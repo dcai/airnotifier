@@ -39,12 +39,15 @@ import oauth
 
 logging.getLogger().setLevel(logging.INFO)
 
-
 class BaseHandler(tornado.web.RequestHandler):
 
     """BaseHandler class
 
     The BaseHandler includes a few common methods
+
+    TODO: needs to handle:
+    - X-AN-APP-ID: 1
+    - X-AN-APP-KEY: XXX
     """
 
     def send_response(self, data=None):
@@ -125,16 +128,48 @@ class AppHandler(BaseHandler):
 
     @tornado.web.authenticated
     def get(self):
-        fullname = tornado.escape.xhtml_escape(self.current_user['name'
-                ])
+        fullname = tornado.escape.xhtml_escape(self.current_user['name'])
         self.oauth_server = oauth.OAuthServer()
         self.oauth_server.add_signature_method(oauth.OAuthSignatureMethod_PLAINTEXT())
         self.oauth_server.add_signature_method(oauth.OAuthSignatureMethod_HMAC_SHA1())
         self.render('apps.html')
 
+class UserHandler(BaseHandler):
+    """Handle users
+    - Take application ID and secret
+    - Create user
+    """
+    def post(self):
+        """ Create user """
+        pass
+    def get(self):
+        """Get user info
+        supply loggged token to get private info
+        """
+        pass
+    def delete(self):
+        """ Delete user """
+        pass
+    def put(self):
+        """ Update """
+        pass
 
-        # self.write("Hello, " + fullname)
-        # self.write("<br><a href='/auth/logout'>Logout</a>")
+class ObjectHandler(BaseHandler):
+    """Object Handler
+    http://airnotifier.xxx/objects/option/1
+    option will be the resource name
+    """
+    def get(self):
+        """Query resource
+        """
+        pass
+    def post(self):
+        """Create object
+        """
+        pass
+
+class AdminHandler(object):
+    pass
 
 class AirNotifierApp(tornado.web.Application):
 
@@ -149,10 +184,17 @@ class AirNotifierApp(tornado.web.Application):
             cookie_secret='airnotifiercookie',
             login_url=r"/auth/login",
             )
-        handlers = [(r"/", MainHandler), (r"/notification/",
-                    NotificationHandler), (r"/auth/login",
-                    AuthHandler), (r"/auth/logout", LogoutHandler),
-                    (r"/applications/", AppHandler)]  # this is the restful api
+        handlers = [(r"/", MainHandler),
+                    (r"/notification/", NotificationHandler),
+                    (r"/users/", UserHandler),
+                    (r"/objects/", ObjectHandler),
+                    (r"/applications/", AppHandler),
+                    # Admin
+                    (r"/admin/", AdminHandler),
+                    # authentication session
+                    (r"/auth/login", AuthHandler),
+                    (r"/auth/logout", LogoutHandler),
+                    ]
 
         tornado.web.Application.__init__(self, handlers, **app_settings)
 
