@@ -7,14 +7,12 @@ import json
 import struct
 import datetime
 import time
+
 from collections import deque
 from socket import ssl, socket, AF_INET, SOCK_STREAM
 from ssl import wrap_socket
 from tornado import ioloop
 from tornado import iostream
-
-import conf
-
 
 class PayLoad(object):
 
@@ -45,7 +43,10 @@ class PayLoad(object):
 
 class APNClient(object):
 
-    def __init__(self):
+    def __init__(self, apns=(), certfile="", keyfile=""):
+        self.apns = apns
+        self.certfile = certfile
+        self.keyfile = keyfile
         self.messages = deque()
         self.ioloop = ioloop.IOLoop.instance()
         self.connect()
@@ -114,10 +115,9 @@ class APNClient(object):
         """ Setup socket """
         self.sock = socket(AF_INET, SOCK_STREAM)
         self.remote_stream = iostream.SSLIOStream(self.sock,
-                ssl_options=dict(certfile=conf.get_option('certfile'),
-                keyfile=conf.get_option('keyfile')))
-        self.remote_stream.connect(conf.get_option('apns'),
-                                   self._on_remote_connected)
+                ssl_options=dict(certfile=self.certfile, keyfile=self.keyfile)
+                )
+        self.remote_stream.connect(self.apns, self._on_remote_connected)
         self.remote_stream.read_until_close(self._on_remote_read_close,
                                             self._on_remote_read_streaming)
 

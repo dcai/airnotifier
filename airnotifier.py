@@ -34,8 +34,16 @@ import tornado.ioloop
 import tornado.options
 import tornado.web
 import json
-from apns import *
 import oauth
+import test
+
+from apns import *
+from tornado.options import define, options
+
+define("certfile", default="cert.pem", help="Certificate file")
+define("keyfile", default="key.pem", help="Private key file")
+define("disableapns", default=False, help="Not using APNs")
+define("apns", default=(), help="APNs")
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -55,7 +63,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
         self.set_header('Content-Type',
                         'application/json; charset=utf-8')
-        self.set_header('X-Powered-By', 'airnotifier/1.0')
+        self.set_header('X-Powered-By', 'AirNotifier/1.0')
         if data:
             jsontext = json.dumps(data)
             self.finish(jsontext)
@@ -199,10 +207,12 @@ class AirNotifierApp(tornado.web.Application):
         tornado.web.Application.__init__(self, handlers, **app_settings)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
-    apn = APNClient()
+    logging.info("Starting AirNotifier server")
+    if options.disableapns is not True:
+        apn = APNClient(options.apns, options.certfile, options.keyfile)
     http_server = tornado.httpserver.HTTPServer(AirNotifierApp())
     http_server.listen(8000)
-    logging.info('Starting AirNotifier server')
     tornado.ioloop.IOLoop.instance().start()
