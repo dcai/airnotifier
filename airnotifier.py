@@ -32,37 +32,58 @@ import tornado.httpserver
 import tornado.escape
 import tornado.ioloop
 import tornado.options
+import tornado.database
 import tornado.web
 import json
 import oauth
 import test
+from hashlib import sha1
 
 from apns import *
 from tornado.options import define, options
+
+from uimodules import AppBlockModule
 
 define("certfile", default="cert.pem", help="Certificate file")
 define("keyfile", default="key.pem", help="Private key file")
 define("disableapns", default=False, help="Not using APNs")
 define("apns", default=(), help="APNs")
+define("pemdir", default="pemdir", help="")
+define("passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash")
 
-logging.getLogger().setLevel(logging.INFO)
+define("dbtype", default="mysql", help="Database type")
+define("dbhost", default="localhost", help="Database host")
+define("dbname", default="airnotifier", help="Database name")
+define("dbuser", default="af", help="Database user")
+define("dbpassword", default="", help="Database user password")
+
+
+#logging.getLogger().setLevel(logging.DEBUG)
 
 class BaseHandler(tornado.web.RequestHandler):
 
     """BaseHandler class
-
-    The BaseHandler includes a few common methods
-
-    TODO: needs to handle:
-    - X-AN-APP-ID: 1
-    - X-AN-APP-KEY: XXX
+    Pre-process HTTP request
     """
+    def initialize(self):
+        """ Parsing application ID and KEY """
+        #logging.info(self.request.headers)
+        if self.request.headers.has_key('X-AN-APP-KEY'):
+            self.appkey = self.request.headers['X-AN-APP-KEY']
 
-    def send_response(self, data=None):
+        if self.request.headers.has_key('X-AN-APP-ID'):
+            """ This is an int value """
+            self.appid = int(self.request.headers['X-AN-APP-ID']);
+
+    @property
+    def db(self):
+        """ DB instance """
+        return self.application.db
+
+    def send_response(self, data=None, headers=None):
         """ Set REST API response """
 
-        self.set_header('Content-Type',
-                        'application/json; charset=utf-8')
+        self.set_header('Content-Type', 'application/json; charset=utf-8')
         self.set_header('X-Powered-By', 'AirNotifier/1.0')
         if data:
             jsontext = json.dumps(data)
@@ -91,7 +112,9 @@ class MainHandler(BaseHandler):
 class NotificationHandler(BaseHandler):
 
     def get(self):
-        self.finish('Move along')
+        """ For testing mainly """
+        app = self.db.get("SELECT app.id, app.shortname, app.fullname, app.description FROM applications app WHERE app.id=%s", int(self.request.headers['X-AN-APP-ID']))
+        self.send_response(app)
 
     def post(self):
         token = self.get_argument('devicetoken')
@@ -131,16 +154,31 @@ class LogoutHandler(BaseHandler):
         self.clear_cookie('user')
         self.redirect(r"/")
 
-
 class AppHandler(BaseHandler):
+    def get(self, appname):
+        app =self.db.get("select * from applications where shortname = %s", appname)
+        if not app: raise tornado.web.HTTPError(500)
+        self.render("app.html", app=app)
+    def post(self, appname):
+        if self.request.files['appcertfile'][0]:
+            certfile = self.request.files['appcertfile'][0]
+            filename = sha1(certfile['body']).hexdigest()
+            filepath = options.pemdir + filename
+            thefile = open(filepath, "w")
+            thefile.write(certfile['body'])
+            thefile.close()
+            apps = self.db.execute("UPDATE applications SET certfile = %s WHERE shortname = %s", filepath, appname)
 
-    @tornado.web.authenticated
+class AppsListHandler(BaseHandler):
+
+    #@tornado.web.authenticated
     def get(self):
-        fullname = tornado.escape.xhtml_escape(self.current_user['name'])
-        self.oauth_server = oauth.OAuthServer()
-        self.oauth_server.add_signature_method(oauth.OAuthSignatureMethod_PLAINTEXT())
-        self.oauth_server.add_signature_method(oauth.OAuthSignatureMethod_HMAC_SHA1())
-        self.render('apps.html')
+        #fullname = tornado.escape.xhtml_escape(self.current_user['name'])
+        #self.oauth_server = oauth.OAuthServer()
+        #self.oauth_server.add_signature_method(oauth.OAuthSignatureMethod_PLAINTEXT())
+        #self.oauth_server.add_signature_method(oauth.OAuthSignatureMethod_HMAC_SHA1())
+        apps = self.db.query("SELECT * FROM applications ORDER BY timemodified")
+        self.render('apps.html', apps=apps)
 
 class UserHandler(BaseHandler):
     """Handle users
@@ -179,24 +217,31 @@ class ObjectHandler(BaseHandler):
 class AdminHandler(object):
     pass
 
+class TokenHandler(object):
+    pass
+
 class AirNotifierApp(tornado.web.Application):
 
     def __init__(self):
         app_settings = dict(
             debug=True,
             app_title=u'AirNotifier',
+            ui_modules={"AppBlock": AppBlockModule},
             template_path=os.path.join(os.path.dirname(__file__),
                     'templates'),
             static_path=os.path.join(os.path.dirname(__file__), 'static'
                     ),
             cookie_secret='airnotifiercookie',
             login_url=r"/auth/login",
+            autoescape=None,
             )
         handlers = [(r"/", MainHandler),
                     (r"/notification/", NotificationHandler),
                     (r"/users/", UserHandler),
                     (r"/objects/", ObjectHandler),
-                    (r"/applications/", AppHandler),
+                    (r"/tokens/", TokenHandler),
+                    (r"/applications/", AppsListHandler),
+                    (r"/applications/([^/]+)", AppHandler),
                     # Admin
                     (r"/admin/", AdminHandler),
                     # authentication session
@@ -206,11 +251,16 @@ class AirNotifierApp(tornado.web.Application):
 
         tornado.web.Application.__init__(self, handlers, **app_settings)
 
+        self.db = tornado.database.Connection(
+                host=options.dbhost, database=options.dbname,
+                user=options.dbuser, password=options.dbpassword)
+
 
 if __name__ == "__main__":
     tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
-    logging.info("Starting AirNotifier server")
+    #logging.info("Starting AirNotifier server")
+    # Start APNs connection for each app
     if options.disableapns is not True:
         apn = APNClient(options.apns, options.certfile, options.keyfile)
     http_server = tornado.httpserver.HTTPServer(AirNotifierApp())

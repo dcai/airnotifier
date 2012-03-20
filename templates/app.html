@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block body %}
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="appid" value="{{app.fullname}}" />
+    <fieldset>
+        <legend>{{app.fullname}}</legend>
+        <div class="control-group">
+            <label class="control-label" for="fullnameinput">App full name</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="fullnameinput" name="appfullname" value="{{app.fullname}}">
+                <p class="help-block">Your app's fullname.</p>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="shortnameinput">App short name</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="shortnameinput" name="appshortname" value="{{app.shortname}}">
+                <p class="help-block">Unique identifier for your app.</p>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="certfileinput">Certification file</label>
+            <div class="controls">
+                <input class="input-file" id="certfileinput" type="file" name="appcertfile">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="keyfileinput">key file</label>
+            <div class="controls">
+                <input class="input-file" id="keyfileinput" type="file" name="appkeyfile">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="apnscheckbox">APNs</label>
+            <div class="controls">
+                <label class="checkbox">
+                    {% if app.enableapns %}
+                    <input type="checkbox" id="apnscheckbox" value="option1" checked>
+                    {% else %}
+                    <input type="checkbox" id="apnscheckbox" value="option1">
+                    {% end %}
+                    Apple push notification server enabled
+                </label>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="connselect">Connections</label>
+            <div class="controls">
+                <select id="connselect">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                </select>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label" for="multiSelect">Multicon-select</label>
+            <div class="controls">
+                <select multiple="multiple" id="multiSelect">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                </select>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label" for="appdescription">Description</label>
+            <div class="controls">
+                <textarea class="input-xlarge" id="appdescription" rows="3"></textarea>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save changes</button>
+            <button class="btn">Cancel</button>
+        </div>
+    </fieldset>
+</form>
+
+{% end %}

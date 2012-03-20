@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block body %}
+  <!--
+  <div class="hero-unit">
+    <h1>AirNotifier</h1>
+    <p>AirNotifier info</p>
+    <p><a class="btn btn-primary btn-large">Learn more &raquo;</a></p>
+  </div>
+  -->
+  <div class="row-fluid">
+  {% for app in apps %}
+    {{ modules.AppBlock(app) }}
+  {% end %}
+  </div><!--/row-->
+{% end %}
