@@ -67,13 +67,12 @@ class BaseHandler(tornado.web.RequestHandler):
     """
     def initialize(self):
         """ Parsing application ID and KEY """
-        #logging.info(self.request.headers)
-        if self.request.headers.has_key('X-AN-APP-KEY'):
-            self.appkey = self.request.headers['X-AN-APP-KEY']
+        if self.request.headers.has_key('X-An-App-Key'):
+            self.appkey = self.request.headers['X-An-App-Key']
 
-        if self.request.headers.has_key('X-AN-APP-ID'):
+        if self.request.headers.has_key('X-An-App-Id'):
             """ This is an int value """
-            self.appid = int(self.request.headers['X-AN-APP-ID']);
+            self.appid = int(self.request.headers['X-An-App-Id']);
 
     @property
     def db(self):
@@ -113,11 +112,11 @@ class NotificationHandler(BaseHandler):
 
     def get(self):
         """ For testing mainly """
-        app = self.db.get("SELECT app.id, app.shortname, app.fullname, app.description FROM applications app WHERE app.id=%s", int(self.request.headers['X-AN-APP-ID']))
-        self.send_response(app)
+        pass
 
     def post(self):
-        token = self.get_argument('devicetoken')
+        app = self.db.get("SELECT app.id, app.shortname FROM applications app WHERE app.id=%s", self.appid)
+        token = self.get_argument('token')
         if len(token) != 64:
             self.send_response(dict(error='Invalid token'))
             return
@@ -126,11 +125,34 @@ class NotificationHandler(BaseHandler):
         badge = int(self.get_argument('badge', 0))
         pl = PayLoad(alert=alert, sound=sound, badge=1)
         try:
-            apn.send(token, pl)
+            # Take the first APNs connection
+            conn = apnsconns[app.shortname][0]
+            conn.send(token, pl)
             self.send_response(dict(status='ok'))
         except Exception, ex:
             self.send_response(dict(error=str(ex)))
 
+class TokenHandler(BaseHandler):
+    def delete(self, token):
+        """Delete a token
+        """
+        sql = "DELETE FROM tokens WHERE appid=%s AND token=%s"
+        try:
+            result = self.db.execute(sql, self.appid, token)
+            self.send_response(dict(status='ok'))
+        except Exception, ex:
+            self.send_response(dict(error=str(ex)))
+
+    def post(self, token):
+        """Create a new token
+        """
+        sql = "INSERT INTO tokens (appid, token, created) VALUES (%s, %s, %s)"
+        now = int(time.time())
+        try:
+            result = self.db.execute(sql, self.appid, token, now)
+            self.send_response(dict(status='ok'))
+        except Exception, ex:
+            self.send_response(dict(error=str(ex)))
 
 class AuthHandler(BaseHandler, tornado.auth.GoogleMixin):
 
@@ -156,18 +178,31 @@ class LogoutHandler(BaseHandler):
 
 class AppHandler(BaseHandler):
     def get(self, appname):
-        app =self.db.get("select * from applications where shortname = %s", appname)
-        if not app: raise tornado.web.HTTPError(500)
-        self.render("app.html", app=app)
+        if appname == "new":
+            self.render("newapp.html")
+        else:
+            app = self.db.get("select * from applications where shortname = %s", appname)
+            if not app: raise tornado.web.HTTPError(500)
+            self.render("app.html", app=app)
+
     def post(self, appname):
         if self.request.files['appcertfile'][0]:
             certfile = self.request.files['appcertfile'][0]
-            filename = sha1(certfile['body']).hexdigest()
-            filepath = options.pemdir + filename
-            thefile = open(filepath, "w")
+            certfilename = sha1(certfile['body']).hexdigest()
+            certfilepath = options.pemdir + certfilename
+            thefile = open(certfilepath, "w")
             thefile.write(certfile['body'])
             thefile.close()
-            apps = self.db.execute("UPDATE applications SET certfile = %s WHERE shortname = %s", filepath, appname)
+
+            keyfile = self.request.files['appkeyfile'][0]
+            keyfilename = sha1(keyfile['body']).hexdigest()
+            keyfilepath = options.pemdir + keyfilename
+            thefile = open(keyfilepath, "w")
+            thefile.write(keyfile['body'])
+            thefile.close()
+
+            sql = "UPDATE applications SET certfile = %s, keyfile=%s WHERE shortname = %s"
+            apps = self.db.execute(sql, certfilepath, keyfilepath, appname)
 
 class AppsListHandler(BaseHandler):
 
@@ -217,9 +252,6 @@ class ObjectHandler(BaseHandler):
 class AdminHandler(object):
     pass
 
-class TokenHandler(object):
-    pass
-
 class AirNotifierApp(tornado.web.Application):
 
     def __init__(self):
@@ -237,9 +269,9 @@ class AirNotifierApp(tornado.web.Application):
             )
         handlers = [(r"/", MainHandler),
                     (r"/notification/", NotificationHandler),
+                    (r"/tokens/([^/]+)", TokenHandler),
                     (r"/users/", UserHandler),
                     (r"/objects/", ObjectHandler),
-                    (r"/tokens/", TokenHandler),
                     (r"/applications/", AppsListHandler),
                     (r"/applications/([^/]+)", AppHandler),
                     # Admin
@@ -255,14 +287,28 @@ class AirNotifierApp(tornado.web.Application):
                 host=options.dbhost, database=options.dbname,
                 user=options.dbuser, password=options.dbpassword)
 
-
 if __name__ == "__main__":
     tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
-    #logging.info("Starting AirNotifier server")
-    # Start APNs connection for each app
-    if options.disableapns is not True:
-        apn = APNClient(options.apns, options.certfile, options.keyfile)
+    db = tornado.database.Connection(
+            host=options.dbhost, database=options.dbname,
+            user=options.dbuser, password=options.dbpassword)
+
+    sql = "SELECT a.id, a.shortname, a.certfile, a.keyfile FROM applications a WHERE a.enableapns=1"
+    apps = db.query(sql)
+    logging.info(apps)
+
+    apnsconns = {}
+    for app in apps:
+        logging.info(app)
+        apnsconns[app.shortname] = []
+        apn = APNClient(options.apns, app.certfile, app.keyfile)
+        apnsconns[app.shortname].append(apn)
+
+    # Job done, closing
+    db.close()
+
+    logging.info("Starting AirNotifier server")
     http_server = tornado.httpserver.HTTPServer(AirNotifierApp())
     http_server.listen(8000)
     tornado.ioloop.IOLoop.instance().start()

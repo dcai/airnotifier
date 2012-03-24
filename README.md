@@ -2,6 +2,12 @@
 AirNotifier is a REST server for apple push notification service.
 APNs allows provider to do peer-to-peer communication, if notification is from other provider other than master provider, we need a push notification forwarder, AirNotifier comes to rescue.
 
+## Status
+Under heavy development
+
+## Design
+- [Product design](https://github.com/dongsheng/airnotifier/wiki/Specification)
+
 ## Features
 - Restful API allows providers to send notification through straightforward restful interface
 - Non-blocking API design allows master provider to handle large loads of request smoothly
@@ -9,8 +15,11 @@ APNs allows provider to do peer-to-peer communication, if notification is from o
 - OAuth, providers apply OAuth key and secret from master provider
 
 ## Requirements
+
+### Server stack
 - [Python 2.7+](http://www.python.org)
 - [Tornado](http://tornadoweb.org)
+- [MongoDB](http://www.mongodb.org)
 
 ## Copyright
 Copyright (c) 2012, Dongsheng Cai
