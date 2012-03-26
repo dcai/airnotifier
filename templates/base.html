@@ -32,18 +32,19 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </a>
-          <a class="brand" href="#">AirNotifier</a>
+          <span class="brand">AirNotifier</span>
           <div class="nav-collapse">
             <ul class="nav">
-              <li class="active"><a href="/applications/">Home</a></li>
-              <li><a href="/about">About</a></li>
+              <li class="active"><a href="/applications/">Applications</a></li>
+              <li><a href="/stats/">Stats</a></li>
+              <li><a href="/info/">Server Info</a></li>
+              <li><a href="/about/">About</a></li>
             </ul>
             <p class="navbar-text pull-right">
-            
             {% if current_user %}
-            <a href="/auth/logout?next={{ url_escape(request.uri) }}">{{ _("Sign out") }}</a>
+                <a href="/auth/logout?next={{ url_escape(request.uri) }}">{{ _("Sign out") }}</a>
             {% else %}
-            {{ _('<a href="%(url)s">Sign in</a> to compose/edit') % {"url": "/auth/login?next=" + url_escape(request.uri)} }}
+                {{ _('<a href="%(url)s">Sign in</a> to compose/edit') % {"url": "/auth/login?next=" + url_escape(request.uri)} }}
             {% end %}
 
           </div><!--/.nav-collapse -->
@@ -57,15 +58,7 @@
           <div class="well sidebar-nav">
             <ul class="nav nav-list">
               <li class="nav-header">Admin</li>
-              <li class="active"><a href="#">Link</a></li>
-              <li><a href="/applications/new">{{ _("New app") }}</a></li>
-              <li><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
-              <li class="nav-header">Stats</li>
-              <li><a href="#">Notifications</a></li>
-              <li class="nav-header">Environments</li>
-              <li><a href="#">Tornado Info</a></li>
+              {% block navitems %}{% end %}
             </ul>
           </div><!--/.well -->
         </div><!--/span-->

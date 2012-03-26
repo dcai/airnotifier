@@ -186,23 +186,45 @@ class AppHandler(BaseHandler):
             self.render("app.html", app=app)
 
     def post(self, appname):
-        if self.request.files['appcertfile'][0]:
-            certfile = self.request.files['appcertfile'][0]
-            certfilename = sha1(certfile['body']).hexdigest()
-            certfilepath = options.pemdir + certfilename
-            thefile = open(certfilepath, "w")
-            thefile.write(certfile['body'])
-            thefile.close()
+        if appname == 'new':
+            # Create a new app
+            pass
+        else:
+            fields = {}
+            # Update app details
+            if self.request.files:
+                if self.request.files['appcertfile'][0]:
+                    certfile = self.request.files['appcertfile'][0]
+                    certfilename = sha1(certfile['body']).hexdigest()
+                    certfilepath = options.pemdir + certfilename
+                    thefile = open(certfilepath, "w")
+                    thefile.write(certfile['body'])
+                    thefile.close()
+                    fields['certfile'] = certfilepath
 
-            keyfile = self.request.files['appkeyfile'][0]
-            keyfilename = sha1(keyfile['body']).hexdigest()
-            keyfilepath = options.pemdir + keyfilename
-            thefile = open(keyfilepath, "w")
-            thefile.write(keyfile['body'])
-            thefile.close()
+                if self.request.files['appkeyfile'][0]:
+                    keyfile = self.request.files['appkeyfile'][0]
+                    keyfilename = sha1(keyfile['body']).hexdigest()
+                    keyfilepath = options.pemdir + keyfilename
+                    thefile = open(keyfilepath, "w")
+                    thefile.write(keyfile['body'])
+                    thefile.close()
+                    fields['keyfile'] = keyfilepath
 
-            sql = "UPDATE applications SET certfile = %s, keyfile=%s WHERE shortname = %s"
-            apps = self.db.execute(sql, certfilepath, keyfilepath, appname)
+            if self.get_argument('appdescription'):
+                fields['description'] = self.get_argument('appdescription')
+
+            if self.get_argument('connections'):
+                fields['connections'] = self.get_argument('connections')
+
+            updatedfields = buildUpdateFields(fields)
+            sql = "UPDATE applications SET %s WHERE shortname = \"%s\"" % (updatedfields, appname)
+            logging.info(sql)
+            apps = self.db.execute(sql)
+            self.redirect(r"/applications/%s" % appname)
+
+def buildUpdateFields(params):
+    return ",".join(["%s = \"%s\"" % (k, v) for k, v in params.items()])
 
 class AppsListHandler(BaseHandler):
 

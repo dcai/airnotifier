@@ -1,20 +1,17 @@
 {% extends "base.html" %}
-
 {% block navitems %}
 <li><a href="/applications/">Home</a></li>
-<li class="active"><a href="#">{{app.fullname}}</a></li>
-<li><a href="/applications/new">New app</a></li>
+<li class="active"><a href="#">New app</a></li>
 {% end %}
 
 {% block body %}
 <form class="form-horizontal" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="appid" value="{{app.fullname}}" />
     <fieldset>
-        <legend>{{app.fullname}}</legend>
+        <legend></legend>
         <div class="control-group">
             <label class="control-label" for="fullnameinput">App full name</label>
             <div class="controls">
-                <input type="text" class="input-xlarge" id="fullnameinput" readonly="readonly" name="appfullname" value="{{app.fullname}}">
+                <input type="text" class="input-xlarge" id="fullnameinput" name="appfullname" value="">
                 <p class="help-block">Your app's fullname.</p>
             </div>
         </div>
@@ -22,7 +19,7 @@
         <div class="control-group">
             <label class="control-label" for="shortnameinput">App short name</label>
             <div class="controls">
-                <input type="text" class="input-xlarge" id="shortnameinput" readonly="readonly" value="{{app.shortname}}">
+                <input type="text" class="input-xlarge" id="shortnameinput" name="appshortname" value="">
                 <p class="help-block">Unique identifier for your app.</p>
             </div>
         </div>
@@ -45,30 +42,30 @@
             <label class="control-label" for="apnscheckbox">APNs</label>
             <div class="controls">
                 <label class="checkbox">
-                    {% if app.enableapns %}
-                    <input type="checkbox" name="enableapns" id="apnscheckbox" value="yes" checked>
-                    {% else %}
-                    <input type="checkbox" name="enableapns" id="apnscheckbox" value="no">
-                    {% end %}
+                    <input type="checkbox" id="apnscheckbox" value="option1">
                     Apple push notification server enabled
                 </label>
             </div>
         </div>
 
         <div class="control-group">
-            <label class="control-label" for="fullnameinput">Connections</label>
+            <label class="control-label" for="connselect">Connections</label>
             <div class="controls">
-                <input type="text" class="input-xlarge" id="connections" pattern="[0-9]+" name="connections" value="{{app.connections}}">
-                <p class="help-block">Connections</p>
+                <select id="connselect">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                </select>
             </div>
         </div>
         <div class="control-group">
             <label class="control-label" for="appdescription">Description</label>
             <div class="controls">
-                <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription">{{app.description}}</textarea>
+                <textarea class="input-xlarge" id="appdescription" rows="3"></textarea>
             </div>
         </div>
-
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save changes</button>
             <button class="btn">Cancel</button>
