@@ -15,6 +15,8 @@
       .sidebar-nav {
         padding: 9px 0;
       }
+      .online {color:green}
+      .offline {color:red}
     </style>
     <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
@@ -35,7 +37,7 @@
           <span class="brand">AirNotifier</span>
           <div class="nav-collapse">
             <ul class="nav">
-              <li class="active"><a href="/applications/">Applications</a></li>
+              <li><a href="/applications/">Applications</a></li>
               <li><a href="/stats/">Stats</a></li>
               <li><a href="/info/">Server Info</a></li>
               <li><a href="/about/">About</a></li>
@@ -44,7 +46,7 @@
             {% if current_user %}
                 <a href="/auth/logout?next={{ url_escape(request.uri) }}">{{ _("Sign out") }}</a>
             {% else %}
-                {{ _('<a href="%(url)s">Sign in</a> to compose/edit') % {"url": "/auth/login?next=" + url_escape(request.uri)} }}
+                {{ _('<a href="%(url)s">Sign in</a>') % {"url": "/auth/login?next=" + url_escape(request.uri)} }}
             {% end %}
 
           </div><!--/.nav-collapse -->
@@ -56,10 +58,7 @@
       <div class="row-fluid">
         <div class="span3">
           <div class="well sidebar-nav">
-            <ul class="nav nav-list">
-              <li class="nav-header">Admin</li>
-              {% block navitems %}{% end %}
-            </ul>
+          {% block sidebaritems %}{% end %}
           </div><!--/.well -->
         </div><!--/span-->
         <div class="span9">

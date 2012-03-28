@@ -63,18 +63,27 @@ class PayLoad(object):
 
     def json(self):
         jsontext = json.dumps(self.build_payload(), separators=(',', ':'))
-        logging.info("PayLoad: %s", jsontext)
+        #logging.info("PayLoad: %s", jsontext)
         return jsontext
 
 
 class APNClient(object):
 
-    def __init__(self, apns=(), certfile="", keyfile=""):
+    def is_oneline(self):
+        return self.connected
+
+    def __init__(self, apns=(), certfile="", keyfile="", appname="", instanceid=0):
         self.apns = apns
         self.certfile = certfile
         self.keyfile = keyfile
         self.messages = deque()
         self.ioloop = ioloop.IOLoop.instance()
+
+        self.appname = appname
+        self.instanceid = instanceid
+
+        self.connected = False
+
         self.connect()
 
     def build_request(self):
@@ -82,7 +91,7 @@ class APNClient(object):
 
     def _on_remote_read_close(self, data):
         """ Close socket and reconnect """
-        logging.warning('Connection closed')
+        logging.warning('%s[%d] is offline' % (self.appname, self.instanceid))
         self.remote_stream.close()
         self.sock.close()
         self.connect()
@@ -123,16 +132,17 @@ class APNClient(object):
              8      | Invalid token
             255     | None
         """
-        logging.info('read streaming')
+        self.connected = False
         if len(data) != 6:
             logging.info('response must be a 6-byte binary string.')
 
         (command, statuscode, identifier) = struct.unpack_from('!bbI', data, 0)
-        logging.info('CMD: %s Status: %s ID: %s', command, status_table[statuscode], identifier)
+        logging.info('%s[%d] CMD: %s Status: %s ID: %s', self.appname, self.instanceid, command, status_table[statuscode], identifier)
 
     def _on_remote_connected(self):
+        self.connected = True
         """ Callback when connected to APNs """
-        logging.info('Connected to APNs')
+        logging.info('APNs connection: %s[%d] is online' % (self.appname, self.instanceid))
         # Processing the messages queue
         while self._send_message():
             continue
@@ -149,6 +159,7 @@ class APNClient(object):
 
     def send(self, deviceToken, payload):
         """ Pack payload and append to message queue """
+        logging.info("Notification through %s[%d]" % (self.appname, self.instanceid))
         json = payload.json()
         json_len = len(json)
         fmt = '!bIIH32sH%ds' % json_len
@@ -177,13 +188,15 @@ class APNClient(object):
         # One day
         expiry = payload.expiry
         tokenLength = 32
-        logging.info("token length %s", len(deviceToken))
         m = struct.pack(fmt, command, identifier, expiry, tokenLength,
                         binascii.unhexlify(deviceToken),
                         json_len, json)
         self.messages.append(m)
         self.ioloop.add_callback(self._send_message)
         return True
+
+    def getQueueLength(self):
+        len(self.messages)
 
     def _send_message(self):
         if len(self.messages) and not self.remote_stream.closed():
@@ -194,16 +207,8 @@ class APNClient(object):
                 self.remote_stream.write(msg)
             except Exception, ex:
                 logging.exception(ex)
-                # Push back to queue
+                # Push back to queue top
                 self.messages.appendleft(msg)
                 return False
             return True
         return False
-
-
-if __name__ == '__main__':
-    pl = PayLoad(alert='Hello world', sound='default', badge=1)
-    apn = APNClient()
-    apn.send('9116fc350fbcb47a0ed078e214b7f13a9e9cb02105d16d76381c700e1da6c2be'
-                     , pl.json())
-    ioloop.IOLoop.instance().start()

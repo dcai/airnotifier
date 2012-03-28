@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block body %}
+  <div class="row-fluid">
+  {% for app in apps %}
+  {% end %}
+  {% for appname in apns %}
+    <h3>
+    {{appname}}
+    </h3>
+    {% for instance in apns[appname] %}
+        <div>
+            <span>{{ _('Connection') }}</span> <strong>#{{instance.instanceid}}</strong>:
+            {% if instance.connected %}
+            <span class="online">{{ _('online') }}</span>
+            {% else %}
+            <span class="online">{{ _('offline') }}</span>
+            {% end %}
+            <span>{{ _('Queue size') }}<span> <strong>{{ len(instance.messages) }}</strong>
+        </div>
+    {% end %}
+  {% end %}
+  </div><!--/row-->
+{% end %}

@@ -1,9 +1,18 @@
 {% extends "base.html" %}
 
-{% block navitems %}
-<li><a href="/applications/">Home</a></li>
-<li class="active"><a href="#">{{app.fullname}}</a></li>
-<li><a href="/applications/new">New app</a></li>
+{% block sidebaritems %}
+<ul class="nav nav-list">
+    <li class="nav-header">Admin</li>
+    <li><a href="/applications/">Home</a></li>
+    <li><a href="/applications/new">New app</a></li>
+    <li class="active"><a href="#">{{app.fullname}}</a></li>
+</ul>
+<ul class="nav nav-list">
+    <li class="nav-header">Actions</li>
+    <li><a href="/applications/{{app.shortname}}/broadcast">Broadcast</a></li>
+    <li><a href="/applications/{{app.shortname}}/keys">Keys</a></li>
+    <li><a href="/applications/{{app.shortname}}/tokens">Tokens</a></li>
+</ul>
 {% end %}
 
 {% block body %}
