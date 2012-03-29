@@ -1,40 +1,31 @@
 {% extends "base.html" %}
 
 {% block sidebaritems %}
-<ul class="nav nav-list">
-    <li class="nav-header">Admin</li>
-    <li><a href="/applications/">Home</a></li>
-    <li><a href="/applications/new">New app</a></li>
-    <li class="active"><a href="#">{{app.fullname}}</a></li>
-</ul>
-<ul class="nav nav-list">
-    <li class="nav-header">Actions</li>
-    <li><a href="/applications/{{app.shortname}}/broadcast">Broadcast</a></li>
-    <li><a href="/applications/{{app.shortname}}/keys">Keys</a></li>
-    <li><a href="/applications/{{app.shortname}}/tokens">Tokens</a></li>
-</ul>
+{{ modules.AppSideBar(app, 'settings') }}
 {% end %}
 
 {% block body %}
 <form class="form-horizontal" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="appid" value="{{app.fullname}}" />
+    <input type="hidden" name="appid" value="{{app['fullname']}}" />
     <fieldset>
-        <legend>{{app.fullname}}</legend>
-        <div class="control-group">
-            <label class="control-label" for="fullnameinput">App full name</label>
-            <div class="controls">
-                <input type="text" class="input-xlarge" id="fullnameinput" readonly="readonly" name="appfullname" value="{{app.fullname}}">
-                <p class="help-block">Your app's fullname.</p>
-            </div>
-        </div>
+        <legend>{{app['fullname']}}</legend>
 
         <div class="control-group">
             <label class="control-label" for="shortnameinput">App short name</label>
             <div class="controls">
-                <input type="text" class="input-xlarge" id="shortnameinput" readonly="readonly" value="{{app.shortname}}">
+                <input type="text" class="input-xlarge" id="shortnameinput" readonly="readonly" value="{{app['shortname']}}">
                 <p class="help-block">Unique identifier for your app.</p>
             </div>
         </div>
+
+        <div class="control-group">
+            <label class="control-label" for="fullnameinput">App full name</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="fullnameinput" name="appfullname" value="{{app['fullname']}}">
+                <p class="help-block">Your app's fullname.</p>
+            </div>
+        </div>
+
 
         <div class="control-group">
             <label class="control-label" for="certfileinput">Certification file</label>
@@ -54,7 +45,7 @@
             <label class="control-label" for="apnscheckbox">APNs</label>
             <div class="controls">
                 <label class="checkbox">
-                    {% if app.enableapns %}
+                    {% if app.has_key('enableapns') and app['enableapns'] %}
                     <input type="checkbox" name="enableapns" id="apnscheckbox" value="yes" checked>
                     {% else %}
                     <input type="checkbox" name="enableapns" id="apnscheckbox" value="no">
@@ -67,20 +58,24 @@
         <div class="control-group">
             <label class="control-label" for="fullnameinput">Connections</label>
             <div class="controls">
-                <input type="text" class="input-xlarge" id="connections" pattern="[0-9]+" name="connections" value="{{app.connections}}">
+                <input type="text" class="input-xlarge" id="connections" pattern="[0-9]+" name="connections" value="{{app['connections']}}">
                 <p class="help-block">Connections</p>
             </div>
         </div>
         <div class="control-group">
             <label class="control-label" for="appdescription">Description</label>
             <div class="controls">
-                <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription">{{app.description}}</textarea>
+                {% if app.has_key('description') %}
+                <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription">{{app['description']}}</textarea>
+                {% else %}
+                <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription"></textarea>
+                {% end %}
             </div>
         </div>
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save changes</button>
-            <button class="btn">Cancel</button>
+            <!--<button class="btn">Cancel</button>-->
         </div>
     </fieldset>
 </form>

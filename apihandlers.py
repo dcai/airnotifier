@@ -45,21 +45,22 @@ class APIBaseHandler(tornado.web.RequestHandler):
         if self.request.headers.has_key('X-An-App-Key'):
             self.appkey = self.request.headers['X-An-App-Key']
 
-        if self.request.headers.has_key('X-An-App-Id'):
+        if self.request.headers.has_key('X-An-App-Name'):
             """ This is an int value """
-            self.appid = int(self.request.headers['X-An-App-Id']);
+            self.appname = self.request.headers['X-An-App-Name'];
 
-        if not self.appid:
-            self.appid = self.get_argument('appid')
+        if not self.appname:
+            self.appname = self.get_argument('appname')
 
         self.token = self.get_argument('token', None)
         if self.token:
             if len(self.token) != 64:
                 self.send_response(dict(error='Invalid token'))
 
-        self.app = self.db.get("SELECT app.id, app.shortname FROM applications app WHERE app.id=%s", self.appid)
+        #self.app = self.db.get("SELECT app.id, app.shortname FROM applications app WHERE app.id=%s", self.appname)
+        self.app = self.db.applications.find_one({'shortname': self.appname})
         if not self.app:
-            self.send_response(dict(error='Invalid app ID'))
+            self.send_response(dict(error='Invalid Application Name'))
 
     @property
     def db(self):
@@ -86,9 +87,9 @@ class TokenHandler(APIBaseHandler):
     def delete(self, token):
         """Delete a token
         """
-        sql = "DELETE FROM tokens WHERE appid=%s AND token=%s"
+        #sql = "DELETE FROM tokens WHERE appid=%s AND token=%s"
         try:
-            result = self.db.execute(sql, self.appid, token)
+            result = self.db.tokens.remove({'token':token})
             self.send_response(dict(status='ok'))
         except Exception, ex:
             self.send_response(dict(error=str(ex)))
@@ -96,10 +97,16 @@ class TokenHandler(APIBaseHandler):
     def post(self, token):
         """Create a new token
         """
-        sql = "INSERT INTO tokens (appid, token, created) VALUES (%s, %s, %s)"
         now = int(time.time())
+        token = {
+                'appname': self.appname,
+                'token': token,
+                'created': now,
+                }
+
+        #sql = "INSERT INTO tokens (appid, token, created) VALUES (%s, %s, %s)"
         try:
-            result = self.db.execute(sql, self.appid, token, now)
+            result = self.db.tokens.insert(token)
             self.send_response(dict(status='ok'))
         except Exception, ex:
             self.send_response(dict(error=str(ex)))
@@ -116,10 +123,10 @@ class NotificationHandler(APIBaseHandler):
         sound = self.get_argument('sound', 'default')
         badge = int(self.get_argument('badge', 0))
         pl = PayLoad(alert=alert, sound=sound, badge=1)
-        count = len(self.apnsconnections[self.app.shortname])
+        count = len(self.apnsconnections[self.app['shortname']])
         random.seed(time.time())
         instanceid = random.randint(0, count-1)
-        conn = self.apnsconnections[self.app.shortname][instanceid]
+        conn = self.apnsconnections[self.app['shortname']][instanceid]
         try:
             conn.send(self.token, pl)
             self.send_response(dict(status='ok'))

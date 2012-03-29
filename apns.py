@@ -156,6 +156,11 @@ class APNClient(object):
         self.remote_stream.connect(self.apns, self._on_remote_connected)
         self.remote_stream.read_until_close(self._on_remote_read_close,
                                             self._on_remote_read_streaming)
+    def disconnect(self):
+        """Disconect"""
+        logging.info("Closing connection")
+        self.remote_stream.close()
+        self.sock.close()
 
     def send(self, deviceToken, payload):
         """ Pack payload and append to message queue """

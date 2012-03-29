@@ -6,7 +6,7 @@
   {% end %}
   {% for appname in apns %}
     <h3>
-    {{appname}}
+    {{apps[appname]['fullname']}}: {{apps[appname]['description']}}
     </h3>
     {% for instance in apns[appname] %}
         <div>

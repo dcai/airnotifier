@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block sidebaritems %}
+{{ modules.AppSideBar(app, 'tokens') }}
+{% end %}
+
+{% block body %}
+<ul>
+{% for token in tokens %}
+<li>{{token['token']}}</li>
+{% end %}
+<ul>
+{% end %}

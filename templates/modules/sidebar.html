@@ -1,0 +1,28 @@
+<ul class="nav nav-list">
+    <li class="nav-header">Actions</li>
+    {% if active == 'settings'%}
+    <li class="active"><a href="/applications/{{app['shortname']}}">Settings</a></li>
+    {% else %}
+    <li><a href="/applications/{{app['shortname']}}">Settings</a></li>
+    {% end %}
+    {% if active == 'broadcast'%}
+    <li class="active"><a href="/applications/{{app['shortname']}}/broadcast">Broadcast</a></li>
+    {% else %}
+    <li><a href="/applications/{{app['shortname']}}/broadcast">Broadcast</a></li>
+    {% end %}
+    {% if active == 'keys'%}
+    <li class="active"><a href="/applications/{{app['shortname']}}/keys">Access keys</a></li>
+    {% else %}
+    <li><a href="/applications/{{app['shortname']}}/keys">Access keys</a></li>
+    {% end %}
+    {% if active == 'tokens'%}
+    <li class="active"><a href="/applications/{{app['shortname']}}/tokens">Tokens</a></li>
+    {% else %}
+    <li><a href="/applications/{{app['shortname']}}/tokens">Tokens</a></li>
+    {% end %}
+    {% if active == 'delete'%}
+    <li class="active"><a href="/applications/{{app['shortname']}}/delete">Delete</a></li>
+    {% else %}
+    <li><a href="/applications/{{app['shortname']}}/delete">Delete</a></li>
+    {% end %}
+</ul>

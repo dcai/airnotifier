@@ -20,7 +20,8 @@ Under heavy development
 
 ### Server stack
 - [Python 2.7+](http://www.python.org)
-- [Tornado](http://tornadoweb.org)
+- [MongoDB](http://www.mongodb.org/)
+- [Tornado 2.0](http://tornadoweb.org)
 
 ## Copyright
 Copyright (c) 2012, Dongsheng Cai
