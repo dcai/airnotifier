@@ -29,6 +29,7 @@
 import tornado.database
 import tornado.web
 import logging
+import unicodedata
 from apns import *
 import re
 from hashlib import sha1
@@ -51,7 +52,11 @@ class WebBaseHandler(tornado.web.RequestHandler):
     @property
     def db(self):
         """ DB instance """
-        return self.application.db
+        return self.application.mongodb[self.appname]
+
+    @property
+    def masterdb(self):
+        return self.application.masterdb
 
     @property
     def apnsconnections(self):
@@ -96,43 +101,55 @@ class LogoutHandler(WebBaseHandler):
 
 class AppActionHandler(WebBaseHandler):
     def get(self, appname, action):
-        app = self.db.applications.find_one({'shortname':appname})
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':appname})
         if not app: raise tornado.web.HTTPError(500)
         if action == 'delete':
             self.render("app_delete.html", app=app)
         elif action == 'tokens':
-            tokens = self.db.tokens.find({'appname': appname})
-            logging.info(tokens)
+            tokens = self.db.tokens.find()
             self.render("app_tokens.html", app=app, tokens=tokens)
         elif action == 'keys':
-            keys = self.db.keys.find({'appname': appname})
-            self.render("app_keys.html", app=app, keys=keys)
-            pass
+            keys = self.db.keys.find()
+            self.render("app_keys.html", app=app, keys=keys, newkey=None)
         elif action == 'broadcast':
             self.render("app_broadcast.html", app=app)
-            pass
         elif action == 'objects':
-            pass
+            self.render("app_object.html", app=app)
 
     def post(self, appname, action):
-        app = self.db.applications.find_one({'shortname':appname})
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':appname})
         if not app: raise tornado.web.HTTPError(500)
         if action == 'delete':
             self.db.applications.remove({'shortname': appname})
-        self.redirect(r"/applications/")
+            self.redirect(r"/applications/")
+        elif action == 'keys':
+            import uuid
+            key = {}
+            key['created'] = int(time.time())
+            key['owner'] = self.get_argument('keyowner').strip()
+            key['contact'] = self.get_argument('keyownercontact').strip()
+            key['key'] = str(uuid.uuid4())
+            keyObjectId = self.db.keys.insert(key)
+            keys = self.db.keys.find()
+            self.render("app_keys.html", app=app, keys=keys, newkey=key)
 
 class AppHandler(WebBaseHandler):
     def get(self, appname):
         if appname == "new":
-            self.render("newapp.html")
+            self.render("app_new.html")
         else:
             #app = self.db.get("select * from applications where shortname = %s", appname)
-            app = self.db.applications.find_one({'shortname': appname})
+            app = self.masterdb.applications.find_one({'shortname': appname})
             if not app: raise tornado.web.HTTPError(500)
-            self.render("app.html", app=app)
+            self.render("app_settings.html", app=app)
 
     def make_appname(self, appname):
-        return re.sub(r'\W+', '', appname)
+        appname = unicodedata.normalize("NFKD", appname).encode("ascii", "ignore")
+        appname = re.sub(r"[^\w]+", " ", appname)
+        appname = "".join(appname.lower().strip().split())
+        return appname
 
     def start_apns(self, app):
         if not self.apnsconnections.has_key(app['shortname']):
@@ -221,18 +238,33 @@ class AppsListHandler(WebBaseHandler):
 
     #@tornado.web.authenticated
     def get(self):
-        #fullname = tornado.escape.xhtml_escape(self.current_user['name'])
-        #apps = self.db.query("SELECT * FROM applications ORDER BY timemodified")
-        apps = self.db.applications.find()
+        apps = self.masterdb.applications.find()
         self.render('apps.html', apps=apps)
 
 class StatsHandler(WebBaseHandler):
     def get(self):
-        #records = self.db.query("SELECT * FROM applications ORDER BY timemodified")
-        records = self.db.applications.find()
+        records = self.masterdb.applications.find()
         apps = {};
         for app in records:
-            logging.info(app)
             shortname = app['shortname']
             apps[shortname] = app
         self.render('stats.html', apps=apps, apns=self.apnsconnections)
+
+class InfoHandler(WebBaseHandler):
+    def get(self):
+        import sys
+        import platform
+        import os
+        mongodbinfo = self.application.mongodb.server_info()
+        del mongodbinfo['versionArray']
+        pythoninfo = {}
+        pythoninfo['version'] = sys.version
+        pythoninfo['platform'] = sys.platform
+        pythoninfo['os'] = os.name
+        pythoninfo['arch'] = platform.architecture()
+        pythoninfo['machine'] = platform.machine()
+        pythoninfo['build'] = platform.python_build()[1]
+        pythoninfo['compiler'] = platform.python_compiler()
+        pythoninfo['modules'] = ", ".join(sys.builtin_module_names)
+
+        self.render('info.html', pythoninfo=pythoninfo, mongodb=mongodbinfo, tornadoversion=tornado.version)

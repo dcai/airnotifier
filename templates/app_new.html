@@ -1,7 +1,13 @@
 {% extends "base.html" %}
-{% block navitems %}
-<li><a href="/applications/">Home</a></li>
-<li class="active"><a href="#">New app</a></li>
+
+{% block sidebaritems %}
+<ul class="nav nav-list">
+    <li class="active"><a href="###">New application</a></li>
+</ul>
+{% end %}
+
+{% block navbar %}
+{{ modules.NavBar('applications') }}
 {% end %}
 
 {% block body %}

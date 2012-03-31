@@ -1,13 +1,33 @@
 {% extends "base.html" %}
 
+{% block navbar %}
+{{ modules.NavBar('applications') }}
+{% end %}
+
 {% block sidebaritems %}
 {{ modules.AppSideBar(app, 'tokens') }}
 {% end %}
 
 {% block body %}
-<ul>
-{% for token in tokens %}
-<li>{{token['token']}}</li>
-{% end %}
-<ul>
+  <div class="row-fluid">
+    <div class="page-header">
+        <h1>{{app['fullname']}}</h1>
+    </div>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>{{ _('Token') }}</th>
+                <th>{{ _('Created') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for token in tokens %}
+            <tr>
+                <td>{{ token['token'] }}</td>
+                <td><span class="badge badge-info"></span></td>
+            </tr>
+        {% end %}
+        </tbody>
+    </table>
+  </div><!--/row-->
 {% end %}

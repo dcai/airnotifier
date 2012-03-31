@@ -1,8 +1,78 @@
 {% extends "base.html" %}
 
+{% block navbar %}
+{{ modules.NavBar('applications') }}
+{% end %}
+
 {% block sidebaritems %}
 {{ modules.AppSideBar(app, 'keys') }}
 {% end %}
 
 {% block body %}
+{% if newkey %}
+<div class="alert alert-success">
+    New key created: {{ newkey['key'] }}
+</div>
+{% end %}
+
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="appname" value="{{app['shortname']}}" />
+    <fieldset>
+        <legend>{{ _('Create access key') }}</legend>
+
+        <div class="control-group">
+            <label class="control-label" for="appdescription">{{ _('Owner') }}</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="shortnameinput" name="keyowner">
+                <p class="help-block"></p>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="appdescription">{{ _('Owner email') }}</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="shortnameinput" name="keyownercontact">
+                <p class="help-block"></p>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ _('Generate') }}</button>
+        </div>
+    </fieldset>
+</form>
+
+<div class="row-fluid">
+    <div class="page-header">
+        <h1>{{app['fullname']}}</h1>
+    </div>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>{{ _('Key') }}</th>
+                <th>{{ _('Owner') }}</th>
+                <th>{{ _('Created') }}</th>
+                <th>{{ _('Action') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for key in keys %}
+            <tr>
+                <td><strong>{{key['key']}}</strong></td>
+                <td>
+                    <span class="label label-success">{{ key['owner'] }}</span>
+                </td>
+                {% if key.has_key('created') %}
+                <td>{{ key['created'] }}</td>
+                {% else %}
+                <td></td>
+                {% end %}
+                <td>
+                    <a class="btn btn-danger" href="#"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
+                </td>
+            </tr>
+            {% end %}
+        </tbody>
+    </table>
+</div><!--/row-->
 {% end %}

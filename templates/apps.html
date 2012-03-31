@@ -1,14 +1,18 @@
 {% extends "base.html" %}
 
+{% block navbar %}
+{{ modules.NavBar('applications') }}
+{% end %}
+
 {% block sidebaritems %}
 <ul class="nav nav-list">
-    <li class="nav-header">Admin</li>
-    <li><a href="/applications/new">Create application</a></li>
+    <li class="nav-header">{{ _('Admin') }}</li>
+    <li><a href="/applications/new"><i class="icon-plus"></i> {{ ('Create application') }}</a></li>
 </ul>
 <ul class="nav nav-list">
-    <li class="nav-header">Applications</li>
+    <li class="nav-header">{{ _('Applications') }}</li>
     {% for app in apps %}
-    <li><a href="/applications/{{app['shortname']}}">{{app['fullname']}}</a></li>
+    <li><a href="/applications/{{app['shortname']}}"><i class="icon-star"></i> {{app['fullname']}}</a></li>
     {% end %}
 </ul>
 {% end %}
@@ -17,11 +21,6 @@
     <h1>AirNotifier</h1>
     <p>AirNotifier is a REST server for apple push notification service, users and resources management, it's a strong and generic backend for iOS apps.</p>
     <p>APNs requires a certification to set up SSL connection, in some situations, we needs multi server instances without sharing certification file, we need a push notification forwarder, other instances send notification requests to it, it setup the SSL connection and send them all.</p>
-    <p><a class="btn btn-primary btn-large" href="http://github.com/dongsheng/airnotifier/">Learn more &raquo;</a></p>
+    <p><a class="btn btn-primary btn-large" href="http://github.com/dongsheng/airnotifier/">{{ _('Learn more') }} &raquo;</a></p>
   </div>
-  <div class="row-fluid">
-  {% for app in apps %}
-    {{ modules.AppBlock(app) }}
-  {% end %}
-  </div><!--/row-->
 {% end %}

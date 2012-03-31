@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block navbar %}
+{{ modules.NavBar('applications') }}
+{% end %}
+
 {% block sidebaritems %}
 {{ modules.AppSideBar(app, 'delete') }}
 {% end %}
@@ -9,7 +13,9 @@
     <input type="hidden" name="appid" value="{{app['fullname']}}" />
     <fieldset>
         <legend>{{app['fullname']}}</legend>
+        <div class="control-group">
         <p>Are you sure you want to delete this app?</p>
+        </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-danger">Delete</button>
             <button class="btn">Cancel</button>

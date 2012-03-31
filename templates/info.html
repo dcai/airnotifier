@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+{{ modules.NavBar('info') }}
+{% end %}
+
+{% block sidebaritems %}
+<ul class="nav nav-list">
+    <li class="nav-header">Software</li>
+    <li><a href="#tornado">Tornado</a></li>
+    <li><a href="#mongodb">MongoDB</a></li>
+    <li><a href="#python">Python</a></li>
+</ul>
+{% end %}
+
+{% block body %}
+  <div class="row-fluid">
+    <a name="tornado"></a>
+    <h3>Tornado</h3>
+    <dl class="dl-horizontal">
+        <dt>Version</dt> <dd>{{tornadoversion}}</dd>
+    </dl>
+
+    <a name="mongodb"></a>
+    <h3>MongoDB</h3>
+    <dl class="dl-horizontal">
+        {% for info in mongodb %}
+        <dt>{{info}}</dt> <dd>{{mongodb[info]}}</dd>
+        {% end %}
+    </dl>
+
+    <a name="python"></a>
+    <h3>Python</h3>
+    <dl class="dl-horizontal">
+        {% for info in pythoninfo %}
+        <dt>{{info}}</dt> <dd>{{pythoninfo[info]}}</dd>
+        {% end %}
+    </dl>
+  </div><!--/row-->
+{% end %}

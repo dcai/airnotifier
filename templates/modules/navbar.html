@@ -1,0 +1,18 @@
+<ul class="nav">
+{% if tab == 'applications'%}
+<li class="active"><a href="/applications/">Applications</a></li>
+{% else %}
+<li><a href="/applications/">Applications</a></li>
+{% end %}
+{% if tab == 'stats' %}
+<li class="active"><a href="/stats/">Stats</a></li>
+{% else %}
+<li><a href="/stats/">Stats</a></li>
+{% end %}
+{% if tab == 'info' %}
+<li class="active"><a href="/info/">Server Info</a></li>
+{% else %}
+<li><a href="/info/">Server Info</a></li>
+{% end %}
+<li><a href="/about/">About</a></li>
+</ul>

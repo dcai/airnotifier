@@ -31,6 +31,9 @@ import tornado.web
 import random
 ## APNs library
 from apns import *
+# MongoDB
+from pymongo import *
+from bson import *
 
 class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
@@ -41,13 +44,14 @@ class APIBaseHandler(tornado.web.RequestHandler):
     def prepare(self):
         """Pre-process HTTP request
         """
-        """ Parsing application ID and KEY """
-        if self.request.headers.has_key('X-An-App-Key'):
-            self.appkey = self.request.headers['X-An-App-Key']
 
         if self.request.headers.has_key('X-An-App-Name'):
-            """ This is an int value """
+            """ App name """
             self.appname = self.request.headers['X-An-App-Name'];
+
+        if self.request.headers.has_key('X-An-App-Key'):
+            """ App key """
+            self.appkey = self.request.headers['X-An-App-Key']
 
         if not self.appname:
             self.appname = self.get_argument('appname')
@@ -57,15 +61,21 @@ class APIBaseHandler(tornado.web.RequestHandler):
             if len(self.token) != 64:
                 self.send_response(dict(error='Invalid token'))
 
-        #self.app = self.db.get("SELECT app.id, app.shortname FROM applications app WHERE app.id=%s", self.appname)
-        self.app = self.db.applications.find_one({'shortname': self.appname})
+        self.app = self.masterdb.applications.find_one({'shortname': self.appname})
+        key = self.db.keys.find_one({'key':self.appkey})
+        if not key:
+            self.send_response(dict(error='Invalid Key'))
         if not self.app:
             self.send_response(dict(error='Invalid Application Name'))
 
     @property
     def db(self):
         """ DB instance """
-        return self.application.db
+        return self.application.mongodb[self.appname]
+
+    @property
+    def masterdb(self):
+        return self.application.masterdb
 
     @property
     def apnsconnections(self):
@@ -87,38 +97,39 @@ class TokenHandler(APIBaseHandler):
     def delete(self, token):
         """Delete a token
         """
-        #sql = "DELETE FROM tokens WHERE appid=%s AND token=%s"
         try:
-            result = self.db.tokens.remove({'token':token})
-            self.send_response(dict(status='ok'))
+            result = self.db.tokens.remove({'token':token}, True)
+            logging.info(result)
+            if result['n'] == 0:
+                self.send_response(dict(status='Token does\'t exist'))
+            else:
+                self.send_response(dict(status='deleted'))
         except Exception, ex:
             self.send_response(dict(error=str(ex)))
 
     def post(self, token):
         """Create a new token
         """
-        now = int(time.time())
-        token = {
-                'appname': self.appname,
-                'token': token,
-                'created': now,
-                }
-
-        #sql = "INSERT INTO tokens (appid, token, created) VALUES (%s, %s, %s)"
-        try:
-            result = self.db.tokens.insert(token)
-            self.send_response(dict(status='ok'))
-        except Exception, ex:
-            self.send_response(dict(error=str(ex)))
+        record = self.db.tokens.find_one({'token': token})
+        if record and record.has_key('token'):
+            self.send_response(dict(error="Token already recorded"))
+        else:
+            now = int(time.time())
+            token = {
+                    'appname': self.appname,
+                    'token': token,
+                    'created': now,
+                    }
+            try:
+                result = self.db.tokens.insert(token)
+                self.send_response(dict(status='ok'))
+            except Exception, ex:
+                self.send_response(dict(error=str(ex)))
 
 class NotificationHandler(APIBaseHandler):
 
-    def get(self):
-        """ For testing only """
-        pass
-
     def post(self):
-
+        """ Send notifications """
         alert = self.get_argument('alert')
         sound = self.get_argument('sound', 'default')
         badge = int(self.get_argument('badge', 0))
@@ -133,36 +144,118 @@ class NotificationHandler(APIBaseHandler):
         except Exception, ex:
             self.send_response(dict(error=str(ex)))
 
-class UserHandler(APIBaseHandler):
+class UsersHandler(APIBaseHandler):
     """Handle users
     - Take application ID and secret
     - Create user
     """
     def post(self):
-        """ Create user """
-        pass
-    def get(self):
-        """Get user info
-        supply loggged token to get private info
+        """Register user
         """
-        pass
-    def delete(self):
+        username = self.get_argument('username')
+        password = self.get_argument('password')
+        email = self.get_argument('email')
+        now = int(time.time())
+        user = {
+                'username': username,
+                'password': password,
+                'email': email,
+                'created': now,
+        }
+        try:
+            user = self.db.users.find_one({'username':username})
+            if user:
+                self.send_response(dict(error='Username already exists'))
+            else:
+                userid = self.db.users.insert(user)
+                self.send_response({'userid': userid})
+        except Exception, ex:
+            self.send_response(dict(error=str(ex)))
+
+    def get(self):
+        """Query users
+        """
+        cursor = self.db.users.find()
+        users = []
+        for u in cursor:
+            users.append(u)
+        self.send_response(users)
+
+class UserHandler(APIBaseHandler):
+    def delete(self, userId):
         """ Delete user """
         pass
-    def put(self):
+
+    def put(self, userId):
         """ Update """
         pass
+
+    def get(self, userId):
+        """Get user details by ID
+        """
+        username = self.get_argument('username', None)
+        email = self.get_argument('email', None)
+        userid = self.get_argument('userid', None)
+        conditions = {}
+        if username:
+            conditions['username'] = username
+        if email:
+            conditions['email'] = email
+        if userid:
+            conditions['id'] = userid
+
 
 class ObjectHandler(APIBaseHandler):
     """Object Handler
     http://airnotifier.xxx/objects/option/1
     option will be the resource name
     """
-    def get(self):
-        """Query resource
+    def get(self, classname, objectId):
+        """Get object by ID
         """
-        pass
+        self.objectid = ObjectId(objectId)
+        doc = self.db[classname].find_one({'_id': self.objectid})
+        doc['_id'] = str(doc['_id'])
+        self.send_response(doc)
+
+    def delete(self, classname, objectId):
+        """Delete a object
+        """
+        self.objectid = ObjectId(objectId)
+        result = self.db[classname].remove({'_id': self.objectid}, True)
+        self.send_response(dict(result=result))
+
+    def put(self, classname, objectId):
+        """Update a object
+        """
+        data = json.loads(self.request.body)
+        self.objectid = ObjectId(objectId)
+        result = self.db[classname].update({'_id': self.objectid}, data)
+
+class ClassHandler(APIBaseHandler):
+    """Object Handler
+    http://airnotifier.xxx/objects/option/1
+    option will be the resource name
+    """
+    def get(self, classname):
+        """Query collection
+        """
+        objects = self.db[classname].find()
+        results = []
+        for obj in objects:
+            obj['_id'] = str(obj['_id'])
+            results.append(obj)
+        logging.info(results)
+        self.send_response(results)
+
+    def post(self, classname):
+        """Create entry
+        """
+        data = json.loads(self.request.body)
+        objectId = self.db[classname].insert(data)
+        self.send_response(dict(objectId=str(objectId)))
+
+class FilesHandler(APIBaseHandler):
     def post(self):
-        """Create object
-        """
+        ## hash and store a file
         pass

@@ -50,22 +50,14 @@ from webhandlers import *
 ## UI modules
 from uimodules import *
 
-define("certfile", default="cert.pem", help="Certificate file")
-define("keyfile", default="key.pem", help="Private key file")
-define("disableapns", default=False, help="Not using APNs")
-define("apns", default=(), help="APNs")
-define("pemdir", default="pemdir", help="")
+define("apns", default=(), help="APNs address and port")
+define("pemdir", default="pemdir", help="Directory to store pems")
 define("passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash")
-
-define("dbtype", default="mysql", help="Database type")
-define("dbhost", default="localhost", help="Database host")
-define("dbname", default="airnotifier", help="Database name")
-define("dbuser", default="af", help="Database user")
-define("dbpassword", default="", help="Database user password")
 
 define("mongohost", default="localhost", help="MongoDB host name")
 define("mongoport", default=27017, help="MongoDB port")
 define("mongodbname", default="airnotifier", help="MongoDB database name")
+define("masterdb", default="airnotifier", help="MongoDB DB to store information")
 
 
 #logging.getLogger().setLevel(logging.DEBUG)
@@ -76,7 +68,7 @@ class AirNotifierApp(tornado.web.Application):
         app_settings = dict(
             debug=True,
             app_title=u'AirNotifier',
-            ui_modules={"AppBlock": AppBlockModule, "AppSideBar": AppSideBar},
+            ui_modules={"AppSideBar": AppSideBar, "NavBar": NavBar},
             template_path=os.path.join(os.path.dirname(__file__),
                     'templates'),
             static_path=os.path.join(os.path.dirname(__file__), 'static'
@@ -90,13 +82,22 @@ class AirNotifierApp(tornado.web.Application):
                     ## API
                     (r"/notification/", NotificationHandler),
                     (r"/tokens/([^/]+)", TokenHandler),
-                    (r"/users/", UserHandler),
-                    (r"/objects/", ObjectHandler),
+                    ## Create/Query users
+                    (r"/users", UsersHandler),
+                    ## Delete/Get/Update individual user
+                    (r"/users/([^/]+)", UserHandler),
+                    ## Create/Query objects
+                    (r"/objects/([^/]+)", ClassHandler),
+                    ## Delete/Get/Update individual object
+                    (r"/objects/([^/]+)/([^/]+)", ObjectHandler),
+                    ## Upload files
+                    (r"/files", FilesHandler),
                     ## Web
                     (r"/applications/", AppsListHandler),
                     (r"/applications/([^/]+)", AppHandler),
                     (r"/applications/([^/]+)/([^/]+)", AppActionHandler),
                     (r"/stats/", StatsHandler),
+                    (r"/info/", InfoHandler),
                     # authentication session
                     (r"/auth/login", AuthHandler),
                     (r"/auth/logout", LogoutHandler),
@@ -105,30 +106,20 @@ class AirNotifierApp(tornado.web.Application):
         tornado.web.Application.__init__(self, handlers, **app_settings)
 
         mongodb = Connection(options.mongohost, options.mongoport)
-        self.db = mongodb[options.mongodbname]
-        #self.db = tornado.database.Connection(
-                #host=options.dbhost, database=options.dbname,
-                #user=options.dbuser, password=options.dbpassword)
+        self.mongodb = mongodb
+        self.masterdb = mongodb[options.masterdb]
 
 if __name__ == "__main__":
     tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
-    #db = tornado.database.Connection(
-            #host=options.dbhost, database=options.dbname,
-            #user=options.dbuser, password=options.dbpassword)
     mongodb = Connection(options.mongohost, options.mongoport)
-    db = mongodb[options.mongodbname]
+    masterdb = mongodb[options.masterdb]
 
-    #sql = "SELECT a.id, a.shortname, a.certfile, a.keyfile, a.connections FROM applications a WHERE a.enableapns=1"
-    #apps = db.query(sql)
-    logging.info(db)
-
-    apps = db.applications.find({'enableapns': 1})
+    apps = masterdb.applications.find({'enableapns': 1})
 
     apnsconns = {}
 
     for app in apps:
-        logging.info(app['shortname'])
         apnsconns[app['shortname']] = []
         conns = int(app['connections'])
         if conns > 5:
@@ -138,11 +129,10 @@ if __name__ == "__main__":
         for instanceid in range(0, conns):
             apn = APNClient(options.apns, app['certfile'], app['keyfile'], app['shortname'], instanceid)
             apnsconns[app['shortname']].append(apn)
-
-    # Job done, closing
-    #db.close()
+    mongodb.close()
 
     logging.info("Starting AirNotifier server")
     http_server = tornado.httpserver.HTTPServer(AirNotifierApp(apnsconnections=apnsconns))
     http_server.listen(8000)
+
     tornado.ioloop.IOLoop.instance().start()

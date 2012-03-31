@@ -36,12 +36,7 @@
           </a>
           <span class="brand">AirNotifier</span>
           <div class="nav-collapse">
-            <ul class="nav">
-              <li><a href="/applications/">Applications</a></li>
-              <li><a href="/stats/">Stats</a></li>
-              <li><a href="/info/">Server Info</a></li>
-              <li><a href="/about/">About</a></li>
-            </ul>
+            {% block navbar %}{% end %}
             <p class="navbar-text pull-right">
             {% if current_user %}
                 <a href="/auth/logout?next={{ url_escape(request.uri) }}">{{ _("Sign out") }}</a>

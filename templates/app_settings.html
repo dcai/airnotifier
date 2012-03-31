@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+{{ modules.NavBar('applications') }}
+{% end %}
+
+{% block sidebaritems %}
+{{ modules.AppSideBar(app, 'settings') }}
+{% end %}
+
+{% block body %}
+
+<form class="form-horizontal" method="post">
+    <input type="hidden" name="appname" value="{{app['shortname']}}" />
+    <fieldset>
+        <legend>{{ _('APNs') }}</legend>
+        <div class="control-group">
+            <label class="control-label" for="shortnameinput"> {{ _('APNs service') }}</label>
+            <div class="controls">
+                {% if app.has_key('enableapns') and app['enableapns'] %}
+                <button type="submit" class="btn btn-danger">{{ _('Stop') }}</button>
+                {% else %}
+                <button type="submit" class="btn btn-primary">{{ _('Launch') }}</button>
+                {% end %}
+                <p class="help-block">Apple push notification service</p>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+<form class="form-horizontal" method="post">
+    <input type="hidden" name="appname" value="{{app['shortname']}}" />
+    <fieldset>
+        <legend>{{ _('General') }}</legend>
+
+        <div class="control-group">
+            <label class="control-label" for="shortnameinput"> {{ _('Short name') }}</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="shortnameinput" disabled value="{{app['shortname']}}">
+                <p class="help-block">Unique identifier for your app.</p>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="fullnameinput">{{ _('Full name') }}</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="fullnameinput" name="appfullname" value="{{app['fullname']}}">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="fullnameinput">Connections</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="connections" pattern="[0-9]+" name="connections" value="{{app['connections']}}">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="appdescription">Description</label>
+            <div class="controls">
+                {% if app.has_key('description') %}
+                <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription">{{app['description']}}</textarea>
+                {% else %}
+                <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription"></textarea>
+                {% end %}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
+        </div>
+    </fieldset>
+</form>
+
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="appname" value="{{app['shortname']}}" />
+    <fieldset>
+        <legend>{{ _('Certificates') }}</legend>
+        <div class="control-group">
+            <label class="control-label" for="certfileinput">{{ _('Certification') }}</label>
+            <div class="controls">
+                {% if app.has_key('certfile') and app['certfile'] %}
+                <div class="alert alert-success">
+                    {{ _('Already uploaded') }}
+                {% else %}
+                <div class="alert alert-error">
+                    {{ _('Certificate not set') }}
+                {% end %}
+                    <input class="input-file" id="certfileinput" type="file" name="appcertfile">
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="keyfileinput">{{ _('Key') }}</label>
+            <div class="controls">
+                {% if app.has_key('keyfile') and app['keyfile'] %}
+                <div class="alert alert-success">
+                    {{ _('Already uploaded') }}
+                {% else %}
+                <div class="alert alert-error">
+                    {{ _('Key not set') }}
+                {% end %}
+                    <input class="input-file" id="keyfileinput" type="file" name="appkeyfile">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ _('Upload') }}</button>
+        </div>
+    </fieldset>
+</form>
+
+
+{% end %}
