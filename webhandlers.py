@@ -74,23 +74,28 @@ class WebBaseHandler(tornado.web.RequestHandler):
         userId = ObjectId(userid)
         user = self.masterdb.managers.find_one({'_id': userId})
         return user
-        #return tornado.escape.json_decode(user_json)
 
 class AuthHandler(WebBaseHandler):
-    """ Google authentication """
-    def get(self):
-        self.render('login.html')
+    def get(self, action):
+        next = self.get_argument('next', "/")
+        if action == 'logout':
+            self.clear_cookie('user')
+            self.redirect(next)
+        else:
+            self.render('login.html')
 
-    def post(self):
-        username = self.get_argument('username', None)
-        password = self.get_argument('password', None)
-        passwordhash = sha1(password).hexdigest()
-        user = self.masterdb.managers.find_one({'username': username, 'password': passwordhash})
-        logging.info(user)
-        logging.info(passwordhash)
-        if user:
-            self.set_secure_cookie('user', str(user['_id']))
-            self.redirect(r"/applications")
+    def post(self, action):
+        next = self.get_argument('next', "/")
+        if action == 'logout':
+            self.clear_cookie('user')
+        else:
+            username = self.get_argument('username', None)
+            password = self.get_argument('password', None)
+            passwordhash = sha1(password).hexdigest()
+            user = self.masterdb.managers.find_one({'username': username, 'password': passwordhash})
+            if user:
+                self.set_secure_cookie('user', str(user['_id']))
+        self.redirect(next)
 
 
 class MainHandler(WebBaseHandler):
@@ -98,12 +103,6 @@ class MainHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
         self.redirect(r"/applications")
-
-class LogoutHandler(WebBaseHandler):
-    """ Logout and clearn cookies """
-    def get(self):
-        self.clear_cookie('user')
-        self.redirect(r"/")
 
 class AppActionHandler(WebBaseHandler):
     @tornado.web.authenticated

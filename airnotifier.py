@@ -99,8 +99,7 @@ class AirNotifierApp(tornado.web.Application):
                     (r"/stats/", StatsHandler),
                     (r"/info/", InfoHandler),
                     # authentication session
-                    (r"/auth/login", AuthHandler),
-                    (r"/auth/logout", LogoutHandler),
+                    (r"/auth/([^/]+)", AuthHandler),
                     ]
 
         tornado.web.Application.__init__(self, handlers, **app_settings)
