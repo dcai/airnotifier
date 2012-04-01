@@ -34,6 +34,7 @@ import tornado.options
 import tornado.database
 import tornado.web
 import logging
+from hashlib import sha1
 
 from pymongo import *
 from pymongo.errors import *
@@ -60,12 +61,23 @@ if __name__ == "__main__":
     try:
         masterdb.create_collection('applications')
     except CollectionInvalid, ex:
-        print("Already installed")
+        print("db.applications installed")
+
     try:
-        masterdb.create_collection('config')
+        masterdb.create_collection('managers')
     except CollectionInvalid, ex:
-        print("Already installed")
-    db = masterdb['test_applications']
-    #app = {'app': "test"}
-    #objectid = db.insert(app)
-    #logging.info(objectid)
+        print("db.managers installed")
+
+    try:
+        manager = {}
+        manager['username'] = 'admin'
+        passwordhash = sha1('admin').hexdigest()
+        manager['password'] = passwordhash
+        masterdb['managers'].insert(manager)
+    except Exception, ex:
+        print("Failed to created manager")
+
+    try:
+        masterdb.create_collection('options')
+    except CollectionInvalid, ex:
+        print("db.options installed")

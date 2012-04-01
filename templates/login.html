@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+{{ modules.NavBar('applications') }}
+{% end %}
+
+{% block sidebaritems %}
+{% end %}
+
+{% block body %}
+
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="appname" value="" />
+    <fieldset>
+        <legend>{{ _('Login') }}</legend>
+
+        <div class="control-group">
+            <label class="control-label" for="appdescription">{{ _('User') }}</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="shortnameinput" name="username">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="appdescription">{{ _('Password') }}</label>
+            <div class="controls">
+                <input type="password" class="input-xlarge" id="shortnameinput" name="password">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ _('Login') }}</button>
+        </div>
+    </fieldset>
+</form>
+
+{% end %}

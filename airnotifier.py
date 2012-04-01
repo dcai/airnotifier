@@ -93,7 +93,7 @@ class AirNotifierApp(tornado.web.Application):
                     ## Upload files
                     (r"/files", FilesHandler),
                     ## Web
-                    (r"/applications/", AppsListHandler),
+                    (r"/applications", AppsListHandler),
                     (r"/applications/([^/]+)", AppHandler),
                     (r"/applications/([^/]+)/([^/]+)", AppActionHandler),
                     (r"/stats/", StatsHandler),

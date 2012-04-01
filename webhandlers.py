@@ -34,6 +34,8 @@ from apns import *
 import re
 from hashlib import sha1
 from tornado.options import define, options
+from pymongo import *
+from bson import *
 
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement
@@ -66,32 +68,36 @@ class WebBaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
         """ Get current user from cookie """
 
-        user_json = self.get_secure_cookie('user')
-        if not user_json:
+        userid = self.get_secure_cookie('user')
+        if not userid:
             return None
-        return tornado.escape.json_decode(user_json)
+        userId = ObjectId(userid)
+        user = self.masterdb.managers.find_one({'_id': userId})
+        return user
+        #return tornado.escape.json_decode(user_json)
+
+class AuthHandler(WebBaseHandler):
+    """ Google authentication """
+    def get(self):
+        self.render('login.html')
+
+    def post(self):
+        username = self.get_argument('username', None)
+        password = self.get_argument('password', None)
+        passwordhash = sha1(password).hexdigest()
+        user = self.masterdb.managers.find_one({'username': username, 'password': passwordhash})
+        logging.info(user)
+        logging.info(passwordhash)
+        if user:
+            self.set_secure_cookie('user', str(user['_id']))
+            self.redirect(r"/applications")
+
 
 class MainHandler(WebBaseHandler):
     """ Redirect to default view """
+    @tornado.web.authenticated
     def get(self):
-        self.redirect(r"/applications/")
-
-
-class AuthHandler(WebBaseHandler, tornado.auth.GoogleMixin):
-    """ Google authentication """
-    @tornado.web.asynchronous
-    def get(self):
-        if self.get_argument('openid.mode', None):
-            self.get_authenticated_user(self.async_callback(self._on_auth))
-            return
-        self.authenticate_redirect()
-
-    def _on_auth(self, user):
-        if not user:
-            raise tornado.web.HTTPError(500, 'Google auth failed')
-        self.set_secure_cookie('user', tornado.escape.json_encode(user))
-        self.redirect(r"/applications/")
-
+        self.redirect(r"/applications")
 
 class LogoutHandler(WebBaseHandler):
     """ Logout and clearn cookies """
@@ -100,6 +106,7 @@ class LogoutHandler(WebBaseHandler):
         self.redirect(r"/")
 
 class AppActionHandler(WebBaseHandler):
+    @tornado.web.authenticated
     def get(self, appname, action):
         self.appname = appname
         app = self.masterdb.applications.find_one({'shortname':appname})
@@ -117,13 +124,14 @@ class AppActionHandler(WebBaseHandler):
         elif action == 'objects':
             self.render("app_object.html", app=app)
 
+    @tornado.web.authenticated
     def post(self, appname, action):
         self.appname = appname
         app = self.masterdb.applications.find_one({'shortname':appname})
         if not app: raise tornado.web.HTTPError(500)
         if action == 'delete':
             self.db.applications.remove({'shortname': appname})
-            self.redirect(r"/applications/")
+            self.redirect(r"/applications")
         elif action == 'keys':
             import uuid
             key = {}
@@ -136,6 +144,7 @@ class AppActionHandler(WebBaseHandler):
             self.render("app_keys.html", app=app, keys=keys, newkey=key)
 
 class AppHandler(WebBaseHandler):
+    @tornado.web.authenticated
     def get(self, appname):
         if appname == "new":
             self.render("app_new.html")
@@ -170,6 +179,7 @@ class AppHandler(WebBaseHandler):
                 #apn = APNClient(options.apns, app['certfile'], app['keyfile'], app['shortname'], instanceid)
                 #self.apnsconnections[app['shortname']].append(apn)
 
+    @tornado.web.authenticated
     def post(self, appname):
         update = True
         if appname == 'new':
@@ -236,12 +246,13 @@ class AppHandler(WebBaseHandler):
 
 class AppsListHandler(WebBaseHandler):
 
-    #@tornado.web.authenticated
+    @tornado.web.authenticated
     def get(self):
         apps = self.masterdb.applications.find()
         self.render('apps.html', apps=apps)
 
 class StatsHandler(WebBaseHandler):
+    @tornado.web.authenticated
     def get(self):
         records = self.masterdb.applications.find()
         apps = {};
@@ -251,6 +262,7 @@ class StatsHandler(WebBaseHandler):
         self.render('stats.html', apps=apps, apns=self.apnsconnections)
 
 class InfoHandler(WebBaseHandler):
+    @tornado.web.authenticated
     def get(self):
         import sys
         import platform
