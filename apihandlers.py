@@ -29,8 +29,11 @@
 import tornado.database
 import tornado.web
 import random
+from tornado.options import define, options
 ## APNs library
 from apns import *
+## Util
+from util import *
 # MongoDB
 from pymongo import *
 from bson import *
@@ -44,17 +47,16 @@ class APIBaseHandler(tornado.web.RequestHandler):
     def prepare(self):
         """Pre-process HTTP request
         """
-
         if self.request.headers.has_key('X-An-App-Name'):
             """ App name """
             self.appname = self.request.headers['X-An-App-Name'];
 
+        if not self.appname:
+            self.appname = self.get_argument('appname')
+
         if self.request.headers.has_key('X-An-App-Key'):
             """ App key """
             self.appkey = self.request.headers['X-An-App-Key']
-
-        if not self.appname:
-            self.appname = self.get_argument('appname')
 
         self.token = self.get_argument('token', None)
         if self.token:
@@ -64,31 +66,31 @@ class APIBaseHandler(tornado.web.RequestHandler):
         self.app = self.masterdb.applications.find_one({'shortname': self.appname})
         key = self.db.keys.find_one({'key':self.appkey})
         if not key:
-            self.send_response(dict(error='Invalid Key'))
+            self.send_response(dict(error='Invalid access key'))
         if not self.app:
-            self.send_response(dict(error='Invalid Application Name'))
+            self.send_response(dict(error='Invalid application name'))
 
     @property
     def db(self):
-        """ DB instance """
+        """ App DB, store logs/objects/users etc """
         return self.application.mongodb[self.appname]
 
     @property
     def masterdb(self):
+        """ Master DB instance, store airnotifier data """
         return self.application.masterdb
 
     @property
     def apnsconnections(self):
-        """ APNs connections"""
+        """ APNs connections """
         return self.application.apnsconnections
 
     def send_response(self, data=None, headers=None):
         """ Set REST API response """
-
         self.set_header('Content-Type', 'application/json; charset=utf-8')
         self.set_header('X-Powered-By', 'AirNotifier/1.0')
         if data:
-            jsontext = json.dumps(data)
+            jsontext = json.dumps(data, default=json_default)
             self.finish(jsontext)
         else:
             self.finish()
@@ -180,19 +182,29 @@ class UsersHandler(APIBaseHandler):
                 'created': now,
         }
         try:
-            user = self.db.users.find_one({'username':username})
-            if user:
+            cursor = self.db.users.find_one({'username':username})
+            if cursor:
                 self.send_response(dict(error='Username already exists'))
             else:
                 userid = self.db.users.insert(user)
-                self.send_response({'userid': userid})
+                self.send_response({'userid': str(userid)})
         except Exception, ex:
             self.send_response(dict(error=str(ex)))
 
     def get(self):
         """Query users
         """
-        cursor = self.db.users.find()
+        where = self.get_argument('where', None)
+        if not where:
+            data = {}
+        else:
+            try:
+                ## unpack query conditions
+                data = json.loads(where)
+            except Exception, ex:
+                self.send_response(dict(error=str(ex)))
+
+        cursor = self.db.users.find(data)
         users = []
         for u in cursor:
             users.append(u)
@@ -224,20 +236,20 @@ class UserHandler(APIBaseHandler):
 
 class ObjectHandler(APIBaseHandler):
     """Object Handler
-    http://airnotifier.xxx/objects/option/1
-    option will be the resource name
+    http://airnotifier.xxx/objects/cars/4f794f7329ddda1cb9000000
     """
     def get(self, classname, objectId):
         """Get object by ID
         """
+        self.classname = classname
         self.objectid = ObjectId(objectId)
         doc = self.db[classname].find_one({'_id': self.objectid})
-        doc['_id'] = str(doc['_id'])
         self.send_response(doc)
 
     def delete(self, classname, objectId):
         """Delete a object
         """
+        self.classname = classname
         self.objectid = ObjectId(objectId)
         result = self.db[classname].remove({'_id': self.objectid}, True)
         self.send_response(dict(result=result))
@@ -245,32 +257,59 @@ class ObjectHandler(APIBaseHandler):
     def put(self, classname, objectId):
         """Update a object
         """
+        self.classname = classname
         data = json.loads(self.request.body)
         self.objectid = ObjectId(objectId)
         result = self.db[classname].update({'_id': self.objectid}, data)
 
+    @property
+    def collection(self):
+        collectionname = "%s%s" % (options.dbprefix, self.classname)
+        return collectionname
+
 class ClassHandler(APIBaseHandler):
     """Object Handler
-    http://airnotifier.xxx/objects/option/1
-    option will be the resource name
+    http://airnotifier.xxx/objects/cars
     """
+    @property
+    def collection(self):
+        cursor = self.db.objects.find_one({'collection':self.classname})
+        if not cursor:
+            col = {}
+            col['collection'] = self.classname
+            col['created'] = int(time.time())
+            self.db.objects.insert(col)
+
+        collectionname = "%s%s" % (options.dbprefix, self.classname)
+        return collectionname
+
     def get(self, classname):
         """Query collection
         """
-        objects = self.db[classname].find()
+        self.classname = classname
+        where = self.get_argument('where', None)
+        if not where:
+            data = {}
+        else:
+            try:
+                ## unpack query conditions
+                data = json.loads(where)
+            except Exception, ex:
+                self.send_response(dict(error=str(ex)))
+
+        objects = self.db[self.collection].find(data)
         results = []
         for obj in objects:
-            obj['_id'] = str(obj['_id'])
             results.append(obj)
-        logging.info(results)
         self.send_response(results)
 
     def post(self, classname):
-        """Create entry
+        """Create collections
         """
+        self.classname = classname
         data = json.loads(self.request.body)
-        objectId = self.db[classname].insert(data)
-        self.send_response(dict(objectId=str(objectId)))
+        objectId = self.db[self.collection].insert(data)
+        self.send_response(dict(objectId=objectId))
 
 class FilesHandler(APIBaseHandler):
     def post(self):

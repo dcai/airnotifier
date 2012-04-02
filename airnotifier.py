@@ -56,6 +56,7 @@ define("mongohost", default="localhost", help="MongoDB host name")
 define("mongoport", default=27017, help="MongoDB port")
 define("mongodbname", default="airnotifier", help="MongoDB database name")
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
+define("dbprefix", default="obj_", help="Collection name prefix")
 
 
 #logging.getLogger().setLevel(logging.DEBUG)

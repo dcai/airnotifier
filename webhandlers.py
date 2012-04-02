@@ -122,7 +122,11 @@ class AppActionHandler(WebBaseHandler):
         elif action == 'broadcast':
             self.render("app_broadcast.html", app=app, sent=False)
         elif action == 'objects':
-            self.render("app_object.html", app=app)
+            objects = self.db.objects.find()
+            self.render("app_objects.html", app=app, objects=objects)
+        elif action == 'logs':
+            logs = self.db.logs.find()
+            self.render("app_logs.html", app=app, logs=logs)
 
     @tornado.web.authenticated
     def post(self, appname, action):
@@ -192,8 +196,6 @@ class AppHandler(WebBaseHandler):
             conns = self.apnsconnections[app['shortname']]
             for conn in conns:
                 conn.disconnect()
-                #apn = APNClient(options.apns, app['certfile'], app['keyfile'], app['shortname'], instanceid)
-                #self.apnsconnections[app['shortname']].append(apn)
 
     @tornado.web.authenticated
     def post(self, appname):

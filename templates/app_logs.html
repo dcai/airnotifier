@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+{{ modules.NavBar('applications') }}
+{% end %}
+
+{% block sidebaritems %}
+{{ modules.AppSideBar(app, 'logs') }}
+{% end %}
+
+{% block body %}
+
+<div class="row-fluid">
+    <div class="page-header">
+        <h1>{{app['fullname']}}</h1>
+    </div>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>{{ _('Action') }}</th>
+                <th>{{ _('Owner') }}</th>
+                <th>{{ _('Created') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td><strong>{{log['action']}}</strong></td>
+                <td>
+                    <span class="label label-success">{{ log['content'] }}</span>
+                </td>
+                {% if log.has_key('created') %}
+                <td>{{ log['created'] }}</td>
+                {% else %}
+                <td></td>
+                {% end %}
+            </tr>
+            {% end %}
+        </tbody>
+    </table>
+</div><!--/row-->
+{% end %}
