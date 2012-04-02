@@ -95,6 +95,14 @@ class APIBaseHandler(tornado.web.RequestHandler):
         else:
             self.finish()
 
+    def add_to_log(self, action, info=None, level="info"):
+        log = {}
+        log['action'] = action
+        log['info'] = info
+        log['level'] = level
+        log['created'] = int(time.time())
+        self.db.logs.insert(log)
+
 class TokenHandler(APIBaseHandler):
     def delete(self, token):
         """Delete a token
@@ -109,23 +117,25 @@ class TokenHandler(APIBaseHandler):
         except Exception, ex:
             self.send_response(dict(error=str(ex)))
 
-    def post(self, token):
+    def post(self, devicetoken):
         """Create a new token
         """
-        record = self.db.tokens.find_one({'token': token})
-        if record and record.has_key('token'):
-            self.send_response(dict(error="Token already recorded"))
+        record = self.db.tokens.find_one({'token': devicetoken})
+        if record:
+            self.send_response(dict(error="Token already added"))
         else:
             now = int(time.time())
             token = {
-                    'appname': self.appname,
-                    'token': token,
-                    'created': now,
-                    }
+                'appname': self.appname,
+                'token': devicetoken,
+                'created': now,
+            }
             try:
                 result = self.db.tokens.insert(token)
+                self.add_to_log('Add token', devicetoken)
                 self.send_response(dict(status='ok'))
             except Exception, ex:
+                self.add_to_log('Cannot add token', devicetoken, "error")
                 self.send_response(dict(error=str(ex)))
 
 class NotificationHandler(APIBaseHandler):
@@ -158,6 +168,7 @@ class NotificationHandler(APIBaseHandler):
         instanceid = random.randint(0, count-1)
         conn = self.apnsconnections[self.app['shortname']][instanceid]
         try:
+            self.add_to_log('Send notification', alert)
             conn.send(self.token, pl)
             self.send_response(dict(status='ok'))
         except Exception, ex:
@@ -187,6 +198,7 @@ class UsersHandler(APIBaseHandler):
                 self.send_response(dict(error='Username already exists'))
             else:
                 userid = self.db.users.insert(user)
+                self.add_to_log('Add user', username)
                 self.send_response({'userid': str(userid)})
         except Exception, ex:
             self.send_response(dict(error=str(ex)))
@@ -278,6 +290,7 @@ class ClassHandler(APIBaseHandler):
             col = {}
             col['collection'] = self.classname
             col['created'] = int(time.time())
+            self.add_to_log('Register collection', self.classname)
             self.db.objects.insert(col)
 
         collectionname = "%s%s" % (options.dbprefix, self.classname)
@@ -307,7 +320,12 @@ class ClassHandler(APIBaseHandler):
         """Create collections
         """
         self.classname = classname
-        data = json.loads(self.request.body)
+        try:
+            data = json.loads(self.request.body)
+        except Exception, ex:
+            self.send_response(ex)
+
+        self.add_to_log('Add object to %s' %  self.classname, data)
         objectId = self.db[self.collection].insert(data)
         self.send_response(dict(objectId=objectId))
 

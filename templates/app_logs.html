@@ -18,17 +18,15 @@
         <thead>
             <tr>
                 <th>{{ _('Action') }}</th>
-                <th>{{ _('Owner') }}</th>
-                <th>{{ _('Created') }}</th>
+                <th>{{ _('Info') }}</th>
+                <th>{{ _('Time') }}</th>
             </tr>
         </thead>
         <tbody>
             {% for log in logs %}
             <tr>
-                <td><strong>{{log['action']}}</strong></td>
-                <td>
-                    <span class="label label-success">{{ log['content'] }}</span>
-                </td>
+                <td><span class="label label-success">{{log['action']}}</span></td>
+                <td> {{ log['info'] }} </td>
                 {% if log.has_key('created') %}
                 <td>{{ log['created'] }}</td>
                 {% else %}
