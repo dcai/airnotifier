@@ -9,6 +9,11 @@
 {% end %}
 
 {% block body %}
+{% if sent %}
+<div class="alert alert-success">
+    Notification sent!
+</div>
+{% end %}
 
 <form class="form-horizontal" method="post" enctype="multipart/form-data">
     <input type="hidden" name="appname" value="{{app['shortname']}}" />
@@ -16,9 +21,9 @@
         <legend>{{app['fullname']}}</legend>
 
         <div class="control-group">
-            <label class="control-label" for="appdescription">{{ _('Message') }}</label>
+            <label class="control-label">{{ _('Message') }}</label>
             <div class="controls">
-                <textarea class="input-xxlarge" id="appdescription" rows="6" name="notification"></textarea>
+                <textarea class="input-xxlarge" rows="6" name="notification"></textarea>
             </div>
         </div>
 

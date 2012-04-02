@@ -18,8 +18,10 @@
             <label class="control-label" for="shortnameinput"> {{ _('APNs service') }}</label>
             <div class="controls">
                 {% if app.has_key('enableapns') and app['enableapns'] %}
+                <input type="hidden" name="stopapns" value="true" />
                 <button type="submit" class="btn btn-danger">{{ _('Stop') }}</button>
                 {% else %}
+                <input type="hidden" name="launchapns" value="true" />
                 <button type="submit" class="btn btn-primary">{{ _('Launch') }}</button>
                 {% end %}
                 <p class="help-block">Apple push notification service</p>

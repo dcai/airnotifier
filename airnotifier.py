@@ -29,9 +29,7 @@
 ## System modules
 import logging
 import json
-import oauth
 import test
-import random
 from pymongo import Connection
 ## Tornado modules
 import tornado.auth

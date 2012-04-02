@@ -130,6 +130,23 @@ class NotificationHandler(APIBaseHandler):
 
     def post(self):
         """ Send notifications """
+        if not self.token:
+            self.send_response(dict(error="No token provided"))
+
+        token = self.db.tokens.find_one({'token': self.token})
+        if not token:
+            now = int(time.time())
+            token = {
+                    'appname': self.appname,
+                    'token': self.token,
+                    'created': now,
+                    }
+            logging.info(token)
+            try:
+                result = self.db.tokens.insert(token)
+            except Exception, ex:
+                self.send_response(dict(error=str(ex)))
+
         alert = self.get_argument('alert')
         sound = self.get_argument('sound', 'default')
         badge = int(self.get_argument('badge', 0))

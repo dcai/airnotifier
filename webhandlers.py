@@ -29,6 +29,7 @@
 import tornado.database
 import tornado.web
 import logging
+import random
 import unicodedata
 from apns import *
 import re
@@ -119,7 +120,7 @@ class AppActionHandler(WebBaseHandler):
             keys = self.db.keys.find()
             self.render("app_keys.html", app=app, keys=keys, newkey=None)
         elif action == 'broadcast':
-            self.render("app_broadcast.html", app=app)
+            self.render("app_broadcast.html", app=app, sent=False)
         elif action == 'objects':
             self.render("app_object.html", app=app)
 
@@ -129,7 +130,7 @@ class AppActionHandler(WebBaseHandler):
         app = self.masterdb.applications.find_one({'shortname':appname})
         if not app: raise tornado.web.HTTPError(500)
         if action == 'delete':
-            self.db.applications.remove({'shortname': appname})
+            self.masterdb.applications.remove({'shortname': appname})
             self.redirect(r"/applications")
         elif action == 'keys':
             import uuid
@@ -141,6 +142,22 @@ class AppActionHandler(WebBaseHandler):
             keyObjectId = self.db.keys.insert(key)
             keys = self.db.keys.find()
             self.render("app_keys.html", app=app, keys=keys, newkey=key)
+        elif action == 'broadcast':
+            alert = self.get_argument('notification').strip()
+            sound = 'default'
+            badge = 1
+            pl = PayLoad(alert=alert, sound=sound, badge=1)
+            count = len(self.apnsconnections[app['shortname']])
+            random.seed(time.time())
+            instanceid = random.randint(0, count-1)
+            conn = self.apnsconnections[app['shortname']][instanceid]
+            tokens = self.db.tokens.find()
+            try:
+                for token in tokens:
+                    conn.send(token['token'], pl)
+            except Exception, ex:
+                logging.info(ex)
+            self.render("app_broadcast.html", app=app, sent=True)
 
 class AppHandler(WebBaseHandler):
     @tornado.web.authenticated
@@ -185,43 +202,45 @@ class AppHandler(WebBaseHandler):
             # Create a new app
             update = False
             app = {}
-            appname = self.make_appname(self.get_argument('appshortname').strip().lower())
+            self.appname = self.make_appname(self.get_argument('appshortname').strip().lower())
             app['shortname'] = appname
         else:
-            appname = self.make_appname(appname)
-            app = self.db.applications.find_one({'shortname':appname})
+            self.appname = appname
+            app = self.masterdb.applications.find_one({'shortname':self.appname})
 
         # Update app details
         if self.request.files:
-            if self.request.files['appcertfile'][0]:
+            if self.request.files.has_key('appcertfile'):
                 certfile = self.request.files['appcertfile'][0]
                 certfilename = sha1(certfile['body']).hexdigest()
+                logging.info(certfilename)
                 certfilepath = options.pemdir + certfilename
                 thefile = open(certfilepath, "w")
                 thefile.write(certfile['body'])
                 thefile.close()
                 app['certfile'] = certfilepath
 
-            if self.request.files['appkeyfile'][0]:
+            if self.request.files.has_key('appkeyfile'):
                 keyfile = self.request.files['appkeyfile'][0]
                 keyfilename = sha1(keyfile['body']).hexdigest()
+                logging.info(keyfilename)
                 keyfilepath = options.pemdir + keyfilename
                 thefile = open(keyfilepath, "w")
                 thefile.write(keyfile['body'])
                 thefile.close()
                 app['keyfile'] = keyfilepath
 
-        if self.get_argument('appdescription'):
+        if self.get_argument('appdescription', None):
             app['description'] = self.get_argument('appdescription')
 
-        if self.get_argument('connections'):
+        if self.get_argument('connections', None):
             """If this value is greater than current apns connections,
             creating more
             If less than current apns connections, kill extra instances
             """
             app['connections'] = int(self.get_argument('connections'))
 
-        if self.get_argument('appfullname'):
+        if self.get_argument('appfullname', None):
             app['fullname'] = self.get_argument('appfullname')
 
         enableapns = self.get_argument('enableapns', None)
@@ -233,15 +252,16 @@ class AppHandler(WebBaseHandler):
             app['enableapns'] = 1
             self.start_apns(app)
 
-        #updatedfields = buildUpdateFields(fields)
-        #sql = "UPDATE applications SET %s WHERE shortname = \"%s\"" % (updatedfields, appname)
-        #logging.info(sql)
-        #apps = self.db.execute(sql)
+        if self.get_argument('launchapns', False):
+            logging.info("start apns")
+            app['enableapns'] = 1
+            self.start_apns(app)
+
         if update:
-            self.db.applications.update({'shortname': appname}, app)
+            self.masterdb.applications.update({'shortname': self.appname}, app)
         else:
-            self.db.applications.insert(app)
-        self.redirect(r"/applications/%s" % appname)
+            self.masterdb.applications.insert(app)
+        self.redirect(r"/applications/%s" % self.appname)
 
 class AppsListHandler(WebBaseHandler):
 

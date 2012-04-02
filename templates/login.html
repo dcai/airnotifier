@@ -5,6 +5,11 @@
 {% end %}
 
 {% block sidebaritems %}
+<ul class="nav nav-list">
+    <li class="nav-header">{{ _('Actions') }}</li>
+    <a href="###"> {{ _('Register') }}</a></li>
+</ul>
+
 {% end %}
 
 {% block body %}
@@ -15,21 +20,21 @@
         <legend>{{ _('Login') }}</legend>
 
         <div class="control-group">
-            <label class="control-label" for="appdescription">{{ _('User') }}</label>
+            <label class="control-label" for="appdescription">{{ _('Username') }}</label>
             <div class="controls">
-                <input type="text" class="input-xlarge" id="shortnameinput" name="username">
+                <input type="text" class="input-xlarge" placeholder="dongsheng" name="username">
             </div>
         </div>
 
         <div class="control-group">
             <label class="control-label" for="appdescription">{{ _('Password') }}</label>
             <div class="controls">
-                <input type="password" class="input-xlarge" id="shortnameinput" name="password">
+                <input type="password" class="input-xlarge" name="password">
             </div>
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">{{ _('Login') }}</button>
+            <button type="submit" class="btn btn-primary">{{ _('Sign in') }}</button>
         </div>
     </fieldset>
 </form>
