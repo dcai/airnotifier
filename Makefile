@@ -2,4 +2,4 @@
 all: install
 
 install:
-	install.py
+	python ./install.py

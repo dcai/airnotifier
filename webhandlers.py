@@ -37,6 +37,7 @@ from hashlib import sha1
 from tornado.options import define, options
 from pymongo import *
 from bson import *
+from util import *
 
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement
@@ -134,7 +135,7 @@ class AppActionHandler(WebBaseHandler):
         app = self.masterdb.applications.find_one({'shortname':appname})
         if not app: raise tornado.web.HTTPError(500)
         if action == 'delete':
-            self.masterdb.applications.remove({'shortname': appname})
+            self.masterdb.applications.remove({'shortname': appname}, safe=True)
             self.redirect(r"/applications")
         elif action == 'keys':
             import uuid
@@ -169,16 +170,13 @@ class AppHandler(WebBaseHandler):
         if appname == "new":
             self.render("app_new.html")
         else:
-            #app = self.db.get("select * from applications where shortname = %s", appname)
             app = self.masterdb.applications.find_one({'shortname': appname})
-            if not app: raise tornado.web.HTTPError(500)
-            self.render("app_settings.html", app=app)
-
-    def make_appname(self, appname):
-        appname = unicodedata.normalize("NFKD", appname).encode("ascii", "ignore")
-        appname = re.sub(r"[^\w]+", " ", appname)
-        appname = "".join(appname.lower().strip().split())
-        return appname
+            if not app:
+                self.finish("Application doesn't exist")
+                #self.redirect(r"/applications/new")
+                #raise tornado.web.HTTPError(500)
+            else:
+                self.render("app_settings.html", app=app)
 
     def start_apns(self, app):
         if not self.apnsconnections.has_key(app['shortname']):
@@ -204,8 +202,8 @@ class AppHandler(WebBaseHandler):
             # Create a new app
             update = False
             app = {}
-            self.appname = self.make_appname(self.get_argument('appshortname').strip().lower())
-            app['shortname'] = appname
+            self.appname = filter_alphabetanum(self.get_argument('appshortname').strip().lower())
+            app['shortname'] = self.appname
         else:
             self.appname = appname
             app = self.masterdb.applications.find_one({'shortname':self.appname})
@@ -260,7 +258,7 @@ class AppHandler(WebBaseHandler):
             self.start_apns(app)
 
         if update:
-            self.masterdb.applications.update({'shortname': self.appname}, app)
+            self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
         else:
             self.masterdb.applications.insert(app)
         self.redirect(r"/applications/%s" % self.appname)

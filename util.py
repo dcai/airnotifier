@@ -28,6 +28,8 @@
 
 from pymongo import *
 from bson import *
+import unicodedata
+import sys
 
 def json_default(obj):
     """ adapted from bson.json_util.default """
@@ -60,3 +62,13 @@ def json_default(obj):
     if _use_uuid and isinstance(obj, uuid.UUID):
         return {"$uuid": obj.hex}
     raise TypeError("%r is not JSON serializable" % obj)
+
+def filter_alphabetanum(string):
+    ## absolutely alphabeta and number only
+    string = unicodedata.normalize("NFKD", string).encode("ascii", "ignore")
+    string = re.sub(r"[^\w]+", " ", string)
+    string = "".join(string.lower().strip().split())
+    return string
+
+def error_log(log):
+    sys.stderr.write(log)

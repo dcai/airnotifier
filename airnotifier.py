@@ -28,6 +28,7 @@
 
 ## System modules
 import logging
+import sys
 import json
 import test
 from pymongo import Connection
@@ -39,6 +40,7 @@ import tornado.ioloop
 import tornado.options
 import tornado.database
 import tornado.web
+from util import *
 from tornado.options import define, options
 ## APNs library
 from apns import *
@@ -103,9 +105,15 @@ class AirNotifierApp(tornado.web.Application):
 
         tornado.web.Application.__init__(self, handlers, **app_settings)
 
-        mongodb = Connection(options.mongohost, options.mongoport)
+        try:
+            mongodb = Connection(options.mongohost, options.mongoport)
+        except ConnectionFailure, ex:
+            error_log("Cannot not connect to MongoDB")
+            sys.exit(1)
         self.mongodb = mongodb
+
         self.masterdb = mongodb[options.masterdb]
+        assert self.masterdb.connection == self.mongodb
 
 if __name__ == "__main__":
     tornado.options.parse_config_file("airnotifier.conf")
