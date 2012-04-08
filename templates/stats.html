@@ -17,9 +17,7 @@
 <div class="row-fluid">
     {% for appname in apns %}
     <a name="{{appname}}"></a>
-    <div class="page-header">
-        <h1>{{apps[appname]['fullname']}} <small>{{apps[appname]['description']}}</small></h1>
-    </div>
+    <h2>{{apps[appname]['fullname']}}</h2>
     <table class="table table-bordered table-striped">
         <thead>
             <tr>

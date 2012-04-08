@@ -93,7 +93,7 @@ class AuthHandler(WebBaseHandler):
         else:
             username = self.get_argument('username', None)
             password = self.get_argument('password', None)
-            passwordhash = sha1(password).hexdigest()
+            passwordhash = sha1("%s%s" % (options.passwordsalt, password)).hexdigest()
             user = self.masterdb.managers.find_one({'username': username, 'password': passwordhash})
             if user:
                 self.set_secure_cookie('user', str(user['_id']))
@@ -115,9 +115,17 @@ class AppActionHandler(WebBaseHandler):
         if action == 'delete':
             self.render("app_delete.html", app=app)
         elif action == 'tokens':
+            token_to_be_deleted = self.get_argument('delete', None)
+            if token_to_be_deleted:
+                self.db.tokens.remove({'token':token_to_be_deleted})
+                self.redirect("/applications/%s/tokens" % appname)
             tokens = self.db.tokens.find()
             self.render("app_tokens.html", app=app, tokens=tokens)
         elif action == 'keys':
+            key_to_be_deleted = self.get_argument('delete', None)
+            if key_to_be_deleted:
+                self.db.keys.remove({'key':key_to_be_deleted})
+                self.redirect("/applications/%s/keys" % appname)
             keys = self.db.keys.find()
             self.render("app_keys.html", app=app, keys=keys, newkey=None)
         elif action == 'broadcast':
@@ -126,7 +134,7 @@ class AppActionHandler(WebBaseHandler):
             objects = self.db.objects.find()
             self.render("app_objects.html", app=app, objects=objects)
         elif action == 'logs':
-            logs = self.db.logs.find()
+            logs = self.db.logs.find().sort('created', DESCENDING).limit(100)
             self.render("app_logs.html", app=app, logs=logs)
 
     @tornado.web.authenticated
@@ -150,8 +158,7 @@ class AppActionHandler(WebBaseHandler):
         elif action == 'broadcast':
             alert = self.get_argument('notification').strip()
             sound = 'default'
-            badge = 1
-            pl = PayLoad(alert=alert, sound=sound, badge=1)
+            pl = PayLoad(alert=alert, sound=sound)
             count = len(self.apnsconnections[app['shortname']])
             random.seed(time.time())
             instanceid = random.randint(0, count-1)
@@ -182,9 +189,11 @@ class AppHandler(WebBaseHandler):
         if not self.apnsconnections.has_key(app['shortname']):
             self.apnsconnections[app['shortname']] = []
             count = app['connections']
+            if not app.has_key('environment'):
+                app['environment'] = 'sandbox'
 
             for instanceid in range(0, count):
-                apn = APNClient(options.apns, app['certfile'], app['keyfile'], app['shortname'], instanceid)
+                apn = APNClient(app['environment'], app['certfile'], app['keyfile'], app['shortname'], instanceid)
                 self.apnsconnections[app['shortname']].append(apn)
         else:
             return
@@ -192,8 +201,10 @@ class AppHandler(WebBaseHandler):
     def stop_apns(self, app):
         if self.apnsconnections.has_key(app['shortname']):
             conns = self.apnsconnections[app['shortname']]
+            logging.info(conns)
             for conn in conns:
-                conn.disconnect()
+                conn.shutdown()
+            del self.apnsconnections[app['shortname']]
 
     @tornado.web.authenticated
     def post(self, appname):
@@ -204,6 +215,9 @@ class AppHandler(WebBaseHandler):
             app = {}
             self.appname = filter_alphabetanum(self.get_argument('appshortname').strip().lower())
             app['shortname'] = self.appname
+            app['environment'] = 'sandbox'
+            app['enableapns'] = 0
+            app['connections'] = 1
         else:
             self.appname = appname
             app = self.masterdb.applications.find_one({'shortname':self.appname})
@@ -238,29 +252,39 @@ class AppHandler(WebBaseHandler):
             creating more
             If less than current apns connections, kill extra instances
             """
-            app['connections'] = int(self.get_argument('connections'))
+            if app['connections'] != int(self.get_argument('connections')):
+                app['connections'] = int(self.get_argument('connections'))
+                self.stop_apns(app)
+                self.start_apns(app)
 
         if self.get_argument('appfullname', None):
             app['fullname'] = self.get_argument('appfullname')
 
-        enableapns = self.get_argument('enableapns', None)
-        if not enableapns:
-            """TODO Kill all APNs connections"""
-            app['enableapns'] = 0
-        else:
-            """TODO Start APNs connections if none"""
+        if self.get_argument('launchapns', None):
+            logging.info("Start APNS")
             app['enableapns'] = 1
             self.start_apns(app)
 
-        if self.get_argument('launchapns', False):
-            logging.info("start apns")
-            app['enableapns'] = 1
+        if self.get_argument('stopapns', None):
+            logging.info("Shutdown APNS")
+            app['enableapns'] = 0
+            self.stop_apns(app)
+
+        if self.get_argument('turnonproduction', None):
+            app['environment'] = 'production'
+            self.stop_apns(app)
+            self.start_apns(app)
+
+        if self.get_argument('turnonsandbox', None):
+            app['environment'] = 'sandbox'
+            self.stop_apns(app)
             self.start_apns(app)
 
         if update:
             self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
         else:
             self.masterdb.applications.insert(app)
+
         self.redirect(r"/applications/%s" % self.appname)
 
 class AppsListHandler(WebBaseHandler):
@@ -287,7 +311,8 @@ class InfoHandler(WebBaseHandler):
         import platform
         import os
         mongodbinfo = self.application.mongodb.server_info()
-        del mongodbinfo['versionArray']
+        if mongodbinfo.has_key('versionArray'):
+            del mongodbinfo['versionArray']
         pythoninfo = {}
         pythoninfo['version'] = sys.version
         pythoninfo['platform'] = sys.platform

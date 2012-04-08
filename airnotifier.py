@@ -82,6 +82,7 @@ class AirNotifierApp(tornado.web.Application):
         handlers = [(r"/", MainHandler),
                     ## API
                     (r"/notification/", NotificationHandler),
+                    (r"/broadcast/", BroadcastHandler),
                     (r"/tokens/([^/]+)", TokenHandler),
                     ## Create/Query users
                     (r"/users", UsersHandler),
@@ -132,8 +133,10 @@ if __name__ == "__main__":
             conns = 5
         if conns < 1:
             conns = 1
+        if not app.has_key('environment'):
+            app['environment'] = 'sandbox'
         for instanceid in range(0, conns):
-            apn = APNClient(options.apns, app['certfile'], app['keyfile'], app['shortname'], instanceid)
+            apn = APNClient(app['environment'], app['certfile'], app['keyfile'], app['shortname'], instanceid)
             apnsconns[app['shortname']].append(apn)
     mongodb.close()
 

@@ -17,14 +17,16 @@
         <thead>
             <tr>
                 <th>{{ _('Token') }}</th>
-                <th>{{ _('Created') }}</th>
+                <th>{{ _('Delete') }}</th>
             </tr>
         </thead>
         <tbody>
         {% for token in tokens %}
             <tr>
                 <td>{{ token['token'] }}</td>
-                <td><span class="badge badge-info"></span></td>
+                <td>
+                    <a class="btn btn-danger" href="/applications/{{app['shortname']}}/tokens?delete={{token['token']}}"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
+                </td>
             </tr>
         {% end %}
         </tbody>

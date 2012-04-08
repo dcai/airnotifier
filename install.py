@@ -55,8 +55,6 @@ if __name__ == "__main__":
     tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
     mongodb = Connection(options.mongohost, options.mongoport)
-    info = mongodb.server_info()
-    logging.info(info)
     masterdb = mongodb[options.masterdb]
     try:
         masterdb.create_collection('applications')
@@ -71,7 +69,7 @@ if __name__ == "__main__":
     try:
         manager = {}
         manager['username'] = 'admin'
-        passwordhash = sha1('admin').hexdigest()
+        passwordhash = sha1('%sadmin' % options.passwordsalt).hexdigest()
         manager['password'] = passwordhash
         masterdb['managers'].insert(manager)
     except Exception, ex:

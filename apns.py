@@ -35,10 +35,15 @@ import datetime
 import time
 
 from collections import deque
-from socket import ssl, socket, AF_INET, SOCK_STREAM
+from socket import socket, AF_INET, SOCK_STREAM
 from ssl import wrap_socket
 from tornado import ioloop
 from tornado import iostream
+
+apns = {
+    'sandbox': ("gateway.sandbox.push.apple.com", 2195),
+    'production': ("gateway.push.apple.com", 2195)
+}
 
 class PayLoad(object):
 
@@ -53,17 +58,31 @@ class PayLoad(object):
         self.sound = sound
 
     def build_payload(self):
+        limit = 256
+        alertlength = limit
+        ## remove {"aps":{"alert":""}}
+        alertlength = alertlength - 20
         item = {}
-        item['alert'] = self.alert
-        item['sound'] = self.sound
-        item['badge'] = int(self.badge)
+        if self.sound is not None:
+            ## remove sound field ,'sound':""
+            alertlength = alertlength - 11 - len(self.sound)
+            item['sound'] = self.sound
+        if self.badge is not None:
+            ## remove sound field ,'badge':""
+            alertlength = alertlength - 11 - len(self.badge)
+            item['badge'] = int(self.badge)
 
-        payload = {'aps': item}
+        if len(self.alert) > alertlength:
+            item['alert'] = self.alert[:alertlength]
+        else:
+            item['alert'] = self.alert
+
+        payload = {'aps':item}
         return payload
 
     def json(self):
         jsontext = json.dumps(self.build_payload(), separators=(',', ':'))
-        #logging.info("PayLoad: %s", jsontext)
+        logging.info("PayLoad: %s", jsontext)
         return jsontext
 
 
@@ -72,8 +91,8 @@ class APNClient(object):
     def is_oneline(self):
         return self.connected
 
-    def __init__(self, apns=(), certfile="", keyfile="", appname="", instanceid=0):
-        self.apns = apns
+    def __init__(self, env='sandbox', certfile="", keyfile="", appname="", instanceid=0):
+        self.apns = apns[env]
         self.certfile = certfile
         self.keyfile = keyfile
         self.messages = deque()
@@ -94,7 +113,8 @@ class APNClient(object):
         logging.warning('%s[%d] is offline' % (self.appname, self.instanceid))
         self.remote_stream.close()
         self.sock.close()
-        self.connect()
+        if not self.shutdown:
+            self.connect()
 
     def _on_remote_read_streaming(self, data):
         """ Something bad happened """
@@ -134,10 +154,10 @@ class APNClient(object):
         """
         self.connected = False
         if len(data) != 6:
-            logging.info('response must be a 6-byte binary string.')
+            logging.error('response must be a 6-byte binary string.')
 
         (command, statuscode, identifier) = struct.unpack_from('!bbI', data, 0)
-        logging.info('%s[%d] CMD: %s Status: %s ID: %s', self.appname, self.instanceid, command, status_table[statuscode], identifier)
+        logging.error('%s[%d] CMD: %s Status: %s ID: %s', self.appname, self.instanceid, command, status_table[statuscode], identifier)
 
     def _on_remote_connected(self):
         self.connected = True
@@ -150,15 +170,18 @@ class APNClient(object):
     def connect(self):
         """ Setup socket """
         self.sock = socket(AF_INET, SOCK_STREAM)
-        self.remote_stream = iostream.SSLIOStream(self.sock,
-                ssl_options=dict(certfile=self.certfile, keyfile=self.keyfile)
-                )
+        self.remote_stream = iostream.SSLIOStream(self.sock, ssl_options=dict(certfile=self.certfile, keyfile=self.keyfile))
         self.remote_stream.connect(self.apns, self._on_remote_connected)
         self.remote_stream.read_until_close(self._on_remote_read_close,
                                             self._on_remote_read_streaming)
+    def shutdown(self):
+        """Shutdown this connection"""
+        self.shutdown = True
+        self.remote_stream.close()
+        self.sock.close()
+
     def disconnect(self):
-        """Disconect"""
-        logging.info("Closing connection")
+        """Disconnect"""
         self.remote_stream.close()
         self.sock.close()
 

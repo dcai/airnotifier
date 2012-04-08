@@ -141,8 +141,28 @@ class TokenHandler(APIBaseHandler):
                 self.send_response(dict(status='ok'))
                 self.add_to_log('Add token', devicetoken)
         except Exception, ex:
-            self.add_to_log('Cannot add token', devicetoken, "error")
+            self.add_to_log('Cannot add token', devicetoken, "warning")
             self.send_response(dict(error=str(ex)))
+
+class BroadcastHandler(APIBaseHandler):
+    def post(self):
+        alert = self.get_argument('alert')
+        sound = self.get_argument('sound', None)
+        badge = self.get_argument('badge', None)
+        tokens = self.db.tokens.find()
+        pl = PayLoad(alert=alert, sound=sound, badge=badge)
+
+        self.add_to_log('%s broadcast' % self.appname, alert, "important")
+        for token in tokens:
+            count = len(self.apnsconnections[self.app['shortname']])
+            random.seed(time.time())
+            instanceid = random.randint(0, count-1)
+            conn = self.apnsconnections[self.app['shortname']][instanceid]
+            try:
+                conn.send(token['token'], pl)
+                self.send_response(dict(status='ok'))
+            except Exception, ex:
+                self.send_response(dict(error=str(ex)))
 
 class NotificationHandler(APIBaseHandler):
     def post(self):
@@ -165,9 +185,9 @@ class NotificationHandler(APIBaseHandler):
                 self.send_response(dict(error=str(ex)))
 
         alert = self.get_argument('alert')
-        sound = self.get_argument('sound', 'default')
-        badge = int(self.get_argument('badge', 0))
-        pl = PayLoad(alert=alert, sound=sound, badge=1)
+        sound = self.get_argument('sound', None)
+        badge = self.get_argument('badge', None)
+        pl = PayLoad(alert=alert, sound=sound, badge=badge)
         count = len(self.apnsconnections[self.app['shortname']])
         random.seed(time.time())
         instanceid = random.randint(0, count-1)

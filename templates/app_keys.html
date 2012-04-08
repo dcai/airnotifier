@@ -56,6 +56,7 @@
             </tr>
         </thead>
         <tbody>
+            {% from datetime import datetime %}
             {% for key in keys %}
             <tr>
                 <td><strong>{{key['key']}}</strong></td>
@@ -63,13 +64,13 @@
                     <span class="label label-success">{{ key['owner'] }}</span>
                 </td>
                 {% if key.has_key('created') %}
-                <td>{{ key['created'] }}</td>
+                <td>{{ datetime.fromtimestamp(key['created']).strftime("%I:%M%p %d, %B") }}</td>
                 {% else %}
                 <td></td>
                 {% end %}
                 <td>
                     <a class="btn btn-info" href="#"><i class="icon-pencil icon-white"></i> {{ _('Edit') }}</a>
-                    <a class="btn btn-danger" href="#"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
+                    <a class="btn btn-danger" href="/applications/{{app['shortname']}}/keys?delete={{key['key']}}"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
                 </td>
             </tr>
             {% end %}
