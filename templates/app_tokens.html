@@ -25,7 +25,7 @@
             <tr>
                 <td>{{ token['token'] }}</td>
                 <td>
-                    <a class="btn btn-danger" href="/applications/{{app['shortname']}}/tokens?delete={{token['token']}}"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
+                    <a class="btn btn-danger" href="/applications/{{app['shortname']}}/tokens?delete={{token['_id']}}"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
                 </td>
             </tr>
         {% end %}

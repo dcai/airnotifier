@@ -96,6 +96,7 @@ class APNClient(object):
         self.certfile = certfile
         self.keyfile = keyfile
         self.messages = deque()
+        self.reconnect = True
         self.ioloop = ioloop.IOLoop.instance()
 
         self.appname = appname
@@ -110,10 +111,11 @@ class APNClient(object):
 
     def _on_remote_read_close(self, data):
         """ Close socket and reconnect """
-        logging.warning('%s[%d] is offline' % (self.appname, self.instanceid))
+        self.connected = False
+        logging.warning('%s[%d] is offline %d' % (self.appname, self.instanceid, self.reconnect))
         self.remote_stream.close()
         self.sock.close()
-        if not self.shutdown:
+        if self.reconnect:
             self.connect()
 
     def _on_remote_read_streaming(self, data):
@@ -176,7 +178,7 @@ class APNClient(object):
                                             self._on_remote_read_streaming)
     def shutdown(self):
         """Shutdown this connection"""
-        self.shutdown = True
+        self.reconnect = False
         self.remote_stream.close()
         self.sock.close()
 
@@ -216,6 +218,7 @@ class APNClient(object):
         # One day
         expiry = payload.expiry
         tokenLength = 32
+        logging.info(deviceToken)
         m = struct.pack(fmt, command, identifier, expiry, tokenLength,
                         binascii.unhexlify(deviceToken),
                         json_len, json)
@@ -230,7 +233,6 @@ class APNClient(object):
         if len(self.messages) and not self.remote_stream.closed():
             # First in first out
             msg = self.messages.popleft()
-            # TODO: Log this action
             try:
                 self.remote_stream.write(msg)
             except Exception, ex:

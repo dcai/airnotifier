@@ -115,10 +115,11 @@ class AppActionHandler(WebBaseHandler):
         if action == 'delete':
             self.render("app_delete.html", app=app)
         elif action == 'tokens':
-            token_to_be_deleted = self.get_argument('delete', None)
-            if token_to_be_deleted:
-                self.db.tokens.remove({'token':token_to_be_deleted})
+            token_id = self.get_argument('delete', None)
+            if token_id:
+                self.db.tokens.remove({'_id':ObjectId(token_id)})
                 self.redirect("/applications/%s/tokens" % appname)
+                return
             tokens = self.db.tokens.find()
             self.render("app_tokens.html", app=app, tokens=tokens)
         elif action == 'keys':

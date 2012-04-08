@@ -29,6 +29,7 @@
 import tornado.database
 import tornado.web
 import random
+import binascii
 from tornado.options import define, options
 ## APNs library
 from apns import *
@@ -62,6 +63,10 @@ class APIBaseHandler(tornado.web.RequestHandler):
         if self.token:
             # If token provided, it must be 64 chars
             if len(self.token) != 64:
+                self.send_response(dict(error='Invalid token'))
+            try:
+                value = binascii.unhexlify(self.token)
+            except Exception, ex:
                 self.send_response(dict(error='Invalid token'))
 
         self.app = self.masterdb.applications.find_one({'shortname': self.appname})
@@ -125,6 +130,14 @@ class TokenHandler(APIBaseHandler):
     def post(self, devicetoken):
         """Create a new token
         """
+        if len(devicetoken) != 64:
+            self.send_response(dict(error='Invalid token'))
+
+        try:
+            value = binascii.unhexlify(devicetoken)
+        except Exception, ex:
+            self.send_response(dict(error='Invalid token'))
+
         now = int(time.time())
         token = {
             'appname': self.appname,
@@ -160,15 +173,16 @@ class BroadcastHandler(APIBaseHandler):
             conn = self.apnsconnections[self.app['shortname']][instanceid]
             try:
                 conn.send(token['token'], pl)
-                self.send_response(dict(status='ok'))
             except Exception, ex:
-                self.send_response(dict(error=str(ex)))
+                pass
+        self.send_response(dict(status='ok'))
 
 class NotificationHandler(APIBaseHandler):
     def post(self):
         """ Send notifications """
         if not self.token:
             self.send_response(dict(error="No token provided"))
+            return
 
         token = self.db.tokens.find_one({'token': self.token})
         if not token:
