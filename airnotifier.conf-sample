@@ -1,0 +1,9 @@
+pemdir = "/var/airnotifier/files"
+
+passwordsalt = 'd2o0n1g2s0h3e1n1g'
+
+mongohost = "localhost"
+mongoport = 27017
+
+masterdb = "airnotifier"
+dbprefix = "obj_"

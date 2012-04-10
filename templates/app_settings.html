@@ -24,12 +24,13 @@
                 <input type="hidden" name="launchapns" value="true" />
                 <button type="submit" class="btn btn-primary">{{ _('Launch') }}</button>
                 {% end %}
-                <p class="help-block">Apple push notification service</p>
+                <p class="help-block">You have to stop the service to see more options</p>
             </div>
         </div>
     </fieldset>
 </form>
 
+{% if app['enableapns'] != 1 %}
 <form class="form-horizontal" method="post">
     <input type="hidden" name="appname" value="{{app['shortname']}}" />
     <fieldset>
@@ -44,11 +45,11 @@
                 <input type="hidden" name="turnonsandbox" value="true" />
                 <button type="submit" class="btn btn-info">{{ _('Enter sandbox') }}</button>
                 {% end %}
-                <p class="help-block">This will restart APNs</p>
             </div>
         </div>
     </fieldset>
 </form>
+{% end %}
 
 <form class="form-horizontal" method="post">
     <input type="hidden" name="appname" value="{{app['shortname']}}" />
@@ -70,6 +71,7 @@
             </div>
         </div>
 
+        {% if app['enableapns'] != 1 %}
         <div class="control-group">
             <label class="control-label" for="fullnameinput">Connections</label>
             <div class="controls">
@@ -77,6 +79,7 @@
                 <p class="help-block ">This will restart APNs</p>
             </div>
         </div>
+        {% end %}
 
         <div class="control-group">
             <label class="control-label" for="appdescription">Description</label>
@@ -95,6 +98,7 @@
     </fieldset>
 </form>
 
+{% if app['enableapns'] != 1 %}
 <form class="form-horizontal" method="post" enctype="multipart/form-data">
     <input type="hidden" name="appname" value="{{app['shortname']}}" />
     <fieldset>
@@ -134,6 +138,7 @@
         </div>
     </fieldset>
 </form>
+{% end %}
 
 
 {% end %}

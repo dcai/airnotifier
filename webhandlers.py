@@ -26,18 +26,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# system
+import random
+import sys
+import platform
+import os
+import unicodedata
+import logging
+import re
+import uuid
+from hashlib import sha1
+
+# tornado
 import tornado.database
 import tornado.web
-import logging
-import random
-import unicodedata
-from apns import *
-import re
-from hashlib import sha1
 from tornado.options import define, options
+
+# pymongo
 from pymongo import *
 from bson import *
 from util import *
+
+from apns import *
 
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement
@@ -66,6 +76,10 @@ class WebBaseHandler(tornado.web.RequestHandler):
     def apnsconnections(self):
         """ APNs connections"""
         return self.application.apnsconnections
+
+    @property
+    def currentuser(self):
+        return self.get_current_user()
 
     def get_current_user(self):
         """ Get current user from cookie """
@@ -147,7 +161,6 @@ class AppActionHandler(WebBaseHandler):
             self.masterdb.applications.remove({'shortname': appname}, safe=True)
             self.redirect(r"/applications")
         elif action == 'keys':
-            import uuid
             key = {}
             key['created'] = int(time.time())
             key['owner'] = self.get_argument('keyowner').strip()
@@ -202,7 +215,6 @@ class AppHandler(WebBaseHandler):
     def stop_apns(self, app):
         if self.apnsconnections.has_key(app['shortname']):
             conns = self.apnsconnections[app['shortname']]
-            logging.info(conns)
             for conn in conns:
                 conn.shutdown()
             del self.apnsconnections[app['shortname']]
@@ -289,7 +301,6 @@ class AppHandler(WebBaseHandler):
         self.redirect(r"/applications/%s" % self.appname)
 
 class AppsListHandler(WebBaseHandler):
-
     @tornado.web.authenticated
     def get(self):
         apps = self.masterdb.applications.find()
@@ -308,9 +319,6 @@ class StatsHandler(WebBaseHandler):
 class InfoHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
-        import sys
-        import platform
-        import os
         mongodbinfo = self.application.mongodb.server_info()
         if mongodbinfo.has_key('versionArray'):
             del mongodbinfo['versionArray']
@@ -325,3 +333,30 @@ class InfoHandler(WebBaseHandler):
         pythoninfo['modules'] = ", ".join(sys.builtin_module_names)
 
         self.render('info.html', pythoninfo=pythoninfo, mongodb=mongodbinfo, tornadoversion=tornado.version)
+
+class AdminHandler(WebBaseHandler):
+    @tornado.web.authenticated
+    def get(self, action):
+        if self.get_argument('delete', None):
+            user_id = self.get_argument('delete', None)
+            if user_id:
+                self.masterdb.managers.remove({'_id':ObjectId(user_id)})
+                self.redirect("/admin/managers")
+                return
+        managers = self.masterdb.managers.find()
+        self.render('managers.html', managers=managers, created=None, updated=None, currentuser=self.currentuser)
+
+    def post(self, action):
+        user = {}
+        user['created'] = int(time.time())
+        user['username'] = self.get_argument('newusername').strip()
+        password = self.get_argument('newpassword').strip()
+        passwordhash = sha1("%s%s" % (options.passwordsalt, password)).hexdigest()
+        user['password'] = passwordhash
+        user['level'] = "manager"
+        result = self.masterdb.managers.update({'username': user['username']}, user, safe=True, upsert=True)
+        managers = self.masterdb.managers.find()
+        if result['updatedExisting']:
+            self.render('managers.html', managers=managers, updated=user, created=None, currentuser=self.currentuser)
+        else:
+            self.render('managers.html', managers=managers, updated=None, created=user, currentuser=self.currentuser)

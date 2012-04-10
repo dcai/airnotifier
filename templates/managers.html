@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+{{ modules.NavBar('applications') }}
+{% end %}
+
+{% block sidebaritems %}
+<ul class="nav nav-list">
+    <li class="nav-header">{{ _('Admin') }}</li>
+    <li class="active"><a href="/admin/managers"><i class="icon-user"></i> {{ _('Managers') }}</a></li>
+    <li><a href="/applications/new"><i class="icon-plus"></i> {{ ('Create application') }}</a></li>
+</ul>
+{% end %}
+
+{% block body %}
+
+{% if updated %}
+<div class="alert alert-success">
+    User "{{updated['username']}}" updated.
+</div>
+{% end %}
+{% if created %}
+<div class="alert alert-success">
+    User "{{created['username']}} created.
+</div>
+{% end %}
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+    <fieldset>
+        <legend>{{ _('Create new manager') }}</legend>
+
+        <div class="control-group">
+            <label class="control-label" for="appdescription">{{ _('Username') }}</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="shortnameinput" name="newusername">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="appdescription">{{ _('Password') }}</label>
+            <div class="controls">
+                <input type="password" class="input-xlarge" id="shortnameinput" name="newpassword">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ _('Create') }}</button>
+        </div>
+    </fieldset>
+</form>
+
+<div class="row-fluid">
+    <div class="page-header">
+        <h1>{{ _('Managers') }}</h1>
+    </div>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>{{ _('Username') }}</th>
+                <th>{{ _('Actions') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in managers %}
+            <tr>
+                <td><strong>{{ m['username'] }}</strong></td>
+                <td>
+                    {% if currentuser['username'] != m['username'] %}
+                    <a class="btn btn-danger" href="/admin/managers?delete={{m['_id']}}"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
+                    {% else %}
+                    <strong>This is you</strong>
+                    {% end %}
+                </td>
+            </tr>
+            {% end %}
+        </tbody>
+    </table>
+</div><!--/row-->
+{% end %}

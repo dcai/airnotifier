@@ -202,6 +202,10 @@ class NotificationHandler(APIBaseHandler):
         sound = self.get_argument('sound', None)
         badge = self.get_argument('badge', None)
         pl = PayLoad(alert=alert, sound=sound, badge=badge)
+        if not self.apnsconnections.has_key(self.app['shortname']):
+            ## TODO: add message to queue in MongoDB
+            self.send_response(dict(error="APNs is offline"))
+            return
         count = len(self.apnsconnections[self.app['shortname']])
         random.seed(time.time())
         instanceid = random.randint(0, count-1)

@@ -1,5 +1,13 @@
 <ul class="nav nav-list">
-    <li class="nav-header">{{ _('Actions') }}</li>
+    <li class="nav-header">{{ _('Admin') }}</li>
+    {% if active == 'managers'%}<li class="active">{% else %}<li>{% end %}
+    <a href="/admin/managers"><i class="icon-user"></i> {{ _('Managers') }}</a></li>
+    {% if active == 'createapp'%}<li class="active">{% else %}<li>{% end %}
+    <a href="/applications/new"><i class="icon-plus"></i> {{ ('Create application') }}</a></li>
+</ul>
+
+<ul class="nav nav-list">
+    <li class="nav-header">{{ _('Applications') }}</li>
     {% if active == 'settings'%}<li class="active">{% else %}<li>{% end %}
     <a href="/applications/{{app['shortname']}}"><i class="icon-cog"></i> {{ _('Settings') }}</a></li>
 
@@ -16,9 +24,8 @@
     <a href="/applications/{{app['shortname']}}/objects"><i class="icon-inbox"></i> {{ _('Objects browser') }}</a></li>
 
     {% if active == 'logs'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/applications/{{app['shortname']}}/logs"><i class="icon-eye-open"></i> {{ _('Logs') }}</a></li>
+    <a href="/applications/{{app['shortname']}}/logs"><i class="icon-exclamation-sign"></i> {{ _('Logs') }}</a></li>
 
     {% if active == 'delete'%}<li class="active">{% else %}<li>{% end %}
     <a href="/applications/{{app['shortname']}}/delete"><i class="icon-trash"></i> {{ _('Delete') }}</a></li>
-
 </ul>

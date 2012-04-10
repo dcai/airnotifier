@@ -2,7 +2,9 @@
 
 {% block sidebaritems %}
 <ul class="nav nav-list">
-    <li class="active"><a href="###">New application</a></li>
+    <li class="nav-header">{{ _('Admin') }}</li>
+    <li><a href="/admin/managers"><i class="icon-user"></i> {{ _('Managers') }}</a></li>
+    <li class="active"><a href="/applications/new"><i class="icon-plus"></i> {{ ('Create application') }}</a></li>
 </ul>
 {% end %}
 
