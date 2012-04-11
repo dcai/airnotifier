@@ -36,6 +36,7 @@ import logging
 import re
 import uuid
 from hashlib import sha1
+from hashlib import md5
 
 # tornado
 import tornado.database
@@ -162,10 +163,11 @@ class AppActionHandler(WebBaseHandler):
             self.redirect(r"/applications")
         elif action == 'keys':
             key = {}
+            key['contact'] = self.get_argument('keycontact').strip()
+            key['description'] = self.get_argument('keydesc').strip()
             key['created'] = int(time.time())
-            key['owner'] = self.get_argument('keyowner').strip()
-            key['contact'] = self.get_argument('keyownercontact').strip()
-            key['key'] = str(uuid.uuid4())
+            # make key as shorter as possbile
+            key['key'] = md5(str(uuid.uuid4())).hexdigest()
             keyObjectId = self.db.keys.insert(key)
             keys = self.db.keys.find()
             self.render("app_keys.html", app=app, keys=keys, newkey=key)

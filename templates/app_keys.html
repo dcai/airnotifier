@@ -21,18 +21,55 @@
         <legend>{{ _('Create access key') }}</legend>
 
         <div class="control-group">
+            <label class="control-label" for="appdescription">{{ _('Key') }}</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="shortnameinput" name="accesskey">
+                <p class="help-block">Indicate a key if you like</p>
+            </div>
+        </div>
+
+        <div class="control-group">
             <label class="control-label" for="appdescription">{{ _('Description') }}</label>
             <div class="controls">
-                <input type="text" class="input-xlarge" id="shortnameinput" name="keyowner">
-                <p class="help-block"></p>
+                <input type="text" class="input-xlarge" id="shortnameinput" name="keydesc">
             </div>
         </div>
 
         <div class="control-group">
             <label class="control-label" for="appdescription">{{ _('Contact Email') }}</label>
             <div class="controls">
-                <input type="text" class="input-xlarge" id="shortnameinput" name="keyownercontact">
-                <p class="help-block"></p>
+                <input type="text" class="input-xlarge" id="shortnameinput" name="keycontact">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="optionsCheckboxList">{{ _('Permissions') }}</label>
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" name="optionsCheckboxList1" value="option1">
+                    Create token
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" name="optionsCheckboxList1" value="option1">
+                    Delete token
+                </label>
+
+                <label class="checkbox">
+                    <input type="checkbox" name="optionsCheckboxList2" value="option2">
+                    Send notification
+                </label>
+
+                <label class="checkbox">
+                    <input type="checkbox" name="optionsCheckboxList3" value="option3">
+                    Send broadcast
+                </label>
+
+                <label class="checkbox">
+                    <input type="checkbox" name="optionsCheckboxList3" value="option3">
+                    Access objects
+                </label>
+
+                <p class="help-block"><strong>Note:</strong> You can indicate a key to update</p>
             </div>
         </div>
 
@@ -50,8 +87,8 @@
         <thead>
             <tr>
                 <th>{{ _('Key') }}</th>
-                <th>{{ _('Owner') }}</th>
-                <th>{{ _('Created') }}</th>
+                <th>{{ _('Description') }}</th>
+                <th>{{ _('Contact') }}</th>
                 <th>{{ _('Action') }}</th>
             </tr>
         </thead>
@@ -59,9 +96,11 @@
             {% from datetime import datetime %}
             {% for key in keys %}
             <tr>
-                <td><strong>{{key['key']}}</strong></td>
+                <td><code>{{key['key']}}</code></td>
                 <td>
-                    <span class="label label-success">{{ key['owner'] }}</span>
+                    {% if key.has_key('description') %}
+                    <span class="label label-success">{{ key['description'] }}</span>
+                    {% end %}
                 </td>
                 {% if key.has_key('created') %}
                 <td>{{ datetime.fromtimestamp(key['created']).strftime("%I:%M%p %d, %B") }}</td>
@@ -69,7 +108,6 @@
                 <td></td>
                 {% end %}
                 <td>
-                    <a class="btn btn-info" href="#"><i class="icon-pencil icon-white"></i> {{ _('Edit') }}</a>
                     <a class="btn btn-danger" href="/applications/{{app['shortname']}}/keys?delete={{key['key']}}"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
                 </td>
             </tr>
