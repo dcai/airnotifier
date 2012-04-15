@@ -82,7 +82,6 @@ class PayLoad(object):
 
     def json(self):
         jsontext = json.dumps(self.build_payload(), separators=(',', ':'))
-        logging.info("PayLoad: %s", jsontext)
         return jsontext
 
 
@@ -189,7 +188,7 @@ class APNClient(object):
 
     def send(self, deviceToken, payload):
         """ Pack payload and append to message queue """
-        logging.info("Notification through %s[%d]" % (self.appname, self.instanceid))
+        #logging.info("Notification through %s[%d]" % (self.appname, self.instanceid))
         json = payload.json()
         json_len = len(json)
         fmt = '!bIIH32sH%ds' % json_len
@@ -218,7 +217,7 @@ class APNClient(object):
         # One day
         expiry = payload.expiry
         tokenLength = 32
-        logging.info(deviceToken)
+        #logging.info(deviceToken)
         m = struct.pack(fmt, command, identifier, expiry, tokenLength,
                         binascii.unhexlify(deviceToken),
                         json_len, json)

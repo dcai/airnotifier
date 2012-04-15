@@ -1,5 +1,5 @@
 #!/bin/sh
 
 #Notifiction
-curl -i -H "Accept: application/json" -H "X-AN-APP-NAME: moodle" -H "X-AN-APP-KEY: 71df6e86-2fdf-432f-bf80-7104143e9769" -X POST -d "alert=Testing broadcast" http://push.tux.im/broadcast/
+curl -i -H "Accept: application/json" -H "X-AN-APP-NAME: moodle" -H "X-AN-APP-KEY: 04005c30-9685-4924-ad6a-41bd15e8d294" -X POST -d "alert=Testing broadcast" http://localhost:8000/broadcast/
 

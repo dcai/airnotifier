@@ -29,6 +29,7 @@
 import tornado.database
 import tornado.web
 import random
+import datetime
 import binascii
 from tornado.options import define, options
 ## APNs library
@@ -119,7 +120,6 @@ class TokenHandler(APIBaseHandler):
         """
         try:
             result = self.db.tokens.remove({'token':token}, safe=True)
-            logging.info(result)
             if result['n'] == 0:
                 self.send_response(dict(status='Token does\'t exist'))
             else:
@@ -166,6 +166,7 @@ class BroadcastHandler(APIBaseHandler):
         pl = PayLoad(alert=alert, sound=sound, badge=badge)
 
         self.add_to_log('%s broadcast' % self.appname, alert, "important")
+        time_start = datetime.datetime.now()
         for token in tokens:
             count = len(self.apnsconnections[self.app['shortname']])
             random.seed(time.time())
@@ -175,6 +176,8 @@ class BroadcastHandler(APIBaseHandler):
                 conn.send(token['token'], pl)
             except Exception, ex:
                 pass
+        delta_t = datetime.datetime.now() - time_start
+        logging.warning("Broadcast took time: %s" % delta_t)
         self.send_response(dict(status='ok'))
 
 class NotificationHandler(APIBaseHandler):
