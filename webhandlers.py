@@ -362,3 +362,7 @@ class AdminHandler(WebBaseHandler):
             self.render('managers.html', managers=managers, updated=user, created=None, currentuser=self.currentuser)
         else:
             self.render('managers.html', managers=managers, updated=None, created=user, currentuser=self.currentuser)
+
+class BlitzHandler(WebBaseHandler):
+    def get(self):
+        self.write('42')

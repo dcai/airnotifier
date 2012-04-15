@@ -50,6 +50,8 @@ from webhandlers import *
 ## UI modules
 from uimodules import *
 
+define("port", default=8801, help="Application server listen port", type=int)
+
 define("pemdir", default="pemdir", help="Directory to store pems")
 define("passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash")
 
@@ -102,6 +104,8 @@ class AirNotifierApp(tornado.web.Application):
                     (r"/admin/([^/]+)", AdminHandler),
                     # authentication session
                     (r"/auth/([^/]+)", AuthHandler),
+                    # Blitz rush
+                    (r"/mu-4716c5c7-3cb80ee8-4515a4a4-35abf050", BlitzHandler),
                     ]
 
         tornado.web.Application.__init__(self, handlers, **app_settings)
@@ -142,6 +146,6 @@ if __name__ == "__main__":
 
     logging.info("Starting AirNotifier server")
     http_server = tornado.httpserver.HTTPServer(AirNotifierApp(apnsconnections=apnsconns))
-    http_server.listen(8000)
+    http_server.listen(options.port)
 
     tornado.ioloop.IOLoop.instance().start()
