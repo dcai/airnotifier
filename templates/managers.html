@@ -10,6 +10,12 @@
     <li class="active"><a href="/admin/managers"><i class="icon-user"></i> {{ _('Managers') }}</a></li>
     <li><a href="/applications/new"><i class="icon-plus"></i> {{ ('Create application') }}</a></li>
 </ul>
+<ul class="nav nav-list">
+    <li class="nav-header">{{ _('Applications') }}</li>
+    {% for app in apps %}
+    <li><a href="/applications/{{app['shortname']}}"><i class="icon-star"></i> {{app['fullname']}}</a></li>
+    {% end %}
+</ul>
 {% end %}
 
 {% block body %}

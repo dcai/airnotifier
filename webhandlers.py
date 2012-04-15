@@ -91,6 +91,10 @@ class WebBaseHandler(tornado.web.RequestHandler):
         userId = ObjectId(userid)
         user = self.masterdb.managers.find_one({'_id': userId})
         return user
+    def render_string(self, template_name, **kwargs):
+        apps = self.masterdb.applications.find()
+        kwargs["apps"] = apps
+        return super(WebBaseHandler, self).render_string(template_name, **kwargs)
 
 class AuthHandler(WebBaseHandler):
     def get(self, action):
@@ -327,17 +331,13 @@ class AppsListHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
         apps = self.masterdb.applications.find()
-        self.render('apps.html', apps=apps)
+        self.render('apps.html')
 
 class StatsHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
         records = self.masterdb.applications.find()
-        apps = {};
-        for app in records:
-            shortname = app['shortname']
-            apps[shortname] = app
-        self.render('stats.html', apps=apps, apns=self.apnsconnections)
+        self.render('stats.html', apns=self.apnsconnections)
 
 class InfoHandler(WebBaseHandler):
     @tornado.web.authenticated

@@ -8,7 +8,7 @@
 <ul class="nav nav-list">
     <li class="nav-header">{{ _('Applications') }}</li>
     {% for app in apps %}
-        <li><a href="#{{app}}">{{apps[app]['fullname']}}</a></li>
+        <li><a href="#{{app['shortname']}}">{{app['fullname']}}</a></li>
     {% end %}
 </ul>
 {% end %}
@@ -17,7 +17,7 @@
 <div class="row-fluid">
     {% for appname in apns %}
     <a name="{{appname}}"></a>
-    <h2>{{apps[appname]['fullname']}}</h2>
+    <h2>{{appname}}</h2>
     <table class="table table-bordered table-striped">
         <thead>
             <tr>
