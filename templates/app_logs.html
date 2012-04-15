@@ -37,5 +37,11 @@
             {% end %}
         </tbody>
     </table>
+    <div>
+        {% if not (page == 0) %}
+        <a class="btn" href="/applications/{{app['shortname']}}/logs?page={{page - 1}}">{{ _('Previous') }}</a>
+        {% end %}
+        <a class="btn" href="/applications/{{app['shortname']}}/logs?page={{page + 1}}">{{ _('Next') }}</a>
+    </div>
 </div><!--/row-->
 {% end %}

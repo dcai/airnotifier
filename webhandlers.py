@@ -129,14 +129,24 @@ class AppActionHandler(WebBaseHandler):
         if not app: raise tornado.web.HTTPError(500)
         if action == 'delete':
             self.render("app_delete.html", app=app)
+
         elif action == 'tokens':
+            page = self.get_argument('page', None)
+            perpage = 50
+
             token_id = self.get_argument('delete', None)
             if token_id:
                 self.db.tokens.remove({'_id':ObjectId(token_id)})
                 self.redirect("/applications/%s/tokens" % appname)
                 return
-            tokens = self.db.tokens.find()
-            self.render("app_tokens.html", app=app, tokens=tokens)
+            if page:
+                tokens = self.db.tokens.find().sort('created', DESCENDING).skip(int(page) * perpage).limit(perpage)
+            else:
+                page = 0
+                tokens = self.db.tokens.find().sort('created', DESCENDING).limit(perpage)
+
+            self.render("app_tokens.html", app=app, tokens=tokens, page=int(page))
+
         elif action == 'keys':
             key_to_be_deleted = self.get_argument('delete', None)
             if key_to_be_deleted:
@@ -144,14 +154,25 @@ class AppActionHandler(WebBaseHandler):
                 self.redirect("/applications/%s/keys" % appname)
             keys = self.db.keys.find()
             self.render("app_keys.html", app=app, keys=keys, newkey=None)
+
         elif action == 'broadcast':
             self.render("app_broadcast.html", app=app, sent=False)
+
         elif action == 'objects':
             objects = self.db.objects.find()
             self.render("app_objects.html", app=app, objects=objects)
+
         elif action == 'logs':
-            logs = self.db.logs.find().sort('created', DESCENDING).limit(100)
-            self.render("app_logs.html", app=app, logs=logs)
+            page = self.get_argument('page', None)
+            perpage = 50
+
+            if page:
+                logs = self.db.logs.find().sort('created', DESCENDING).skip(int(page) * perpage).limit(perpage)
+            else:
+                page = 0
+                logs = self.db.logs.find().sort('created', DESCENDING).limit(perpage)
+
+            self.render("app_logs.html", app=app, logs=logs, page=int(page))
 
     @tornado.web.authenticated
     def post(self, appname, action):
