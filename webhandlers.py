@@ -91,6 +91,7 @@ class WebBaseHandler(tornado.web.RequestHandler):
         userId = ObjectId(userid)
         user = self.masterdb.managers.find_one({'_id': userId})
         return user
+
     def render_string(self, template_name, **kwargs):
         apps = self.masterdb.applications.find()
         kwargs["apps"] = apps

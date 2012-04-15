@@ -29,7 +29,7 @@
 import tornado.database
 import tornado.web
 import random
-import datetime
+import time
 import binascii
 from tornado.options import define, options
 ## APNs library
@@ -44,7 +44,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
     """
     def initialize(self):
-        pass
+        self._time_start = time.time()
 
     def prepare(self):
         """Pre-process HTTP request
@@ -106,6 +106,10 @@ class APIBaseHandler(tornado.web.RequestHandler):
 
         self.finish(data)
 
+    def finish(self, chunk=None):
+        super(APIBaseHandler, self).finish(chunk)
+        self._time_end = time.time()
+
     def add_to_log(self, action, info=None, level="info"):
         log = {}
         log['action'] = action
@@ -166,7 +170,6 @@ class BroadcastHandler(APIBaseHandler):
         pl = PayLoad(alert=alert, sound=sound, badge=badge)
 
         self.add_to_log('%s broadcast' % self.appname, alert, "important")
-        time_start = datetime.datetime.now()
         for token in tokens:
             count = len(self.apnsconnections[self.app['shortname']])
             random.seed(time.time())
@@ -176,8 +179,8 @@ class BroadcastHandler(APIBaseHandler):
                 conn.send(token['token'], pl)
             except Exception, ex:
                 pass
-        delta_t = datetime.datetime.now() - time_start
-        logging.warning("Broadcast took time: %s" % delta_t)
+        delta_t = time.time() - self._time_start
+        logging.warning("Broadcast took time: %sms" % (delta_t * 1000))
         self.send_response(dict(status='ok'))
 
 class NotificationHandler(APIBaseHandler):
