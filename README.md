@@ -9,12 +9,15 @@ Under heavy development
 ## Design
 - [Product design](https://github.com/dongsheng/airnotifier/wiki/Specification)
 
+## API documentation
+- [API (In progress)](https://github.com/dongsheng/airnotifier/wiki/API)
+
 ## Features
+- Generic backend for iOS app (Users, resources management) in the Cloud
 - Restful API allows providers to send notification through straightforward restful interface
-- Generic backend for iOS app (Users, resources management)
+- Access key management
 - Logging activities
 - Non-blocking API design allows master provider to handle large loads of request smoothly
-- OAuth, providers apply OAuth key and secret from master provider
 
 ## Requirements
 
