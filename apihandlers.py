@@ -142,10 +142,13 @@ class TokenHandler(APIBaseHandler):
         except Exception, ex:
             self.send_response(dict(error='Invalid token'))
 
+        channel = self.get_argument('channel', 'default')
+
         now = int(time.time())
         token = {
             'appname': self.appname,
             'token': devicetoken,
+            'channel': channel,
         }
         try:
             result = self.db.tokens.update({'token': devicetoken, 'appname': self.appname}, token, safe=True, upsert=True)
@@ -163,10 +166,19 @@ class TokenHandler(APIBaseHandler):
 
 class BroadcastHandler(APIBaseHandler):
     def post(self):
+        ## the cannel to be boradcasted
+        channel = self.get_argument('channel', 'default')
+
+        ## Message payload
         alert = self.get_argument('alert')
         sound = self.get_argument('sound', None)
         badge = self.get_argument('badge', None)
-        tokens = self.db.tokens.find()
+        if channel == 'default':
+            ## channel is not set or channel is default
+            tokens = self.db.tokens.find({'$or':[{"channel": {"$exists": False}}, {"channel": "default"}]})
+        else:
+            tokens = self.db.tokens.find()
+
         pl = PayLoad(alert=alert, sound=sound, badge=badge)
 
         self.add_to_log('%s broadcast' % self.appname, alert, "important")
