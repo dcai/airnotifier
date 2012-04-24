@@ -316,15 +316,16 @@ class ObjectHandler(APIBaseHandler):
         """
         self.classname = classname
         self.objectid = ObjectId(objectId)
-        doc = self.db[classname].find_one({'_id': self.objectid})
+        doc = self.db[self.collection].find_one({'_id': self.objectid})
         self.send_response(doc)
+        return
 
     def delete(self, classname, objectId):
         """Delete a object
         """
         self.classname = classname
         self.objectid = ObjectId(objectId)
-        result = self.db[classname].remove({'_id': self.objectid}, safe=True)
+        result = self.db[self.collection].remove({'_id': self.objectid}, safe=True)
         self.send_response(dict(result=result))
 
     def put(self, classname, objectId):
@@ -333,7 +334,7 @@ class ObjectHandler(APIBaseHandler):
         self.classname = classname
         data = json.loads(self.request.body)
         self.objectid = ObjectId(objectId)
-        result = self.db[classname].update({'_id': self.objectid}, data, safe=True)
+        result = self.db[self.collection].update({'_id': self.objectid}, data, safe=True)
 
     @property
     def collection(self):
