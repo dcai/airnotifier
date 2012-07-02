@@ -3,6 +3,28 @@ AirNotifier is a REST server for apple push notification service, users and reso
 
 APNs requires a certification to set up SSL connection, in some situations, we needs multi server instances without sharing certification file, we need a push notification forwarder, other instances send notification requests to it, it setup the SSL connection and send them all.
 
+## Installation
+1. Install required python packages
+   - pip install tornado
+   - pip install pymongo
+2. Install MongoDB
+3. Run install script
+
+   `python install.py`
+4. Launch the server
+
+   `python airnotifier.py`
+
+5. Default login username and password are "admin"
+
+## Configuration
+`airnotifier.conf` is the config file, options:
+
+- pemdir: The directory storing APNS certificate
+- passwordsalt: passwordsalt
+- masterdb: MongoDB database name
+- dbprefix: MongoDB collection name prefix, this will be used to create object data collection
+
 ## Status
 Under heavy development
 
