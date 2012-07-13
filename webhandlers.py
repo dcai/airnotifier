@@ -192,6 +192,11 @@ class AppActionHandler(WebBaseHandler):
             key['contact'] = self.get_argument('keycontact').strip()
             key['description'] = self.get_argument('keydesc').strip()
             key['created'] = int(time.time())
+            permissions = self.get_arguments('permissions[]')
+            result = 0
+            for permission in permissions:
+                result = result | int(permission)
+            key['permission'] = result
             # make key as shorter as possbile
             key['key'] = md5(str(uuid.uuid4())).hexdigest()
             keyObjectId = self.db.keys.insert(key)

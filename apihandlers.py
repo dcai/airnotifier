@@ -77,6 +77,8 @@ class APIBaseHandler(tornado.web.RequestHandler):
         key = self.db.keys.find_one({'key':self.appkey})
         if not key:
             self.send_response(dict(error='Invalid access key'))
+        else:
+            self.permission = int(key['permission'])
 
     @property
     def db(self):
@@ -122,6 +124,8 @@ class TokenHandler(APIBaseHandler):
     def delete(self, token):
         """Delete a token
         """
+        if self.permission & 2 == 2:
+            self.send_response(dict(error="No permission to delete token"))
         try:
             result = self.db.tokens.remove({'token':token}, safe=True)
             if result['n'] == 0:
@@ -134,6 +138,9 @@ class TokenHandler(APIBaseHandler):
     def post(self, devicetoken):
         """Create a new token
         """
+        if self.permission & 1 == 1:
+            self.send_response(dict(error="No permission to create token"))
+
         if len(devicetoken) != 64:
             self.send_response(dict(error='Invalid token'))
 
@@ -166,6 +173,9 @@ class TokenHandler(APIBaseHandler):
 
 class BroadcastHandler(APIBaseHandler):
     def post(self):
+        if self.permission & 8 == 8:
+            self.send_response(dict(error="No permission to send broadcast"))
+
         ## the cannel to be boradcasted
         channel = self.get_argument('channel', 'default')
 
@@ -198,6 +208,9 @@ class BroadcastHandler(APIBaseHandler):
 class NotificationHandler(APIBaseHandler):
     def post(self):
         """ Send notifications """
+        if self.permission & 4 == 4:
+            self.send_response(dict(error="No permission to send notification"))
+
         if not self.token:
             self.send_response(dict(error="No token provided"))
             return

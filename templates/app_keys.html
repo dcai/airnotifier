@@ -43,29 +43,29 @@
         </div>
 
         <div class="control-group">
-            <label class="control-label" for="optionsCheckboxList">{{ _('Permissions') }}</label>
+            <label class="control-label">{{ _('Permissions') }}</label>
             <div class="controls">
                 <label class="checkbox">
-                    <input type="checkbox" name="optionsCheckboxList1" value="option1">
+                    <input type="checkbox" name="permissions[]" value="1">
                     Create token
                 </label>
                 <label class="checkbox">
-                    <input type="checkbox" name="optionsCheckboxList1" value="option1">
+                    <input type="checkbox" name="permissions[]" value="2">
                     Delete token
                 </label>
 
                 <label class="checkbox">
-                    <input type="checkbox" name="optionsCheckboxList2" value="option2">
+                    <input type="checkbox" name="permissions[]" value="4">
                     Send notification
                 </label>
 
                 <label class="checkbox">
-                    <input type="checkbox" name="optionsCheckboxList3" value="option3">
+                    <input type="checkbox" name="permissions[]" value="8">
                     Send broadcast
                 </label>
 
                 <label class="checkbox">
-                    <input type="checkbox" name="optionsCheckboxList3" value="option3">
+                    <input type="checkbox" name="permissions[]" value="16">
                     Access objects
                 </label>
 
@@ -89,6 +89,7 @@
                 <th>{{ _('Key') }}</th>
                 <th>{{ _('Description') }}</th>
                 <th>{{ _('Contact') }}</th>
+                <th>{{ _('Permission') }}</th>
                 <th>{{ _('Action') }}</th>
             </tr>
         </thead>
@@ -104,6 +105,53 @@
                 </td>
                 {% if key.has_key('created') %}
                 <td>{{ datetime.fromtimestamp(key['created']).strftime("%I:%M%p %d, %B") }}</td>
+                {% else %}
+                <td></td>
+                {% end %}
+                {% if key.has_key('permission') %}
+                <td>
+                    <ul class="unstyled">
+                        <li>
+                            <span>Create token</span> 
+                            {% if key['permission'] & 1 == 1 %}
+                                <i class="icon-ok"></i>
+                            {% else %}
+                                <i class="icon-remove"></i>
+                            {% end %}
+                        </li>
+                        <li>
+                            <span>Delete token</span> 
+                            {% if key['permission'] & 2 == 2 %}
+                                <i class="icon-ok"></i>
+                            {% else %}
+                                <i class="icon-remove"></i>
+                            {% end %}
+                        </li>
+                        <li>
+                            <span>Send notification</span> 
+                            {% if key['permission'] & 4 == 4 %}
+                                <i class="icon-ok"></i>
+                            {% else %}
+                                <i class="icon-remove"></i>
+                            {% end %}
+                        </li>
+                        <li>
+                            <span>Broadcast</span> 
+                            {% if key['permission'] & 8 == 8 %}
+                                <i class="icon-ok"></i>
+                            {% else %}
+                                <i class="icon-remove"></i>
+                            {% end %}
+                        </li>
+                        <li>
+                            <span>Access objects</span> 
+                            {% if key['permission'] & 16 == 16 %}
+                                <i class="icon-ok"></i>
+                            {% else %}
+                                <i class="icon-remove"></i>
+                            {% end %}
+                        </li>
+                </td>
                 {% else %}
                 <td></td>
                 {% end %}
