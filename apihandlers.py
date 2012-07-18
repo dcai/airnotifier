@@ -189,7 +189,13 @@ class BroadcastHandler(APIBaseHandler):
         else:
             tokens = self.db.tokens.find()
 
-        pl = PayLoad(alert=alert, sound=sound, badge=badge)
+        #Build the custom params (everything not alert/sound/badge/channel)
+        customparams = {}
+        for paramname,param in self.request.arguments.iteritems():
+            if paramname != 'alert' and paramname != 'sound' and paramname != 'badge' and paramname != 'channel':
+                customparams[paramname] = param
+
+        pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
 
         self.add_to_log('%s broadcast' % self.appname, alert, "important")
         for token in tokens:
@@ -232,7 +238,14 @@ class NotificationHandler(APIBaseHandler):
         alert = self.get_argument('alert')
         sound = self.get_argument('sound', None)
         badge = self.get_argument('badge', None)
-        pl = PayLoad(alert=alert, sound=sound, badge=badge)
+
+        #Build the custom params  (everything not alert/sound/badge/token)
+        customparams = {}
+        for paramname,param in self.request.arguments.iteritems():
+            if paramname != 'alert' and paramname != 'sound' and paramname != 'badge' and paramname != 'token':
+                customparams[paramname] = param
+
+        pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
         if not self.apnsconnections.has_key(self.app['shortname']):
             ## TODO: add message to queue in MongoDB
             self.send_response(dict(error="APNs is offline"))

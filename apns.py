@@ -47,7 +47,7 @@ apns = {
 
 class PayLoad(object):
 
-    def __init__(self, alert=None, badge=None, sound=None, identifier=0, expiry=None):
+    def __init__(self, alert=None, badge=None, sound=None, identifier=0, expiry=None, customparams=None):
         if expiry == None:
             self.expiry = long(time.time() + 60 * 60 * 24)
         else:
@@ -56,6 +56,7 @@ class PayLoad(object):
         self.alert = alert
         self.badge = badge
         self.sound = sound
+        self.customparams = customparams
 
     def build_payload(self):
         limit = 256
@@ -77,7 +78,9 @@ class PayLoad(object):
         else:
             item['alert'] = self.alert
 
-        payload = {'aps':item}
+        payload = {'aps': item}
+        if self.customparams != None:
+            payload = dict(payload.items() + self.customparams.items())
         return payload
 
     def json(self):
