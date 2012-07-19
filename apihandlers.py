@@ -238,13 +238,11 @@ class NotificationHandler(APIBaseHandler):
         alert = self.get_argument('alert')
         sound = self.get_argument('sound', None)
         badge = self.get_argument('badge', None)
-
         #Build the custom params  (everything not alert/sound/badge/token)
         customparams = {}
-        for paramname,param in self.request.arguments.iteritems():
+        for paramname,param in self.request.arguments.items():
             if paramname != 'alert' and paramname != 'sound' and paramname != 'badge' and paramname != 'token':
-                customparams[paramname] = param
-
+                customparams[paramname] = self.get_argument(paramname)
         pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
         if not self.apnsconnections.has_key(self.app['shortname']):
             ## TODO: add message to queue in MongoDB
