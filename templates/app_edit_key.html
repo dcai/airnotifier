@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+{{ modules.NavBar('applications') }}
+{% end %}
+
+{% block sidebaritems %}
+{{ modules.AppSideBar(app, 'keys') }}
+{% end %}
+
+{% block body %}
+
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="appname" value="{{app['shortname']}}">
+    <input type="hidden" name="action" value="edit">
+    <fieldset>
+        <legend>{{ _('Edit access key') }}</legend>
+
+        <div class="control-group">
+            <label class="control-label" for="accesskey">{{ _('Access Key') }}</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="accesskey" name="accesskey" value="{{ key['key'] }}" readonly="readonly">
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label" for="keydesc">{{ _('Description') }}</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="keydesc" name="keydesc" value="{{ key['description'] }}">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="keycontact">{{ _('Contact Email') }}</label>
+            <div class="controls">
+                <input type="text" class="input-xlarge" id="keycontact" name="keycontact" value="{{ key['contact'] }}">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">{{ _('Permissions') }}</label>
+            <div class="controls">
+                <label class="checkbox">
+                    {% if key['permission'] & 1 == 1 %}
+                    <input type="checkbox" name="permissions[]" value="1" checked="checked">
+                    {% else %}
+                    <input type="checkbox" name="permissions[]" value="1">
+                    {% end %}
+                    Create token
+                </label>
+                <label class="checkbox">
+                    {% if key['permission'] & 2 == 2 %}
+                    <input type="checkbox" name="permissions[]" value="2" checked="checked">
+                    {% else %}
+                    <input type="checkbox" name="permissions[]" value="2">
+                    {% end %}
+                    Delete token
+                </label>
+
+                <label class="checkbox">
+                    {% if key['permission'] & 4 == 4 %}
+                    <input type="checkbox" name="permissions[]" value="4" checked="checked">
+                    {% else %}
+                    <input type="checkbox" name="permissions[]" value="4">
+                    {% end %}
+                    Send notification
+                </label>
+
+                <label class="checkbox">
+                    {% if key['permission'] & 8 == 8 %}
+                    <input type="checkbox" name="permissions[]" value="8" checked="checked">
+                    {% else %}
+                    <input type="checkbox" name="permissions[]" value="8">
+                    {% end %}
+                    Send broadcast
+                </label>
+
+                <label class="checkbox">
+                    {% if key['permission'] & 16 == 16 %}
+                    <input type="checkbox" name="permissions[]" value="16" checked="checked">
+                    {% else %}
+                    <input type="checkbox" name="permissions[]" value="16">
+                    {% end %}
+                    Access objects
+                </label>
+
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ _('Generate') }}</button>
+        </div>
+    </fieldset>
+</form>
+
+{% end %}
