@@ -126,6 +126,8 @@ class TokenHandler(APIBaseHandler):
         """
         if self.permission & 2 == 2:
             self.send_response(dict(error="No permission to delete token"))
+            return
+
         try:
             result = self.db.tokens.remove({'token':token}, safe=True)
             if result['n'] == 0:
@@ -140,9 +142,11 @@ class TokenHandler(APIBaseHandler):
         """
         if self.permission & 1 == 1:
             self.send_response(dict(error="No permission to create token"))
+            return
 
         if len(devicetoken) != 64:
             self.send_response(dict(error='Invalid token'))
+            return
 
         try:
             value = binascii.unhexlify(devicetoken)
@@ -175,6 +179,7 @@ class BroadcastHandler(APIBaseHandler):
     def post(self):
         if self.permission & 8 == 8:
             self.send_response(dict(error="No permission to send broadcast"))
+            return
 
         ## the cannel to be boradcasted
         channel = self.get_argument('channel', 'default')
@@ -216,6 +221,7 @@ class NotificationHandler(APIBaseHandler):
         """ Send notifications """
         if self.permission & 4 == 4:
             self.send_response(dict(error="No permission to send notification"))
+            return
 
         if not self.token:
             self.send_response(dict(error="No token provided"))
