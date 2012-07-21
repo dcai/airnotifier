@@ -75,6 +75,9 @@ class APIBaseHandler(tornado.web.RequestHandler):
             self.send_response(dict(error='Invalid application name'))
 
         key = self.db.keys.find_one({'key':self.appkey})
+        if not key.has_key('permission'):
+            key['permission'] = 0
+
         if not key:
             self.send_response(dict(error='Invalid access key'))
         else:

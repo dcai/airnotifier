@@ -57,23 +57,23 @@
         <legend>{{ _('General') }}</legend>
 
         <div class="control-group">
-            <label class="control-label" for="shortnameinput"> {{ _('Short name') }}</label>
+            <label class="control-label" for="shortname"> {{ _('Short name') }}</label>
             <div class="controls">
-                <input type="text" class="input-xlarge" id="shortnameinput" disabled value="{{app['shortname']}}">
+                <input type="text" class="input-xlarge" id="shortname" readonly="readonly" value="{{app['shortname']}}">
                 <p class="help-block">Unique identifier for your app.</p>
             </div>
         </div>
 
         <div class="control-group">
-            <label class="control-label" for="fullnameinput">{{ _('Full name') }}</label>
+            <label class="control-label" for="appfullname">{{ _('Full name') }}</label>
             <div class="controls">
-                <input type="text" class="input-xlarge" id="fullnameinput" name="appfullname" value="{{app['fullname']}}">
+                <input type="text" class="input-xlarge" id="appfullname" name="appfullname" value="{{app['fullname']}}">
             </div>
         </div>
 
         {% if app['enableapns'] != 1 %}
         <div class="control-group">
-            <label class="control-label" for="fullnameinput">Connections</label>
+            <label class="control-label" for="connections">Connections</label>
             <div class="controls">
                 <input type="text" class="input-xlarge" id="connections" pattern="[0-9]+" name="connections" value="{{app['connections']}}">
                 <p class="help-block ">This will restart APNs</p>

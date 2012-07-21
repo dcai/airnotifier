@@ -154,6 +154,12 @@ class AppActionHandler(WebBaseHandler):
 
         elif action == 'keys':
             key_to_be_deleted = self.get_argument('delete', None)
+            key_to_be_edited = self.get_argument('edit', None)
+            if key_to_be_edited:
+                keys = self.db.keys.find()
+                key = self.db.keys.find_one({'key': key_to_be_edited})
+                self.render("app_edit_key.html", app=app, keys=keys, key=key)
+                return
             if key_to_be_deleted:
                 self.db.keys.remove({'key':key_to_be_deleted})
                 self.redirect("/applications/%s/keys" % appname)
@@ -190,6 +196,7 @@ class AppActionHandler(WebBaseHandler):
         elif action == 'keys':
             key = {}
             key['contact'] = self.get_argument('keycontact').strip()
+            action = self.get_argument('action').strip()
             key['description'] = self.get_argument('keydesc').strip()
             key['created'] = int(time.time())
             permissions = self.get_arguments('permissions[]')
@@ -198,10 +205,17 @@ class AppActionHandler(WebBaseHandler):
                 result = result | int(permission)
             key['permission'] = result
             # make key as shorter as possbile
-            key['key'] = md5(str(uuid.uuid4())).hexdigest()
-            keyObjectId = self.db.keys.insert(key)
-            keys = self.db.keys.find()
-            self.render("app_keys.html", app=app, keys=keys, newkey=key)
+            if action == 'create':
+                key['key'] = md5(str(uuid.uuid4())).hexdigest()
+                keyObjectId = self.db.keys.insert(key)
+                keys = self.db.keys.find()
+                self.render("app_keys.html", app=app, keys=keys, newkey=key)
+            else:
+                key['key'] = self.get_argument('accesskey').strip()
+                self.db.keys.update({'key': key['key']}, key, safe=True)
+                keys = self.db.keys.find()
+                self.render("app_keys.html", app=app, keys=keys, newkey=None)
+
         elif action == 'broadcast':
             alert = self.get_argument('notification').strip()
             sound = 'default'
