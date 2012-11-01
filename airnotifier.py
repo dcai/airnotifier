@@ -123,7 +123,16 @@ class AirNotifierApp(tornado.web.Application):
 if __name__ == "__main__":
     tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
-    mongodb = Connection(options.mongohost, options.mongoport)
+    mongodb = None
+
+    while not mongodb:
+        try:
+            mongodb = Connection(options.mongohost, options.mongoport)
+        except:
+            pass
+        # wait 5 secs to reconnect
+        time.sleep(5)
+
     masterdb = mongodb[options.masterdb]
 
     apps = masterdb.applications.find({'enableapns': 1})
