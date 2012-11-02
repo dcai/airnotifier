@@ -56,26 +56,36 @@ if __name__ == "__main__":
     tornado.options.parse_command_line()
     mongodb = Connection(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]
+    collection_names = masterdb.collection_names()
     try:
-        masterdb.create_collection('applications')
+        if not 'applications' in collection_names:
+            masterdb.create_collection('applications')
+            print("db.applications installed")
     except CollectionInvalid, ex:
-        print("db.applications installed")
+        print("Failed to created applications collection", ex)
+        pass
 
     try:
-        masterdb.create_collection('managers')
+        if not 'managers' in collection_names:
+            masterdb.create_collection('managers')
+            masterdb.managers.ensure_index("username", unique=True)
+            print("db.managers installed")
     except CollectionInvalid, ex:
-        print("db.managers installed")
+        print("Failed to created managers collection")
+        pass
 
     try:
         manager = {}
         manager['username'] = 'admin'
-        passwordhash = sha1('%sadmin' % options.passwordsalt).hexdigest()
-        manager['password'] = passwordhash
+        manager['password'] = sha1('%sadmin' % options.passwordsalt).hexdigest()
         masterdb['managers'].insert(manager)
+        print("Admin user created, username: admin, password: admin")
     except Exception, ex:
-        print("Failed to created manager")
+        print("Failed to create admin user")
 
     try:
-        masterdb.create_collection('options')
+        if not 'options' in collection_names:
+            masterdb.create_collection('options')
+            print("db.options installed")
     except CollectionInvalid, ex:
         print("db.options installed")
