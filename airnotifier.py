@@ -70,7 +70,7 @@ class AirNotifierApp(tornado.web.Application):
         app_settings = dict(
             debug=True,
             app_title=u'AirNotifier',
-            ui_modules={"AppSideBar": AppSideBar, "NavBar": NavBar},
+            ui_modules={"AppSideBar": AppSideBar, "NavBar": NavBar, "TabBar": TabBar},
             template_path=os.path.join(os.path.dirname(__file__),
                     'templates'),
             static_path=os.path.join(os.path.dirname(__file__), 'static'

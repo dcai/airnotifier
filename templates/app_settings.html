@@ -4,6 +4,10 @@
 {{ modules.NavBar('applications') }}
 {% end %}
 
+{% block tabbaritems %}
+{{ modules.TabBar(app, 'settings') }}
+{% end %}
+
 {% block sidebaritems %}
 {{ modules.AppSideBar(app, 'settings') }}
 {% end %}
@@ -39,10 +43,10 @@
             <label class="control-label" for="shortnameinput"> {{ _('') }}</label>
             <div class="controls">
                 {% if not app.has_key('environment') or (app.has_key('environment') and app['environment'] == 'sandbox') %}
-                <input type="hidden" name="turnonproduction" value="true" />
+                <input type="hidden" name="turnonproduction" value="true">
                 <button type="submit" class="btn btn-info">{{ _('Enter production') }}</button>
                 {% else %}
-                <input type="hidden" name="turnonsandbox" value="true" />
+                <input type="hidden" name="turnonsandbox" value="true">
                 <button type="submit" class="btn btn-info">{{ _('Enter sandbox') }}</button>
                 {% end %}
             </div>

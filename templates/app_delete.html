@@ -4,6 +4,10 @@
 {{ modules.NavBar('applications') }}
 {% end %}
 
+{% block tabbaritems %}
+{{ modules.TabBar(app, 'delete') }}
+{% end %}
+
 {% block sidebaritems %}
 {{ modules.AppSideBar(app, 'delete') }}
 {% end %}

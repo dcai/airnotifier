@@ -1,7 +1,7 @@
 <ul class="nav nav-list">
     <li class="nav-header">{{ _('Admin') }}</li>
     {% if active == 'managers'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/admin/managers"><i class="icon-user"></i> {{ _('Managers') }}</a></li>
+    <a href="/admin/managers"><i class="icon-user"></i> {{ _('Users') }}</a></li>
     {% if active == 'createapp'%}<li class="active">{% else %}<li>{% end %}
     <a href="/applications/new"><i class="icon-plus"></i> {{ ('Create application') }}</a></li>
 </ul>
@@ -13,26 +13,3 @@
     {% end %}
 </ul>
 
-<ul class="nav nav-list">
-    <li class="nav-header">{{ _('Administration') }}</li>
-    {% if active == 'settings'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/applications/{{app['shortname']}}"><i class="icon-cog"></i> {{ _('Settings') }}</a></li>
-
-    {% if active == 'broadcast'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/applications/{{app['shortname']}}/broadcast"><i class="icon-volume-up"></i> {{ _('Broadcast') }}</a></li>
-
-    {% if active == 'keys'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/applications/{{app['shortname']}}/keys"><i class="icon-lock"></i> {{ _('Access keys') }}</a></li>
-
-    {% if active == 'tokens'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/applications/{{app['shortname']}}/tokens"><i class="icon-info-sign"></i> {{ _('Tokens') }}</a></li>
-
-    {% if active == 'objects'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/applications/{{app['shortname']}}/objects"><i class="icon-inbox"></i> {{ _('Objects browser') }}</a></li>
-
-    {% if active == 'logs'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/applications/{{app['shortname']}}/logs"><i class="icon-exclamation-sign"></i> {{ _('Logs') }}</a></li>
-
-    {% if active == 'delete'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/applications/{{app['shortname']}}/delete"><i class="icon-trash"></i> {{ _('Delete') }}</a></li>
-</ul>

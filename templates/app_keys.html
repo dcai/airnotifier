@@ -4,6 +4,10 @@
 {{ modules.NavBar('applications') }}
 {% end %}
 
+{% block tabbaritems %}
+{{ modules.TabBar(app, 'keys') }}
+{% end %}
+
 {% block sidebaritems %}
 {{ modules.AppSideBar(app, 'keys') }}
 {% end %}
