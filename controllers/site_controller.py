@@ -43,6 +43,8 @@ import tornado.database
 import tornado.web
 from tornado.options import define, options
 
+from routes import route
+
 # pymongo
 from pymongo import *
 from bson import *
@@ -97,6 +99,7 @@ class WebBaseHandler(tornado.web.RequestHandler):
         kwargs["apps"] = apps
         return super(WebBaseHandler, self).render_string(template_name, **kwargs)
 
+@route(r"/auth/([^/]+)")
 class AuthHandler(WebBaseHandler):
     def get(self, action):
         next = self.get_argument('next', "/")
@@ -120,12 +123,14 @@ class AuthHandler(WebBaseHandler):
         self.redirect(next)
 
 
+@route(r"/")
 class MainHandler(WebBaseHandler):
     """ Redirect to default view """
     @tornado.web.authenticated
     def get(self):
         self.redirect(r"/applications")
 
+@route(r"/applications/([^/]+)/([^/]+)")
 class AppActionHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self, appname, action):
@@ -232,6 +237,7 @@ class AppActionHandler(WebBaseHandler):
                 logging.info(ex)
             self.render("app_broadcast.html", app=app, sent=True)
 
+@route(r"/applications/([^/]+)")
 class AppHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self, appname):
@@ -347,18 +353,21 @@ class AppHandler(WebBaseHandler):
 
         self.redirect(r"/applications/%s" % self.appname)
 
+@route(r"/applications")
 class AppsListHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
         apps = self.masterdb.applications.find()
         self.render('apps.html')
 
+@route(r"/stats/")
 class StatsHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
         records = self.masterdb.applications.find()
         self.render('stats.html', apns=self.apnsconnections)
 
+@route(r"/info/")
 class InfoHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
@@ -377,6 +386,7 @@ class InfoHandler(WebBaseHandler):
 
         self.render('info.html', pythoninfo=pythoninfo, mongodb=mongodbinfo, tornadoversion=tornado.version)
 
+@route(r"/admin/([^/]+)")
 class AdminHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self, action):
@@ -404,6 +414,7 @@ class AdminHandler(WebBaseHandler):
         else:
             self.render('managers.html', managers=managers, updated=None, created=user, currentuser=self.currentuser)
 
+@route(r"/mu-4716c5c7-3cb80ee8-4515a4a4-35abf050")
 class BlitzHandler(WebBaseHandler):
     def get(self):
         self.write('42')

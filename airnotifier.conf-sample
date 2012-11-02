@@ -3,6 +3,8 @@ port = 8801
 pemdir = "/var/airnotifier/files"
 
 passwordsalt = 'd2o0n1g2s0h3e1n1g'
+cookiesecret = 'airnotifiercookiesecret'
+debug = False
 
 mongohost = "localhost"
 mongoport = 27017

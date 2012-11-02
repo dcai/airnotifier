@@ -39,6 +39,7 @@ from util import *
 # MongoDB
 from pymongo import *
 from bson import *
+from routes import route
 
 class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
@@ -123,6 +124,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
         log['created'] = int(time.time())
         self.db.logs.insert(log, safe=True)
 
+@route(r"/tokens/([^/]+)")
 class TokenHandler(APIBaseHandler):
     def delete(self, token):
         """Delete a token
@@ -178,6 +180,7 @@ class TokenHandler(APIBaseHandler):
             self.add_to_log('Cannot add token', devicetoken, "warning")
             self.send_response(dict(error=str(ex)))
 
+@route(r"/broadcast/")
 class BroadcastHandler(APIBaseHandler):
     def post(self):
         if self.permission & 8 == 8:
@@ -219,6 +222,7 @@ class BroadcastHandler(APIBaseHandler):
         logging.warning("Broadcast took time: %sms" % (delta_t * 1000))
         self.send_response(dict(status='ok'))
 
+@route(r"/notification/")
 class NotificationHandler(APIBaseHandler):
     def post(self):
         """ Send notifications """
@@ -268,6 +272,7 @@ class NotificationHandler(APIBaseHandler):
         except Exception, ex:
             self.send_response(dict(error=str(ex)))
 
+@route(r"/users")
 class UsersHandler(APIBaseHandler):
     """Handle users
     - Take application ID and secret
@@ -316,6 +321,7 @@ class UsersHandler(APIBaseHandler):
             users.append(u)
         self.send_response(users)
 
+@route(r"/users/([^/]+)")
 class UserHandler(APIBaseHandler):
     def delete(self, userId):
         """ Delete user """
@@ -340,6 +346,7 @@ class UserHandler(APIBaseHandler):
             conditions['id'] = userid
 
 
+@route(r"/objects/([^/]+)/([^/]+)")
 class ObjectHandler(APIBaseHandler):
     """Object Handler
     http://airnotifier.xxx/objects/cars/4f794f7329ddda1cb9000000
@@ -374,6 +381,7 @@ class ObjectHandler(APIBaseHandler):
         collectionname = "%s%s" % (options.dbprefix, self.classname)
         return collectionname
 
+@route(r"/objects/([^/]+)")
 class ClassHandler(APIBaseHandler):
     """Object Handler
     http://airnotifier.xxx/objects/cars
@@ -424,6 +432,7 @@ class ClassHandler(APIBaseHandler):
         objectId = self.db[self.collection].insert(data, safe=True)
         self.send_response(dict(objectId=objectId))
 
+@route(r"/files")
 class FilesHandler(APIBaseHandler):
     def post(self):
         ## hash and store a file
