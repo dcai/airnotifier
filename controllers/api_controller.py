@@ -196,7 +196,10 @@ class BroadcastHandler(APIBaseHandler):
         badge = self.get_argument('badge', None)
         if channel == 'default':
             ## channel is not set or channel is default
-            tokens = self.db.tokens.find({'$or':[{"channel": {"$exists": False}}, {"channel": "default"}]})
+            conditions = []
+            conditions.append({'channel': {"$exists": False}})
+            conditions.append({'channel': 'default'})
+            tokens = self.db.tokens.find({"$or": conditions})
         else:
             tokens = self.db.tokens.find()
 
@@ -209,15 +212,15 @@ class BroadcastHandler(APIBaseHandler):
         pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
 
         self.add_to_log('%s broadcast' % self.appname, alert, "important")
-        for token in tokens:
-            count = len(self.apnsconnections[self.app['shortname']])
-            random.seed(time.time())
-            instanceid = random.randint(0, count-1)
-            conn = self.apnsconnections[self.app['shortname']][instanceid]
-            try:
+        count = len(self.apnsconnections[self.app['shortname']])
+        random.seed(time.time())
+        instanceid = random.randint(0, count-1)
+        conn = self.apnsconnections[self.app['shortname']][instanceid]
+        try:
+            for token in tokens:
                 conn.send(token['token'], pl)
-            except Exception, ex:
-                pass
+        except Exception, ex:
+            pass
         delta_t = time.time() - self._time_start
         logging.warning("Broadcast took time: %sms" % (delta_t * 1000))
         self.send_response(dict(status='ok'))

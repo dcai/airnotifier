@@ -34,9 +34,9 @@ Under heavy development
 ## Requirements
 
 ### Server stack
-- [Python 2.7+](http://www.python.org)
-- [MongoDB](http://www.mongodb.org/)
-- [Tornado 2.0](http://tornadoweb.org)
+- [Python 2.6+](http://www.python.org)
+- [MongoDB 2.0+](http://www.mongodb.org/)
+- [Tornado 2.0+](http://tornadoweb.org)
 
 ## Copyright
 Copyright (c) 2012, Dongsheng Cai
