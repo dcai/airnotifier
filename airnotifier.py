@@ -127,11 +127,13 @@ def init_apns():
             conns = 5
         if conns < 1:
             conns = 1
-        if not app.has_key('environment'):
+        if 'environment' not in app:
             app['environment'] = 'sandbox'
-        for instanceid in range(0, conns):
-            apn = APNClient(app['environment'], app['certfile'], app['keyfile'], app['shortname'], instanceid)
-            apnsconns[app['shortname']].append(apn)
+
+        if 'certfile' in app and 'keyfile' in app and 'shortname' in app:
+            for instanceid in range(0, conns):
+                apn = APNClient(app['environment'], app['certfile'], app['keyfile'], app['shortname'], instanceid)
+                apnsconns[app['shortname']].append(apn)
     mongodb.close()
     return apnsconns
 
