@@ -129,7 +129,8 @@ class TokenHandler(APIBaseHandler):
     def delete(self, token):
         """Delete a token
         """
-        if self.permission & 2 == 2:
+        ## To check the access key permissions we use bitmask method.
+        if (self.permission & 2) != 2:
             self.send_response(dict(error="No permission to delete token"))
             return
 
@@ -145,7 +146,7 @@ class TokenHandler(APIBaseHandler):
     def post(self, devicetoken):
         """Create a new token
         """
-        if self.permission & 1 == 1:
+        if (self.permission & 1) != 1:
             self.send_response(dict(error="No permission to create token"))
             return
 
@@ -183,7 +184,7 @@ class TokenHandler(APIBaseHandler):
 @route(r"/broadcast/")
 class BroadcastHandler(APIBaseHandler):
     def post(self):
-        if self.permission & 8 == 8:
+        if (self.permission & 8) != 8:
             self.send_response(dict(error="No permission to send broadcast"))
             return
 
@@ -229,7 +230,7 @@ class BroadcastHandler(APIBaseHandler):
 class NotificationHandler(APIBaseHandler):
     def post(self):
         """ Send notifications """
-        if self.permission & 4 == 4:
+        if (self.permission & 4) != 4:
             self.send_response(dict(error="No permission to send notification"))
             return
 
