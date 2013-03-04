@@ -220,7 +220,6 @@ class AppActionHandler(WebBaseHandler):
                 self.db.keys.update({'key': key['key']}, key, safe=True)
                 keys = self.db.keys.find()
                 self.render("app_keys.html", app=app, keys=keys, newkey=None)
-
         elif action == 'broadcast':
             alert = self.get_argument('notification').strip()
             sound = 'default'
@@ -312,6 +311,10 @@ class AppHandler(WebBaseHandler):
 
         if self.get_argument('appdescription', None):
             app['description'] = self.get_argument('appdescription')
+
+
+        if self.get_argument('blockediplist', None):
+            app['blockediplist'] = self.get_argument('blockediplist').strip()
 
         if self.get_argument('connections', None):
             """If this value is greater than current apns connections,

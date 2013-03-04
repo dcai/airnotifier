@@ -86,6 +86,14 @@
         {% end %}
 
         <div class="control-group">
+            <label class="control-label" for="keydesc">{{ _('Blocked IP list') }}</label>
+            <div class="controls">
+                <textarea rows="10" class="input-xlarge" id="ipaddr" name="blockediplist">{% if app.has_key('blockediplist') and app['blockediplist'] %}{{ app['blockediplist'] }}{% end %}</textarea>
+            </div>
+        </div>
+
+
+        <div class="control-group">
             <label class="control-label" for="appdescription">Description</label>
             <div class="controls">
                 {% if app.has_key('description') %}

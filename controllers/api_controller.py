@@ -72,17 +72,30 @@ class APIBaseHandler(tornado.web.RequestHandler):
                 self.send_response(dict(error='Invalid token'))
 
         self.app = self.masterdb.applications.find_one({'shortname': self.appname})
-        if not self.app:
-            self.send_response(dict(error='Invalid application name'))
 
-        key = self.db.keys.find_one({'key':self.appkey})
-        if not key:
-            self.permission = 0
-            self.send_response(dict(error='Invalid access key'))
+        if not self.check_blockediplist(self.request.remote_ip, self.app):
+            self.send_response(dict(error='Blocked IP'))
         else:
-            if 'permission' not in key:
-                key['permission'] = 0
-            self.permission = int(key['permission'])
+            if not self.app:
+                self.send_response(dict(error='Invalid application name'))
+
+            key = self.db.keys.find_one({'key':self.appkey})
+            if not key:
+                self.permission = 0
+                self.send_response(dict(error='Invalid access key'))
+            else:
+                if 'permission' not in key:
+                    key['permission'] = 0
+                self.permission = int(key['permission'])
+
+    def check_blockediplist(self, ip, app):
+        if app.has_key('blockediplist') and app['blockediplist']:
+            from netaddr import IPNetwork, IPAddress
+            iplist = app['blockediplist'].splitlines()
+            for blockedip in iplist:
+                if IPAddress(ip) in IPNetwork(blockedip):
+                    return False
+        return True
 
     @property
     def db(self):
