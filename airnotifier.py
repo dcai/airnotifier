@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2012, Dongsheng Cai
@@ -71,7 +71,8 @@ class AirNotifierApp(tornado.web.Application):
 
     def __init__(self, apnsconnections={}):
         app_settings = dict(
-            debug=options.debug,
+            debug=True,
+            #debug=options.debug,
             app_title=u'AirNotifier',
             ui_modules={"AppSideBar": AppSideBar, "NavBar": NavBar, "TabBar": TabBar},
             template_path=os.path.join(os.path.dirname(__file__), 'templates'),
