@@ -38,7 +38,6 @@ import tornado.httpserver
 import tornado.escape
 import tornado.ioloop
 import tornado.options
-import tornado.database
 import tornado.web
 from util import *
 from tornado.options import define, options
@@ -92,7 +91,7 @@ class AirNotifierApp(tornado.web.Application):
         while not mongodb:
             try:
                 mongodb = Connection(options.mongohost, options.mongoport)
-            except ConnectionFailure, ex:
+            except:
                 error_log("Cannot not connect to MongoDB")
             time.sleep(5)
 

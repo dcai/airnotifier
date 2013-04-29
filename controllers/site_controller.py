@@ -39,7 +39,6 @@ from hashlib import sha1
 from hashlib import md5
 
 # tornado
-import tornado.database
 import tornado.web
 from tornado.options import define, options
 

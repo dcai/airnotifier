@@ -31,7 +31,6 @@ import tornado.httpserver
 import tornado.escape
 import tornado.ioloop
 import tornado.options
-import tornado.database
 import tornado.web
 import logging
 from hashlib import sha1
