@@ -38,7 +38,7 @@ import tornado.httpserver
 import tornado.escape
 import tornado.ioloop
 import tornado.options
-import tornado.database
+import torndb
 import tornado.web
 from util import *
 from tornado.options import define, options
