@@ -45,6 +45,11 @@ apns = {
     'production': ("gateway.push.apple.com", 2195)
 }
 
+feedbackhost = {
+    'sandbox': ("feedback.sandbox.push.apple.com", 2196),
+    'production': ("feedback.push.apple.com", 2196)
+}
+
 class PayLoad(object):
 
     def __init__(self, alert=None, badge=None, sound=None, identifier=0, expiry=None, customparams=None):
@@ -87,6 +92,45 @@ class PayLoad(object):
         jsontext = json.dumps(self.build_payload(), separators=(',', ':'))
         return jsontext
 
+class APNFeedback(object):
+    def __init__(self, env="sandbox", certfile="", keyfile="", appname=""):
+        certexists = os.path.exists(certfile)
+        keyexists  = os.path.exists(keyfile)
+        if not certexists:
+            logging.error("Certificate file doesn't exist")
+        if not keyexists:
+            logging.error("Key file doesn't exist")
+        if not certexists and not keyexists:
+            raise Exception("Cert or Key not exist")
+        self.host = feedbackhost[env]
+        self.certfile = certfile
+        self.keyfile = keyfile
+        self.ioloop = ioloop.IOLoop.instance()
+        self.appname = appname
+        self.connect()
+
+    def connect(self):
+        """ Setup socket """
+        self.sock = socket(AF_INET, SOCK_STREAM)
+        self.remote_stream = iostream.SSLIOStream(self.sock, ssl_options=dict(certfile=self.certfile, keyfile=self.keyfile))
+        self.remote_stream.connect(self.host, self._on_feedback_service_connected)
+        self.remote_stream.read_until_close(self._on_feedback_service_read_close,
+                                            self._on_feedback_service_read_streaming)
+
+    def shutdown(self):
+        """Shutdown this connection"""
+        self.remote_stream.close()
+        self.sock.close()
+
+    def _on_feedback_service_connected(self):
+        logging.info("remote connected")
+
+    def _on_feedback_service_read_close(self, data):
+        self.shutdown()
+
+    def _on_feedback_service_read_streaming(self, data):
+        """ Feedback """
+        pass
 
 class APNClient(object):
 
@@ -174,6 +218,7 @@ class APNClient(object):
 
         (command, statuscode, identifier) = struct.unpack_from('!bbI', data, 0)
         logging.error('%s[%d] CMD: %s Status: %s ID: %s', self.appname, self.instanceid, command, status_table[statuscode], identifier)
+
 
     def _on_remote_connected(self):
         self.connected = True

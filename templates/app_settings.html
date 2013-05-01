@@ -34,6 +34,20 @@
     </fieldset>
 </form>
 
+<form class="form-horizontal" method="post">
+    <input type="hidden" name="appname" value="{{app['shortname']}}" />
+    <fieldset>
+        <legend>{{ _('Feedback Service') }}</legend>
+        <div class="control-group">
+            <div class="controls">
+                <input type="hidden" name="performfeedbacktask" value="true" />
+                <button type="submit" class="btn btn-primary">{{ _('Clean up') }}</button>
+                <p class="help-block">Clean up unused device tokens</p>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
 {% if app['enableapns'] != 1 %}
 <form class="form-horizontal" method="post">
     <input type="hidden" name="appname" value="{{app['shortname']}}" />
