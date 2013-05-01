@@ -274,6 +274,9 @@ class AppHandler(WebBaseHandler):
                 conn.shutdown()
             del self.apnsconnections[app['shortname']]
 
+    def perform_feedback(self, app):
+        apn = APNFeedback(app['environment'], app['certfile'], app['keyfile'], app['shortname'])
+
     @tornado.web.authenticated
     def post(self, appname):
         update = True
@@ -328,6 +331,9 @@ class AppHandler(WebBaseHandler):
                 app['connections'] = int(self.get_argument('connections'))
                 self.stop_apns(app)
                 self.start_apns(app)
+
+        if self.get_argument('performfeedbacktask', None):
+            self.perform_feedback(app)
 
         if self.get_argument('appfullname', None):
             app['fullname'] = self.get_argument('appfullname')
