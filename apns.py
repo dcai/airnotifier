@@ -94,6 +94,14 @@ class APNClient(object):
         return self.connected
 
     def __init__(self, env='sandbox', certfile="", keyfile="", appname="", instanceid=0):
+        certexists = os.path.exists(certfile)
+        keyexists  = os.path.exists(keyfile)
+        if not certexists:
+            logging.error("Certificate file doesn't exist")
+        if not keyexists:
+            logging.error("Key file doesn't exist")
+        if not certexists and not keyexists:
+            raise Exception("Cert or Key not exist")
         self.apns = apns[env]
         self.certfile = certfile
         self.keyfile = keyfile
@@ -115,10 +123,14 @@ class APNClient(object):
         """ Close socket and reconnect """
         self.connected = False
         logging.warning('%s[%d] is offline %d' % (self.appname, self.instanceid, self.reconnect))
-        self.remote_stream.close()
-        self.sock.close()
-        if self.reconnect:
-            self.connect()
+
+        try:
+            self.remote_stream.close()
+            self.sock.close()
+            if self.reconnect:
+                self.connect()
+        except Exception, ex:
+            logging.error(ex)
 
     def _on_remote_read_streaming(self, data):
         """ Something bad happened """

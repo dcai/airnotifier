@@ -39,6 +39,7 @@ import tornado.escape
 import tornado.ioloop
 import tornado.options
 import tornado.web
+import os
 from util import *
 from tornado.options import define, options
 ## APNs library
@@ -132,7 +133,11 @@ def init_apns():
 
         if 'certfile' in app and 'keyfile' in app and 'shortname' in app:
             for instanceid in range(0, conns):
-                apn = APNClient(app['environment'], app['certfile'], app['keyfile'], app['shortname'], instanceid)
+                try:
+                    apn = APNClient(app['environment'], app['certfile'], app['keyfile'], app['shortname'], instanceid)
+                except Exception as ex:
+                    logging.error(ex)
+                    continue
                 apnsconns[app['shortname']].append(apn)
     mongodb.close()
     return apnsconns
