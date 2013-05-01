@@ -258,7 +258,11 @@ class AppHandler(WebBaseHandler):
                 app['environment'] = 'sandbox'
 
             for instanceid in range(0, count):
-                apn = APNClient(app['environment'], app['certfile'], app['keyfile'], app['shortname'], instanceid)
+                try:
+                    apn = APNClient(app['environment'], app['certfile'], app['keyfile'], app['shortname'], instanceid)
+                except Exception as ex:
+                    logging.error(ex)
+                    return
                 self.apnsconnections[app['shortname']].append(apn)
         else:
             return
