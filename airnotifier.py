@@ -26,26 +26,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-## System modules
-import logging
-import sys
-import json
-import test
+from apns import *
 from pymongo import Connection
-## Tornado modules
-import tornado.auth
+from tornado.options import define, options
+from uimodules import *
+from util import *
 import tornado.httpserver
-import tornado.escape
 import tornado.ioloop
 import tornado.options
-import tornado.web
-import os
-from util import *
-from tornado.options import define, options
-## APNs library
-from apns import *
-## UI modules
-from uimodules import *
 
 define("port", default=8801, help="Application server listen port", type=int)
 
@@ -61,7 +49,7 @@ define("masterdb", default="airnotifier", help="MongoDB DB to store information"
 define("dbprefix", default="obj_", help="Collection name prefix")
 
 
-#logging.getLogger().setLevel(logging.DEBUG)
+# logging.getLogger().setLevel(logging.DEBUG)
 
 class AirNotifierApp(tornado.web.Application):
 
@@ -72,7 +60,7 @@ class AirNotifierApp(tornado.web.Application):
     def __init__(self, apnsconnections={}):
         app_settings = dict(
             debug=True,
-            #debug=options.debug,
+            # debug=options.debug,
             app_title=u'AirNotifier',
             ui_modules={"AppSideBar": AppSideBar, "NavBar": NavBar, "TabBar": TabBar},
             template_path=os.path.join(os.path.dirname(__file__), 'templates'),

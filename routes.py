@@ -1,7 +1,7 @@
 #  will choose the FIRST match it comes too
 #  or define routes in your controller using @route(r'')
 route_list = [
-    #(r"/", my_controller.MyHandler ),
+    # (r"/", my_controller.MyHandler ),
 ]
 
 
@@ -53,12 +53,12 @@ class RouteLoader(object):
     ''' taken from https://github.com/trendrr/whirlwind/blob/master/whirlwind/core/routes.py '''
 
     @staticmethod
-    def load(package_name,include_routes_file=True):
+    def load(package_name, include_routes_file=True):
         loader = RouteLoader()
-        return loader.init_routes(package_name,include_routes_file)
+        return loader.init_routes(package_name, include_routes_file)
 
-    def init_routes(self,package_name,include_routes_file=True):
-        import pkgutil,sys,inspect
+    def init_routes(self, package_name, include_routes_file=True):
+        import pkgutil, sys
 
         package = __import__(package_name)
         controllers_module = sys.modules[package_name]
@@ -68,10 +68,10 @@ class RouteLoader(object):
         for importer, modname, ispkg in pkgutil.iter_modules(controllers_module.__path__, prefix):
             module = __import__(modname)
 
-        #grab the routes defined via the route decorator
+        # grab the routes defined via the route decorator
         url_routes = route.get_routes()
 
-        #add the routes from our route file
+        # add the routes from our route file
         if include_routes_file:
             url_routes.extend(route_list)
 

@@ -26,19 +26,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import tornado.auth
-import tornado.httpserver
-import tornado.escape
-import tornado.ioloop
-import tornado.options
-import tornado.web
-import logging
 from hashlib import sha1
-
 from pymongo import *
 from pymongo.errors import *
-
 from tornado.options import define, options
+import tornado.options
+
 
 define("apns", default=(), help="APNs address and port")
 define("pemdir", default="pemdir", help="Directory to store pems")
