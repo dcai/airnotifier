@@ -26,19 +26,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import logging
-import os
-import binascii
-import json
-import struct
-import datetime
-import time
-
 from collections import deque
 from socket import socket, AF_INET, SOCK_STREAM
-from ssl import wrap_socket
-from tornado import ioloop
-from tornado import iostream
+from tornado import ioloop, iostream
+import binascii
+import json
+import logging
+import os
+import struct
+import time
+
 
 apns = {
     'sandbox': ("gateway.sandbox.push.apple.com", 2195),
@@ -66,15 +63,15 @@ class PayLoad(object):
     def build_payload(self):
         limit = 256
         alertlength = limit
-        ## remove {"aps":{"alert":""}}
+        # remove {"aps":{"alert":""}}
         alertlength = alertlength - 20
         item = {}
         if self.sound is not None:
-            ## remove sound field ,'sound':""
+            # remove sound field ,'sound':""
             alertlength = alertlength - 11 - len(self.sound)
             item['sound'] = self.sound
         if self.badge is not None:
-            ## remove sound field ,'badge':""
+            # remove sound field ,'badge':""
             alertlength = alertlength - 11 - len(self.badge)
             item['badge'] = int(self.badge)
 
@@ -95,7 +92,7 @@ class PayLoad(object):
 class APNFeedback(object):
     def __init__(self, env="sandbox", certfile="", keyfile="", appname=""):
         certexists = os.path.exists(certfile)
-        keyexists  = os.path.exists(keyfile)
+        keyexists = os.path.exists(keyfile)
         if not certexists:
             logging.error("Certificate file doesn't exist")
         if not keyexists:
@@ -139,7 +136,7 @@ class APNClient(object):
 
     def __init__(self, env='sandbox', certfile="", keyfile="", appname="", instanceid=0):
         certexists = os.path.exists(certfile)
-        keyexists  = os.path.exists(keyfile)
+        keyexists = os.path.exists(keyfile)
         if not certexists:
             logging.error("Certificate file doesn't exist")
         if not keyexists:
@@ -248,11 +245,11 @@ class APNClient(object):
 
     def send(self, deviceToken, payload):
         """ Pack payload and append to message queue """
-        #logging.info("Notification through %s[%d]" % (self.appname, self.instanceid))
+        # logging.info("Notification through %s[%d]" % (self.appname, self.instanceid))
         json = payload.json()
         json_len = len(json)
         fmt = '!bIIH32sH%ds' % json_len
-        #command = '\x00'
+        # command = '\x00'
         # enhanced notification has command 1
         command = 1
         """
@@ -277,7 +274,7 @@ class APNClient(object):
         # One day
         expiry = payload.expiry
         tokenLength = 32
-        #logging.info(deviceToken)
+        # logging.info(deviceToken)
         m = struct.pack(fmt, command, identifier, expiry, tokenLength,
                         binascii.unhexlify(deviceToken),
                         json_len, json)

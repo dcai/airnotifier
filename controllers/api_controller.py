@@ -26,19 +26,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import tornado.web
+from apns import *
+from bson import *
+from pymongo import *
+from routes import route
+from tornado.options import define, options
+from util import *
+import binascii
 import random
 import time
-import binascii
-from tornado.options import define, options
-## APNs library
-from apns import *
-## Util
-from util import *
-# MongoDB
-from pymongo import *
-from bson import *
-from routes import route
+import tornado.web
 
 class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
@@ -141,7 +138,7 @@ class TokenHandler(APIBaseHandler):
     def delete(self, token):
         """Delete a token
         """
-        ## To check the access key permissions we use bitmask method.
+        # To check the access key permissions we use bitmask method.
         if (self.permission & 2) != 2:
             self.send_response(dict(error="No permission to delete token"))
             return
@@ -181,8 +178,8 @@ class TokenHandler(APIBaseHandler):
         }
         try:
             result = self.db.tokens.update({'token': devicetoken, 'appname': self.appname}, token, safe=True, upsert=True)
-            ## result
-            ## {u'updatedExisting': True, u'connectionId': 47, u'ok': 1.0, u'err': None, u'n': 1}
+            # result
+            # {u'updatedExisting': True, u'connectionId': 47, u'ok': 1.0, u'err': None, u'n': 1}
             if result['updatedExisting']:
                 self.send_response(dict(status='token exists'))
                 self.add_to_log('Token exists', devicetoken)
@@ -200,15 +197,15 @@ class BroadcastHandler(APIBaseHandler):
             self.send_response(dict(error="No permission to send broadcast"))
             return
 
-        ## the cannel to be boradcasted
+        # the cannel to be boradcasted
         channel = self.get_argument('channel', 'default')
 
-        ## Message payload
+        # Message payload
         alert = self.get_argument('alert')
         sound = self.get_argument('sound', None)
         badge = self.get_argument('badge', None)
         if channel == 'default':
-            ## channel is not set or channel is default
+            # channel is not set or channel is default
             conditions = []
             conditions.append({'channel': {"$exists": False}})
             conditions.append({'channel': 'default'})
@@ -216,9 +213,9 @@ class BroadcastHandler(APIBaseHandler):
         else:
             tokens = self.db.tokens.find()
 
-        #Build the custom params (everything not alert/sound/badge/channel)
+        # Build the custom params (everything not alert/sound/badge/channel)
         customparams = {}
-        for paramname,param in self.request.arguments.iteritems():
+        for paramname, param in self.request.arguments.iteritems():
             if paramname != 'alert' and paramname != 'sound' and paramname != 'badge' and paramname != 'channel':
                 customparams[paramname] = param
 
@@ -227,7 +224,7 @@ class BroadcastHandler(APIBaseHandler):
         self.add_to_log('%s broadcast' % self.appname, alert, "important")
         count = len(self.apnsconnections[self.app['shortname']])
         random.seed(time.time())
-        instanceid = random.randint(0, count-1)
+        instanceid = random.randint(0, count - 1)
         conn = self.apnsconnections[self.app['shortname']][instanceid]
         try:
             for token in tokens:
@@ -267,19 +264,19 @@ class NotificationHandler(APIBaseHandler):
         alert = self.get_argument('alert')
         sound = self.get_argument('sound', None)
         badge = self.get_argument('badge', None)
-        #Build the custom params  (everything not alert/sound/badge/token)
+        # Build the custom params  (everything not alert/sound/badge/token)
         customparams = {}
-        for paramname,param in self.request.arguments.items():
+        for paramname, param in self.request.arguments.items():
             if paramname != 'alert' and paramname != 'sound' and paramname != 'badge' and paramname != 'token':
                 customparams[paramname] = self.get_argument(paramname)
         pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
         if not self.apnsconnections.has_key(self.app['shortname']):
-            ## TODO: add message to queue in MongoDB
+            # TODO: add message to queue in MongoDB
             self.send_response(dict(error="APNs is offline"))
             return
         count = len(self.apnsconnections[self.app['shortname']])
         random.seed(time.time())
-        instanceid = random.randint(0, count-1)
+        instanceid = random.randint(0, count - 1)
         conn = self.apnsconnections[self.app['shortname']][instanceid]
         try:
             self.add_to_log('%s notification' % self.appname, alert)
@@ -326,7 +323,7 @@ class UsersHandler(APIBaseHandler):
             data = {}
         else:
             try:
-                ## unpack query conditions
+                # unpack query conditions
                 data = json.loads(where)
             except Exception, ex:
                 self.send_response(dict(error=str(ex)))
@@ -424,7 +421,7 @@ class ClassHandler(APIBaseHandler):
             data = {}
         else:
             try:
-                ## unpack query conditions
+                # unpack query conditions
                 data = json.loads(where)
             except Exception, ex:
                 self.send_response(dict(error=str(ex)))
@@ -444,12 +441,12 @@ class ClassHandler(APIBaseHandler):
         except Exception, ex:
             self.send_response(ex)
 
-        self.add_to_log('Add object to %s' %  self.classname, data)
+        self.add_to_log('Add object to %s' % self.classname, data)
         objectId = self.db[self.collection].insert(data, safe=True)
         self.send_response(dict(objectId=objectId))
 
 @route(r"/files")
 class FilesHandler(APIBaseHandler):
     def post(self):
-        ## hash and store a file
+        # hash and store a file
         pass

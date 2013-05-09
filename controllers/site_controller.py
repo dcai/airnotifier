@@ -27,29 +27,22 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # system
-import random
-import sys
-import platform
-import os
-import unicodedata
-import logging
-import re
-import uuid
-from hashlib import sha1
-from hashlib import md5
-
-# tornado
-import tornado.web
-from tornado.options import define, options
-
-from routes import route
-
-# pymongo
-from pymongo import *
-from bson import *
-from util import *
-
 from apns import *
+from bson import *
+from hashlib import md5, sha1
+from pymongo import *
+from routes import route
+from tornado.options import define, options
+from util import *
+import logging
+import os
+import platform
+import random
+import re
+import sys
+import tornado.web
+import unicodedata
+import uuid
 
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement
@@ -211,6 +204,9 @@ class AppActionHandler(WebBaseHandler):
             # make key as shorter as possbile
             if action == 'create':
                 key['key'] = md5(str(uuid.uuid4())).hexdigest()
+                # Alternative key generator, this is SHORT
+                # crc = binascii.crc32(str(uuid.uuid4())) & 0xffffffff
+                # key['key'] = '%08x' % crc
                 keyObjectId = self.db.keys.insert(key)
                 keys = self.db.keys.find()
                 self.render("app_keys.html", app=app, keys=keys, newkey=key)
@@ -225,7 +221,7 @@ class AppActionHandler(WebBaseHandler):
             pl = PayLoad(alert=alert, sound=sound)
             count = len(self.apnsconnections[app['shortname']])
             random.seed(time.time())
-            instanceid = random.randint(0, count-1)
+            instanceid = random.randint(0, count - 1)
             conn = self.apnsconnections[app['shortname']][instanceid]
             tokens = self.db.tokens.find()
             try:
@@ -245,8 +241,8 @@ class AppHandler(WebBaseHandler):
             app = self.masterdb.applications.find_one({'shortname': appname})
             if not app:
                 self.finish("Application doesn't exist")
-                #self.redirect(r"/applications/new")
-                #raise tornado.web.HTTPError(500)
+                # self.redirect(r"/applications/new")
+                # raise tornado.web.HTTPError(500)
             else:
                 self.render("app_settings.html", app=app)
 

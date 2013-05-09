@@ -26,24 +26,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from pymongo import *
 from bson import *
-import unicodedata
-import sys
-import datetime
-try:
-    import uuid
-    _use_uuid = True
-except ImportError:
-    _use_uuid = False
-
-from bson import EPOCH_AWARE
 from bson.dbref import DBRef
 from bson.max_key import MaxKey
 from bson.min_key import MinKey
 from bson.objectid import ObjectId
 from bson.timestamp import Timestamp
 from bson.tz_util import utc
+from pymongo import *
+import datetime
+import sys
+import unicodedata
+try:
+    import uuid
+    _use_uuid = True
+except ImportError:
+    _use_uuid = False
+
 
 def json_default(obj):
     """ adapted from bson.json_util.default """
@@ -78,7 +77,7 @@ def json_default(obj):
     raise TypeError("%r is not JSON serializable" % obj)
 
 def filter_alphabetanum(string):
-    ## absolutely alphabeta and number only
+    # absolutely alphabeta and number only
     string = unicodedata.normalize("NFKD", string).encode("ascii", "ignore")
     string = re.sub(r"[^\w]+", " ", string)
     string = "".join(string.lower().strip().split())
