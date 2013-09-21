@@ -33,6 +33,7 @@ from routes import route
 from tornado.options import define, options
 from util import *
 import binascii
+from hashlib import md5, sha1
 import random
 import time
 import tornado.web
@@ -41,6 +42,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
     """
     def initialize(self):
+        self.accesskeyrequired = True
         self._time_start = time.time()
 
     def prepare(self):
@@ -69,16 +71,18 @@ class APIBaseHandler(tornado.web.RequestHandler):
 
         self.app = self.masterdb.applications.find_one({'shortname': self.appname})
 
+        if not self.app:
+            self.send_response(dict(error='Invalid application name'))
+
         if not self.check_blockediplist(self.request.remote_ip, self.app):
             self.send_response(dict(error='Blocked IP'))
         else:
-            if not self.app:
-                self.send_response(dict(error='Invalid application name'))
 
             key = self.db.keys.find_one({'key':self.appkey})
             if not key:
                 self.permission = 0
-                self.send_response(dict(error='Invalid access key'))
+                if self.accesskeyrequired:
+                    self.send_response(dict(error='Invalid access key'))
             else:
                 if 'permission' not in key:
                     key['permission'] = 0
@@ -444,6 +448,23 @@ class ClassHandler(APIBaseHandler):
         self.add_to_log('Add object to %s' % self.classname, data)
         objectId = self.db[self.collection].insert(data, safe=True)
         self.send_response(dict(objectId=objectId))
+
+@route(r"/accesskeys/")
+class AccessKeysHandler(APIBaseHandler):
+    def initialize(self):
+        self.accesskeyrequired = False
+        self._time_start = time.time()
+    def post(self):
+        """Create access key
+        """
+        key = {}
+        key['contact'] = self.get_argument('contact', '')
+        key['description'] = self.get_argument('description', '')
+        key['created'] = int(time.time())
+        key['permission'] = 0
+        key['key'] = md5(str(uuid.uuid4())).hexdigest()
+        keyObjectId = self.db.keys.insert(key)
+        self.send_response(dict(accesskey=key['key']))
 
 @route(r"/files")
 class FilesHandler(APIBaseHandler):

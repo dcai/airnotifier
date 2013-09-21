@@ -155,6 +155,12 @@ class AppActionHandler(WebBaseHandler):
             if key_to_be_edited:
                 keys = self.db.keys.find()
                 key = self.db.keys.find_one({'key': key_to_be_edited})
+                if not app.has_key('description'):
+                    key['description'] = None
+                    key['description'] = None
+                if not app.has_key('permission'):
+                    key['permission'] = 0
+
                 self.render("app_edit_key.html", app=app, keys=keys, key=key)
                 return
             if key_to_be_deleted:
