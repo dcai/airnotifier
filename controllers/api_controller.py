@@ -32,6 +32,8 @@ from pymongo import *
 from routes import route
 from tornado.options import define, options
 from util import *
+import urllib
+import urllib2
 import binascii
 from hashlib import md5, sha1
 import random
@@ -465,7 +467,29 @@ class AccessKeysHandler(APIBaseHandler):
         key['permission'] = 15
         key['key'] = md5(str(uuid.uuid4())).hexdigest()
         keyObjectId = self.db.keys.insert(key)
-        self.send_response(dict(accesskey=key['key']))
+        result = self.verify_request()
+        if result:
+            self.send_response(dict(accesskey=key['key']))
+        else:
+            self.send_response("Site not registered on moodle.net")
+
+    def verify_request(self):
+        huburl = "http://moodle.net/local/sitecheck/check.php"
+        mdlurl = self.get_argument('url', '')
+        mdlsiteid = self.get_argument('siteid', '')
+        data = {
+                'siteid': mdlsiteid,
+                'url': mdlurl
+                }
+        postdata = urllib.urlencode(data)
+        request = urllib2.Request(huburl, postdata)
+        response = urllib2.urlopen(request)
+        result = int(response.read())
+        if result == 0:
+            return False
+        else:
+            return True
+
 
 @route(r"/files")
 class FilesHandler(APIBaseHandler):
