@@ -1,7 +1,7 @@
 ## Introduction
-AirNotifier is a REST server for apple push notification service, users and resources management, it's a strong and generic backend for iOS apps.
+AirNotifier is an application server for apple push notification service, users and resources management, it's a strong and generic backend for iOS apps.
 
-APNs requires a certification to set up SSL connection, in some situations, we needs multi server instances without sharing certification file, we need a push notification forwarder, other instances send notification requests to it, it setup the SSL connection and send them all.
+APNs requires a certification to set up SSL connection, we needs multi server instances without sharing certification file with all peers under certain circumstances, AirNotifier works as a push notification forwarder, each peer sends notification requests to it, it setup the SSL connection and forward notification to application notification server.
 
 ## Installation
 
@@ -14,9 +14,6 @@ APNs requires a certification to set up SSL connection, in some situations, we n
 - passwordsalt: passwordsalt
 - masterdb: MongoDB database name
 - dbprefix: MongoDB collection name prefix, this will be used to create object data collection
-
-## Status
-Under heavy development
 
 ## Design
 - [Product design](https://github.com/dongsheng/airnotifier/wiki/Specification)
@@ -36,7 +33,7 @@ Under heavy development
 ### Server stack
 - [Python 2.6+](http://www.python.org)
 - [MongoDB 2.0+](http://www.mongodb.org/)
-- [Tornado 2.0+](http://tornadoweb.org)
+- [Tornado 3.0+](http://tornadoweb.org)
 
 ## Copyright
 Copyright (c) 2012, Dongsheng Cai
