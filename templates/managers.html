@@ -38,6 +38,7 @@
             <label class="control-label" for="newusername">{{ _('Username') }}</label>
             <div class="controls">
                 <input type="text" class="input-xlarge" id="newusername" name="newusername">
+                <input type="hidden" name="action" value="createuser">
             </div>
         </div>
 
@@ -73,6 +74,7 @@
                     {% if currentuser['username'] != m['username'] %}
                     <a class="btn btn-danger" href="/admin/managers?delete={{m['_id']}}"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
                     {% else %}
+                    <a href="#changePassword" role="button" class="btn" data-toggle="modal"> {{ _('Change password') }}</a>
                     <strong>This is you</strong>
                     {% end %}
                 </td>
@@ -81,4 +83,29 @@
         </tbody>
     </table>
 </div><!--/row-->
+
+<!-- Modal -->
+<div id="changePassword" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel">{{ _('Change password') }}</h3>
+    </div>
+    <form class="form-horizontal" method="post" enctype="multipart/form-data">
+        <div class="modal-body">
+            <fieldset>
+                <div class="control-group">
+                    <label class="control-label" for="newpassword">{{ _('New password') }}</label>
+                    <div class="controls">
+                        <input type="password" class="input-xlarge" name="newpassword">
+                        <input type="hidden" name="action" value="changepassword">
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+            <button type="submit" class="btn btn-primary">{{ _('Change password') }}</button>
+        </div>
+    </form>
+</div>
 {% end %}
