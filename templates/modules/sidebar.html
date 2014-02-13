@@ -9,7 +9,13 @@
 <ul class="nav nav-list">
     <li class="nav-header">{{ _('Applications') }}</li>
     {% for app in apps %}
-    <li><a href="/applications/{{app['shortname']}}"><i class="icon-star"></i> {{app['fullname']}}</a></li>
+    <li><a href="/applications/{{app['shortname']}}"><i class="icon-star"></i> 
+        {% if app.has_key('fullname') %}
+            {{app['fullname']}}
+        {% else %}
+            {{app['shortname']}}
+        {% end %}
+        </a></li>
     {% end %}
 </ul>
 

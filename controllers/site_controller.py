@@ -295,6 +295,11 @@ class AppHandler(WebBaseHandler):
             self.appname = appname
             app = self.masterdb.applications.find_one({'shortname':self.appname})
 
+        if self.get_argument('appfullname', None):
+            app['fullname'] = self.get_argument('appfullname')
+        else:
+            app['fullname'] = self.appname
+
         # Update app details
         if self.request.files:
             if self.request.files.has_key('appcertfile'):
@@ -337,9 +342,6 @@ class AppHandler(WebBaseHandler):
         if self.get_argument('performfeedbacktask', None):
             self.perform_feedback(app)
 
-        if self.get_argument('appfullname', None):
-            app['fullname'] = self.get_argument('appfullname')
-
         if self.get_argument('launchapns', None):
             logging.info("Start APNS")
             app['enableapns'] = 1
@@ -372,7 +374,7 @@ class AppsListHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
         apps = self.masterdb.applications.find()
-        self.render('apps.html')
+        self.render('apps.html', apps=apps)
 
 @route(r"/stats/")
 class StatsHandler(WebBaseHandler):
