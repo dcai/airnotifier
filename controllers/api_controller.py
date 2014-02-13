@@ -461,7 +461,8 @@ class AccessKeysHandler(APIBaseHandler):
         key['contact'] = self.get_argument('contact', '')
         key['description'] = self.get_argument('description', '')
         key['created'] = int(time.time())
-        key['permission'] = 0
+        # This is 1111 in binary means all permissions are granted
+        key['permission'] = 15
         key['key'] = md5(str(uuid.uuid4())).hexdigest()
         keyObjectId = self.db.keys.insert(key)
         self.send_response(dict(accesskey=key['key']))
