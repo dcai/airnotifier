@@ -414,19 +414,28 @@ class AdminHandler(WebBaseHandler):
         self.render('managers.html', managers=managers, created=None, updated=None, currentuser=self.currentuser)
 
     def post(self, action):
-        user = {}
-        user['created'] = int(time.time())
-        user['username'] = self.get_argument('newusername').strip()
-        password = self.get_argument('newpassword').strip()
-        passwordhash = sha1("%s%s" % (options.passwordsalt, password)).hexdigest()
-        user['password'] = passwordhash
-        user['level'] = "manager"
-        result = self.masterdb.managers.update({'username': user['username']}, user, safe=True, upsert=True)
-        managers = self.masterdb.managers.find()
-        if result['updatedExisting']:
+        action = self.get_argument('action', "")
+        if action == 'createuser':
+            user = {}
+            user['created'] = int(time.time())
+            user['username'] = self.get_argument('newusername').strip()
+            password = self.get_argument('newpassword').strip()
+            passwordhash = sha1("%s%s" % (options.passwordsalt, password)).hexdigest()
+            user['password'] = passwordhash
+            user['level'] = "manager"
+            result = self.masterdb.managers.update({'username': user['username']}, user, safe=True, upsert=True)
+            managers = self.masterdb.managers.find()
+            if result['updatedExisting']:
+                self.render('managers.html', managers=managers, updated=user, created=None, currentuser=self.currentuser)
+            else:
+                self.render('managers.html', managers=managers, updated=None, created=user, currentuser=self.currentuser)
+        elif action == 'changepassword':
+            password = self.get_argument('newpassword').strip()
+            passwordhash = sha1("%s%s" % (options.passwordsalt, password)).hexdigest()
+            self.masterdb.managers.update({"username": self.currentuser['username']}, {"$set": {"password": passwordhash}})
+            managers = self.masterdb.managers.find()
+            user = self.currentuser
             self.render('managers.html', managers=managers, updated=user, created=None, currentuser=self.currentuser)
-        else:
-            self.render('managers.html', managers=managers, updated=None, created=user, currentuser=self.currentuser)
 
 @route(r"/mu-4716c5c7-3cb80ee8-4515a4a4-35abf050")
 class BlitzHandler(WebBaseHandler):
