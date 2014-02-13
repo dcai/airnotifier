@@ -85,7 +85,7 @@
         <div class="control-group">
             <label class="control-label" for="appfullname">{{ _('Full name') }}</label>
             <div class="controls">
-                <input type="text" class="input-xlarge" id="appfullname" name="appfullname" value="{{app['fullname']}}">
+                <input type="text" class="input-xlarge" id="appfullname" name="appfullname" value="{% if app.has_key('fullname') %}{{app['fullname']}}{% else %}{{app['shortname']}}{% end %}">
             </div>
         </div>
 

@@ -16,7 +16,7 @@
 
 <div class="row-fluid">
     <div class="page-header">
-        <h1>{{app['fullname']}}</h1>
+        <h1>{% if app.has_key('fullname') %}{{app['fullname']}}{% else %}{{app['shortname']}}{% end %}</h1>
     </div>
     <table class="table table-bordered table-striped">
         <thead>

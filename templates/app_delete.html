@@ -14,9 +14,8 @@
 
 {% block body %}
 <form class="form-horizontal" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="appid" value="{{app['fullname']}}" />
     <fieldset>
-        <legend>{{app['fullname']}}</legend>
+        <legend>{% if app.has_key('fullname') %}{{app['fullname']}}{% else %}{{app['shortname']}}{% end %}</legend>
         <div class="control-group">
         <p>Are you sure you want to delete this app?</p>
         </div>
