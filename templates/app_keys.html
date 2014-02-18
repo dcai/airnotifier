@@ -19,61 +19,9 @@
 </div>
 {% end %}
 
-<form class="form-horizontal" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="appname" value="{{app['shortname']}}">
-    <input type="hidden" name="action" value="create">
-    <fieldset>
-        <legend>{{ _('Create access key') }}</legend>
-
-        <div class="control-group">
-            <label class="control-label" for="keydesc">{{ _('Description') }}</label>
-            <div class="controls">
-                <input type="text" class="input-xlarge" id="keydesc" name="keydesc">
-            </div>
-        </div>
-
-        <div class="control-group">
-            <label class="control-label" for="keycontact">{{ _('Contact Email') }}</label>
-            <div class="controls">
-                <input type="text" class="input-xlarge" id="keycontact" name="keycontact">
-            </div>
-        </div>
-
-        <div class="control-group">
-            <label class="control-label">{{ _('Permissions') }}</label>
-            <div class="controls">
-                <label class="checkbox">
-                    <input type="checkbox" name="permissions[]" value="1">
-                    Create token
-                </label>
-                <label class="checkbox">
-                    <input type="checkbox" name="permissions[]" value="2">
-                    Delete token
-                </label>
-
-                <label class="checkbox">
-                    <input type="checkbox" name="permissions[]" value="4">
-                    Send notification
-                </label>
-
-                <label class="checkbox">
-                    <input type="checkbox" name="permissions[]" value="8">
-                    Send broadcast
-                </label>
-
-                <label class="checkbox">
-                    <input type="checkbox" name="permissions[]" value="16">
-                    Access objects
-                </label>
-
-            </div>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">{{ _('Generate') }}</button>
-        </div>
-    </fieldset>
-</form>
+<p>
+    <a href="#addAccessKey" role="button" class="btn btn-primary" data-toggle="modal"> {{ _('Create access key') }}</a>
+</p>
 
 <div class="row-fluid">
     <div class="page-header">
@@ -155,4 +103,66 @@
         </tbody>
     </table>
 </div><!--/row-->
+
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="appname" value="{{app['shortname']}}">
+    <input type="hidden" name="action" value="create">
+    <div id="addAccessKey" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="addAccessKey" aria-hidden="true">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h3 id="myModalLabel">{{ _('Create access key') }}</h3>
+            </div>
+            <div class='modal-body'>
+                <fieldset>
+                <div class="control-group">
+                    <label class="control-label" for="keydesc">{{ _('Description') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-xlarge" id="keydesc" name="keydesc">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="keycontact">{{ _('Contact Email') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-xlarge" id="keycontact" name="keycontact">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">{{ _('Permissions') }}</label>
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" name="permissions[]" value="1">
+                            Create token
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" name="permissions[]" value="2">
+                            Delete token
+                        </label>
+
+                        <label class="checkbox">
+                            <input type="checkbox" name="permissions[]" value="4">
+                            Send notification
+                        </label>
+
+                        <label class="checkbox">
+                            <input type="checkbox" name="permissions[]" value="8">
+                            Send broadcast
+                        </label>
+
+                        <label class="checkbox">
+                            <input type="checkbox" name="permissions[]" value="16">
+                            Access objects
+                        </label>
+
+                    </div>
+                </div>
+                </fieldset>
+            </div><!-- modal-body -->
+            <div class="modal-footer">
+                <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+                <button type="submit" class="btn btn-primary">{{ _('Generate') }}</button>
+            </div>
+    </div>
+</form>
 {% end %}
