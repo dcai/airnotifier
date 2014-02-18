@@ -15,12 +15,67 @@
 {% block body %}
 
 <form class="form-horizontal" method="post">
-    <input type="hidden" name="appname" value="{{app['shortname']}}" />
-    <fieldset>
-        <legend>{{ _('APNs') }}</legend>
+<input type="hidden" name="appname" value="{{app['shortname']}}" />
+<fieldset>
+    <legend>{{ _('General') }}</legend>
+
+    <div class="control-group">
+        <label class="control-label" for="shortname"> {{ _('Short name') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="shortname" readonly="readonly" value="{{app['shortname']}}">
+            <p class="help-block">Unique identifier for your app.</p>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="appfullname">{{ _('Full name') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="appfullname" name="appfullname" value="{% if app.has_key('fullname') %}{{app['fullname']}}{% else %}{{app['shortname']}}{% end %}">
+        </div>
+    </div>
+
+    {% if app['enableapns'] != 1 %}
+    <div class="control-group">
+        <label class="control-label" for="connections">Connections</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="connections" pattern="[0-9]+" name="connections" value="{{app['connections']}}">
+            <p class="help-block ">This will restart APNs</p>
+        </div>
+    </div>
+    {% end %}
+
+    <div class="control-group">
+        <label class="control-label" for="keydesc">{{ _('Blocked IP list') }}</label>
+        <div class="controls">
+            <textarea rows="10" class="input-xlarge" id="ipaddr" name="blockediplist">{% if app.has_key('blockediplist') and app['blockediplist'] %}{{ app['blockediplist'] }}{% end %}</textarea>
+        </div>
+    </div>
+
+
+    <div class="control-group">
+        <label class="control-label" for="appdescription">Description</label>
+        <div class="controls">
+            {% if app.has_key('description') %}
+            <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription">{{app['description']}}</textarea>
+            {% else %}
+            <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription"></textarea>
+            {% end %}
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
+    </div>
+</fieldset>
+</form>
+
+<fieldset>
+    <legend>{{ _('Apple push notification settings') }}</legend>
+    <form class="form-horizontal" method="post">
         <div class="control-group">
-            <label class="control-label" for="shortnameinput"> {{ _('APNs service') }}</label>
+            <label class="control-label"> {{ _('APNs service') }}</label>
             <div class="controls">
+                <input type="hidden" name="appname" value="{{app['shortname']}}" />
                 {% if app.has_key('enableapns') and app['enableapns'] %}
                 <input type="hidden" name="stopapns" value="true" />
                 <button type="submit" class="btn btn-danger">{{ _('Stop') }}</button>
@@ -31,34 +86,27 @@
                 <p class="help-block">You have to stop the service to see more options</p>
             </div>
         </div>
-    </fieldset>
-</form>
-
-{% if app['enableapns'] != 1 %}
-<form class="form-horizontal" method="post">
-    <input type="hidden" name="appname" value="{{app['shortname']}}" />
-    <fieldset>
-        <legend>{{ _('Production') }}</legend>
+    </form>
+    {% if app['enableapns'] != 1 %}
+    <form class="form-horizontal" method="post">
         <div class="control-group">
-            <label class="control-label" for="shortnameinput"> {{ _('') }}</label>
+            <label class="control-label"> {{ _('Set mode') }}</label>
             <div class="controls">
+                <input type="hidden" name="appname" value="{{app['shortname']}}" />
                 {% if not app.has_key('environment') or (app.has_key('environment') and app['environment'] == 'sandbox') %}
                 <input type="hidden" name="turnonproduction" value="true">
-                <button type="submit" class="btn btn-info">{{ _('Enter production') }}</button>
+                <button type="submit" class="btn btn-info">{{ _('Enter production mode') }}</button>
                 {% else %}
                 <input type="hidden" name="turnonsandbox" value="true">
-                <button type="submit" class="btn btn-info">{{ _('Enter sandbox') }}</button>
+                <button type="submit" class="btn btn-info">{{ _('Enter sandbox mode') }}</button>
                 {% end %}
             </div>
         </div>
-    </fieldset>
-</form>
-{% end %}
-
-<form class="form-horizontal" method="post">
-    <input type="hidden" name="appname" value="{{app['shortname']}}" />
-    <fieldset>
-        <legend>{{ _('Feedback Service') }}</legend>
+    </form>
+    {% end %}
+    <form class="form-horizontal" method="post">
+        <input type="hidden" name="appname" value="{{app['shortname']}}" />
+        <label class="control-label"> {{ _('Feedback service') }}</label>
         <div class="control-group">
             <div class="controls">
                 <input type="hidden" name="performfeedbacktask" value="true" />
@@ -66,69 +114,10 @@
                 <p class="help-block">Clean up unused device tokens</p>
             </div>
         </div>
-    </fieldset>
-</form>
-
-<form class="form-horizontal" method="post">
-    <input type="hidden" name="appname" value="{{app['shortname']}}" />
-    <fieldset>
-        <legend>{{ _('General') }}</legend>
-
-        <div class="control-group">
-            <label class="control-label" for="shortname"> {{ _('Short name') }}</label>
-            <div class="controls">
-                <input type="text" class="input-xlarge" id="shortname" readonly="readonly" value="{{app['shortname']}}">
-                <p class="help-block">Unique identifier for your app.</p>
-            </div>
-        </div>
-
-        <div class="control-group">
-            <label class="control-label" for="appfullname">{{ _('Full name') }}</label>
-            <div class="controls">
-                <input type="text" class="input-xlarge" id="appfullname" name="appfullname" value="{% if app.has_key('fullname') %}{{app['fullname']}}{% else %}{{app['shortname']}}{% end %}">
-            </div>
-        </div>
-
-        {% if app['enableapns'] != 1 %}
-        <div class="control-group">
-            <label class="control-label" for="connections">Connections</label>
-            <div class="controls">
-                <input type="text" class="input-xlarge" id="connections" pattern="[0-9]+" name="connections" value="{{app['connections']}}">
-                <p class="help-block ">This will restart APNs</p>
-            </div>
-        </div>
-        {% end %}
-
-        <div class="control-group">
-            <label class="control-label" for="keydesc">{{ _('Blocked IP list') }}</label>
-            <div class="controls">
-                <textarea rows="10" class="input-xlarge" id="ipaddr" name="blockediplist">{% if app.has_key('blockediplist') and app['blockediplist'] %}{{ app['blockediplist'] }}{% end %}</textarea>
-            </div>
-        </div>
-
-
-        <div class="control-group">
-            <label class="control-label" for="appdescription">Description</label>
-            <div class="controls">
-                {% if app.has_key('description') %}
-                <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription">{{app['description']}}</textarea>
-                {% else %}
-                <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription"></textarea>
-                {% end %}
-            </div>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
-        </div>
-    </fieldset>
-</form>
-
-{% if app['enableapns'] != 1 %}
-<form class="form-horizontal" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="appname" value="{{app['shortname']}}" />
-    <fieldset>
-        <legend>{{ _('Certificates') }}</legend>
+    </form>
+    {% if app['enableapns'] != 1 %}
+    <form class="form-horizontal" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="appname" value="{{app['shortname']}}" />
         <div class="control-group">
             <label class="control-label" for="certfileinput">{{ _('Certification') }}</label>
             <div class="controls">
@@ -162,9 +151,7 @@
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">{{ _('Upload') }}</button>
         </div>
-    </fieldset>
-</form>
-{% end %}
-
-
+    </form>
+    {% end %}
+</fieldset>
 {% end %}

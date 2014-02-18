@@ -122,113 +122,151 @@ class MainHandler(WebBaseHandler):
     def get(self):
         self.redirect(r"/applications")
 
-@route(r"/applications/([^/]+)/([^/]+)")
-class AppActionHandler(WebBaseHandler):
+@route(r"/applications/([^/]+)/keys")
+class AppAccessKeysHandler(WebBaseHandler):
     @tornado.web.authenticated
-    def get(self, appname, action):
+    def get(self, appname):
         self.appname = appname
         app = self.masterdb.applications.find_one({'shortname':appname})
         if not app: raise tornado.web.HTTPError(500)
-        if action == 'delete':
-            self.render("app_delete.html", app=app)
-
-        elif action == 'tokens':
-            page = self.get_argument('page', None)
-            perpage = 50
-
-            token_id = self.get_argument('delete', None)
-            if token_id:
-                self.db.tokens.remove({'_id':ObjectId(token_id)})
-                self.redirect("/applications/%s/tokens" % appname)
-                return
-            if page:
-                tokens = self.db.tokens.find().sort('created', DESCENDING).skip(int(page) * perpage).limit(perpage)
-            else:
-                page = 0
-                tokens = self.db.tokens.find().sort('created', DESCENDING).limit(perpage)
-
-            self.render("app_tokens.html", app=app, tokens=tokens, page=int(page))
-
-        elif action == 'keys':
+        keys = self.db.keys.find()
+        key_to_be_deleted = self.get_argument('delete', None)
+        key_to_be_edited = self.get_argument('edit', None)
+        if key_to_be_edited:
+            key = self.db.keys.find_one({'key': key_to_be_edited})
+            self.render("app_edit_key.html", app=app, keys=keys, key=key)
+            return
+        if key_to_be_deleted:
+            self.db.keys.remove({'key':key_to_be_deleted})
+            self.redirect("/applications/%s/keys" % appname)
+        self.render("app_keys.html", app=app, keys=keys, newkey=None)
+    @tornado.web.authenticated
+    def post(self, appname):
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':appname})
+        if not app: raise tornado.web.HTTPError(500)
+        key = {}
+        key['contact'] = self.get_argument('keycontact').strip()
+        action = self.get_argument('action').strip()
+        key['description'] = self.get_argument('keydesc').strip()
+        key['created'] = int(time.time())
+        permissions = self.get_arguments('permissions[]')
+        result = 0
+        for permission in permissions:
+            result = result | int(permission)
+        key['permission'] = result
+        # make key as shorter as possbile
+        if action == 'create':
+            key['key'] = md5(str(uuid.uuid4())).hexdigest()
+            # Alternative key generator, this is SHORT
+            # crc = binascii.crc32(str(uuid.uuid4())) & 0xffffffff
+            # key['key'] = '%08x' % crc
+            keyObjectId = self.db.keys.insert(key)
             keys = self.db.keys.find()
-            key_to_be_deleted = self.get_argument('delete', None)
-            key_to_be_edited = self.get_argument('edit', None)
-            if key_to_be_edited:
-                key = self.db.keys.find_one({'key': key_to_be_edited})
-                self.render("app_edit_key.html", app=app, keys=keys, key=key)
-                return
-            if key_to_be_deleted:
-                self.db.keys.remove({'key':key_to_be_deleted})
-                self.redirect("/applications/%s/keys" % appname)
+            self.render("app_keys.html", app=app, keys=keys, newkey=key)
+        else:
+            key['key'] = self.get_argument('accesskey').strip()
+            self.db.keys.update({'key': key['key']}, key, safe=True)
+            keys = self.db.keys.find()
             self.render("app_keys.html", app=app, keys=keys, newkey=None)
 
-        elif action == 'broadcast':
-            self.render("app_broadcast.html", app=app, sent=False)
-
-        elif action == 'objects':
-            objects = self.db.objects.find()
-            self.render("app_objects.html", app=app, objects=objects)
-
-        elif action == 'logs':
-            page = self.get_argument('page', None)
-            perpage = 50
-
-            if page:
-                logs = self.db.logs.find().sort('created', DESCENDING).skip(int(page) * perpage).limit(perpage)
-            else:
-                page = 0
-                logs = self.db.logs.find().sort('created', DESCENDING).limit(perpage)
-
-            self.render("app_logs.html", app=app, logs=logs, page=int(page))
-
+@route(r"/applications/([^/]+)/delete")
+class AppDeletionHandler(WebBaseHandler):
     @tornado.web.authenticated
-    def post(self, appname, action):
+    def get(self, appname):
         self.appname = appname
         app = self.masterdb.applications.find_one({'shortname':appname})
         if not app: raise tornado.web.HTTPError(500)
-        if action == 'delete':
-            self.masterdb.applications.remove({'shortname': appname}, safe=True)
-            self.redirect(r"/applications")
-        elif action == 'keys':
-            key = {}
-            key['contact'] = self.get_argument('keycontact').strip()
-            action = self.get_argument('action').strip()
-            key['description'] = self.get_argument('keydesc').strip()
-            key['created'] = int(time.time())
-            permissions = self.get_arguments('permissions[]')
-            result = 0
-            for permission in permissions:
-                result = result | int(permission)
-            key['permission'] = result
-            # make key as shorter as possbile
-            if action == 'create':
-                key['key'] = md5(str(uuid.uuid4())).hexdigest()
-                # Alternative key generator, this is SHORT
-                # crc = binascii.crc32(str(uuid.uuid4())) & 0xffffffff
-                # key['key'] = '%08x' % crc
-                keyObjectId = self.db.keys.insert(key)
-                keys = self.db.keys.find()
-                self.render("app_keys.html", app=app, keys=keys, newkey=key)
-            else:
-                key['key'] = self.get_argument('accesskey').strip()
-                self.db.keys.update({'key': key['key']}, key, safe=True)
-                keys = self.db.keys.find()
-                self.render("app_keys.html", app=app, keys=keys, newkey=None)
-        elif action == 'broadcast':
-            alert = self.get_argument('notification').strip()
-            sound = 'default'
-            pl = PayLoad(alert=alert, sound=sound)
-            count = len(self.apnsconnections[app['shortname']])
-            random.seed(time.time())
-            instanceid = random.randint(0, count - 1)
-            conn = self.apnsconnections[app['shortname']][instanceid]
-            tokens = self.db.tokens.find()
-            try:
-                for token in tokens:
-                    conn.send(token['token'], pl)
-            except Exception, ex:
-                logging.info(ex)
-            self.render("app_broadcast.html", app=app, sent=True)
+        self.render("app_delete.html", app=app)
+    @tornado.web.authenticated
+    def post(self, appname):
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':appname})
+        if not app: raise tornado.web.HTTPError(500)
+        self.masterdb.applications.remove({'shortname': appname}, safe=True)
+        self.redirect(r"/applications")
+
+@route(r"/applications/([^/]+)/tokens")
+class AppTokensHandler(WebBaseHandler):
+    @tornado.web.authenticated
+    def get(self, appname):
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':appname})
+        if not app: raise tornado.web.HTTPError(500)
+        page = self.get_argument('page', None)
+        perpage = 50
+
+        token_id = self.get_argument('delete', None)
+        if token_id:
+            self.db.tokens.remove({'_id':ObjectId(token_id)})
+            self.redirect("/applications/%s/tokens" % appname)
+            return
+        if page:
+            tokens = self.db.tokens.find().sort('created', DESCENDING).skip(int(page) * perpage).limit(perpage)
+        else:
+            page = 0
+            tokens = self.db.tokens.find().sort('created', DESCENDING).limit(perpage)
+        self.render("app_tokens.html", app=app, tokens=tokens, page=int(page))
+
+    @tornado.web.authenticated
+    def post(self, appname):
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':appname})
+        if not app: raise tornado.web.HTTPError(500)
+
+@route(r"/applications/([^/]+)/broadcast")
+class AppBroadcastHandler(WebBaseHandler):
+    @tornado.web.authenticated
+    def get(self, appname):
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':appname})
+        if not app: raise tornado.web.HTTPError(500)
+        self.render("app_broadcast.html", app=app, sent=False)
+    @tornado.web.authenticated
+    def post(self, appname):
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':appname})
+        if not app: raise tornado.web.HTTPError(500)
+        alert = self.get_argument('notification').strip()
+        sound = 'default'
+        pl = PayLoad(alert=alert, sound=sound)
+        count = len(self.apnsconnections[app['shortname']])
+        random.seed(time.time())
+        instanceid = random.randint(0, count - 1)
+        conn = self.apnsconnections[app['shortname']][instanceid]
+        tokens = self.db.tokens.find()
+        try:
+            for token in tokens:
+                conn.send(token['token'], pl)
+        except Exception, ex:
+            logging.info(ex)
+        self.render("app_broadcast.html", app=app, sent=True)
+
+@route(r"/applications/([^/]+)/logs")
+class AppLogViewHandler(WebBaseHandler):
+    @tornado.web.authenticated
+    def get(self, appname):
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':appname})
+        if not app: raise tornado.web.HTTPError(500)
+        page = self.get_argument('page', None)
+        perpage = 50
+        if page:
+            logs = self.db.logs.find().sort('created', DESCENDING).skip(int(page) * perpage).limit(perpage)
+        else:
+            page = 0
+            logs = self.db.logs.find().sort('created', DESCENDING).limit(perpage)
+        self.render("app_logs.html", app=app, logs=logs, page=int(page))
+
+@route(r"/applications/([^/]+)/objects")
+class AppObjectsHandler(WebBaseHandler):
+    @tornado.web.authenticated
+    def get(self, appname):
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':appname})
+        if not app: raise tornado.web.HTTPError(500)
+        objects = self.db.objects.find()
+        self.render("app_objects.html", app=app, objects=objects)
 
 @route(r"/applications/([^/]+)")
 class AppHandler(WebBaseHandler):
