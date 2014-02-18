@@ -150,23 +150,16 @@ class AppActionHandler(WebBaseHandler):
             self.render("app_tokens.html", app=app, tokens=tokens, page=int(page))
 
         elif action == 'keys':
+            keys = self.db.keys.find()
             key_to_be_deleted = self.get_argument('delete', None)
             key_to_be_edited = self.get_argument('edit', None)
             if key_to_be_edited:
-                keys = self.db.keys.find()
                 key = self.db.keys.find_one({'key': key_to_be_edited})
-                if not app.has_key('description'):
-                    key['description'] = None
-                    key['description'] = None
-                if not app.has_key('permission'):
-                    key['permission'] = 0
-
                 self.render("app_edit_key.html", app=app, keys=keys, key=key)
                 return
             if key_to_be_deleted:
                 self.db.keys.remove({'key':key_to_be_deleted})
                 self.redirect("/applications/%s/keys" % appname)
-            keys = self.db.keys.find()
             self.render("app_keys.html", app=app, keys=keys, newkey=None)
 
         elif action == 'broadcast':
