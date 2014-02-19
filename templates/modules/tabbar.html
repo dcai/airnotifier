@@ -1,6 +1,6 @@
 <ul class="nav nav-tabs">
     {% if active == 'settings'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/applications/{{app['shortname']}}"><i class="icon-cog"></i> {{ _('Settings') }}</a></li>
+    <a href="/applications/{{app['shortname']}}/settings"><i class="icon-cog"></i> {{ _('Settings') }}</a></li>
 
     {% if active == 'broadcast'%}<li class="active">{% else %}<li>{% end %}
     <a href="/applications/{{app['shortname']}}/broadcast"><i class="icon-volume-up"></i> {{ _('Broadcast') }}</a></li>
