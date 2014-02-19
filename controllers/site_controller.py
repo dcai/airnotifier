@@ -268,7 +268,33 @@ class AppObjectsHandler(WebBaseHandler):
         objects = self.db.objects.find()
         self.render("app_objects.html", app=app, objects=objects)
 
-@route(r"/applications/([^/]+)")
+@route(r"/applications/new")
+class AppCreateNewHandler(WebBaseHandler):
+    @tornado.web.authenticated
+    def get(self):
+        self.render("app_new.html")
+    @tornado.web.authenticated
+    def post(self):
+        # Create a new app
+        app = {}
+        self.appname = filter_alphabetanum(self.get_argument('appshortname').strip().lower())
+        app['shortname'] = self.appname
+        app['environment'] = 'sandbox'
+        app['enableapns'] = 0
+        app['connections'] = 1
+        if self.get_argument('appfullname', None):
+            app['fullname'] = self.get_argument('appfullname')
+        else:
+            app['fullname'] = self.appname
+
+        if self.get_argument('appdescription', None):
+            app['description'] = self.get_argument('appdescription')
+
+        self.masterdb.applications.insert(app)
+        self.redirect(r"/applications/%s/settings" % self.appname)
+
+
+@route(r"/applications/([^/]+)/settings")
 class AppHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self, appname):
@@ -360,6 +386,12 @@ class AppHandler(WebBaseHandler):
         if self.get_argument('blockediplist', None):
             app['blockediplist'] = self.get_argument('blockediplist').strip()
 
+        if self.get_argument('gcmprojectnumber', None):
+            app['gcmprojectnumber'] = self.get_argument('gcmprojectnumber').strip()
+
+        if self.get_argument('gcmapikey', None):
+            app['gcmapikey'] = self.get_argument('gcmapikey').strip()
+
         if self.get_argument('connections', None):
             """If this value is greater than current apns connections,
             creating more
@@ -398,7 +430,7 @@ class AppHandler(WebBaseHandler):
         else:
             self.masterdb.applications.insert(app)
 
-        self.redirect(r"/applications/%s" % self.appname)
+        self.redirect(r"/applications/%s/settings" % self.appname)
 
 @route(r"/applications")
 class AppsListHandler(WebBaseHandler):

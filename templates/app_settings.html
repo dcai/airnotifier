@@ -14,7 +14,7 @@
 
 {% block body %}
 
-<form class="form-horizontal" method="post">
+<form class="form-horizontal" id="form-app-settings" method="post">
 <input type="hidden" name="appname" value="{{app['shortname']}}" />
 <fieldset>
     <legend>{{ _('General') }}</legend>
@@ -69,9 +69,9 @@
 </fieldset>
 </form>
 
+<form class="form-horizontal" id="form-ios-settings" method="post">
 <fieldset>
     <legend>{{ _('Apple push notification settings') }}</legend>
-    <form class="form-horizontal" method="post">
         <div class="control-group">
             <label class="control-label"> {{ _('APNs service') }}</label>
             <div class="controls">
@@ -151,7 +151,35 @@
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">{{ _('Upload') }}</button>
         </div>
-    </form>
     {% end %}
 </fieldset>
+</form>
+
+<form class="form-horizontal" id="form-gcm-settings" method="post">
+<input type="hidden" name="appname" value="{{app['shortname']}}" />
+<fieldset>
+    <legend>{{ _('Google cloud messaging settings') }}</legend>
+
+    <div class="control-group">
+        <label class="control-label" for="form-element-gcmprojectnumber"> {{ _('Project number') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="form-element-gcmprojectnumber" name="gcmprojectnumber" value="{% if app.has_key('gcmprojectnumber') %}{{app['gcmprojectnumber']}}{% else %}{% end %}">
+            <p class="help-block">Android app project number</p>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="form-element-gcmapikey">{{ _('API key') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="form-element-gcmapikey" name="gcmapikey" value="{% if app.has_key('gcmapikey') %}{{app['gcmapikey']}}{% else %}{% end %}">
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+    </div>
+</fieldset>
+</form>
+
+
 {% end %}
