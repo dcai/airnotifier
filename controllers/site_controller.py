@@ -293,6 +293,11 @@ class AppCreateNewHandler(WebBaseHandler):
         self.masterdb.applications.insert(app)
         self.redirect(r"/applications/%s/settings" % self.appname)
 
+@route(r"/applications/([^/]+)")
+class AppHandler(WebBaseHandler):
+    @tornado.web.authenticated
+    def get(self, appname):
+        self.redirect(r"/applications/%s/settings" % appname)
 
 @route(r"/applications/([^/]+)/settings")
 class AppHandler(WebBaseHandler):
