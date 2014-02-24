@@ -32,6 +32,7 @@ from pymongo import *
 from routes import route
 from tornado.options import define, options
 from util import *
+from constants import *
 import binascii
 from hashlib import md5, sha1
 import random
@@ -163,25 +164,30 @@ class TokenHandler(APIBaseHandler):
             self.send_response(dict(error="No permission to create token"))
             return
 
-        if len(devicetoken) != 64:
-            self.send_response(dict(error='Invalid token'))
-            return
-
-        try:
-            value = binascii.unhexlify(devicetoken)
-        except Exception, ex:
-            self.send_response(dict(error='Invalid token'))
+        device = self.get_argument('device', 'ios')
+        if device == DEVICE_TYPE_IOS:
+            if len(devicetoken) != 64:
+                self.send_response(dict(error='Invalid token'))
+                return
+            try:
+                value = binascii.unhexlify(devicetoken)
+            except Exception, ex:
+                self.send_response(dict(error='Invalid token'))
+        else:
+            # if it's not ios then we force android type device here
+            device = DEVICE_TYPE_ANDROID
 
         channel = self.get_argument('channel', 'default')
 
         now = int(time.time())
         token = {
+            'device': device,
             'appname': self.appname,
             'token': devicetoken,
             'channel': channel,
         }
         try:
-            result = self.db.tokens.update({'token': devicetoken, 'appname': self.appname}, token, safe=True, upsert=True)
+            result = self.db.tokens.update({'device': device, 'token': devicetoken, 'appname': self.appname}, token, safe=True, upsert=True)
             # result
             # {u'updatedExisting': True, u'connectionId': 47, u'ok': 1.0, u'err': None, u'n': 1}
             if result['updatedExisting']:
@@ -268,26 +274,33 @@ class NotificationHandler(APIBaseHandler):
         alert = self.get_argument('alert')
         sound = self.get_argument('sound', None)
         badge = self.get_argument('badge', None)
-        # Build the custom params  (everything not alert/sound/badge/token)
-        customparams = {}
-        for paramname, param in self.request.arguments.items():
-            if paramname != 'alert' and paramname != 'sound' and paramname != 'badge' and paramname != 'token':
-                customparams[paramname] = self.get_argument(paramname)
-        pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
-        if not self.apnsconnections.has_key(self.app['shortname']):
-            # TODO: add message to queue in MongoDB
-            self.send_response(dict(error="APNs is offline"))
-            return
-        count = len(self.apnsconnections[self.app['shortname']])
-        random.seed(time.time())
-        instanceid = random.randint(0, count - 1)
-        conn = self.apnsconnections[self.app['shortname']][instanceid]
-        try:
-            self.add_to_log('%s notification' % self.appname, alert)
-            conn.send(self.token, pl)
-            self.send_response(dict(status='ok'))
-        except Exception, ex:
-            self.send_response(dict(error=str(ex)))
+        device = self.get_argument('device', 'ios')
+        if device == 'ios':
+            # Build the custom params  (everything not alert/sound/badge/token)
+            customparams = {}
+            for paramname, param in self.request.arguments.items():
+                if paramname != 'alert' and paramname != 'sound' and paramname != 'badge' and paramname != 'token':
+                    customparams[paramname] = self.get_argument(paramname)
+            pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
+            if not self.apnsconnections.has_key(self.app['shortname']):
+                # TODO: add message to queue in MongoDB
+                self.send_response(dict(error="APNs is offline"))
+                return
+            count = len(self.apnsconnections[self.app['shortname']])
+            # Find an APNS instance
+            random.seed(time.time())
+            instanceid = random.randint(0, count - 1)
+            conn = self.apnsconnections[self.app['shortname']][instanceid]
+            # do the job 
+            try:
+                self.add_to_log('%s notification' % self.appname, alert)
+                conn.send(self.token, pl)
+                self.send_response(dict(status='ok'))
+            except Exception, ex:
+                self.send_response(dict(error=str(ex)))
+        else:
+            pass
+
 
 @route(r"/users")
 class UsersHandler(APIBaseHandler):

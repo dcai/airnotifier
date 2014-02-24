@@ -34,6 +34,7 @@ from pymongo import *
 from routes import route
 from tornado.options import define, options
 from util import *
+from constants import *
 import logging
 import os
 import platform
@@ -185,6 +186,12 @@ class AppDeletionHandler(WebBaseHandler):
         if not app: raise tornado.web.HTTPError(500)
         self.masterdb.applications.remove({'shortname': appname}, safe=True)
         self.redirect(r"/applications")
+
+def normalize_tokens(tokens):
+    for token in tokens:
+        if not 'device' in token:
+            token['device'] = DEVICE_TYPE_IOS
+    return tokens
 
 @route(r"/applications/([^/]+)/tokens")
 class AppTokensHandler(WebBaseHandler):
