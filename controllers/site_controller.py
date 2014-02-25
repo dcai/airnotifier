@@ -369,6 +369,7 @@ class AppHandler(WebBaseHandler):
         else:
             app['fullname'] = self.appname
 
+        logging.info(app)
         # Update app details
         if self.request.files:
             if self.request.files.has_key('appcertfile'):
@@ -397,6 +398,8 @@ class AppHandler(WebBaseHandler):
 
         if self.get_argument('blockediplist', None):
             app['blockediplist'] = self.get_argument('blockediplist').strip()
+        else:
+            app['blockediplist'] = ''
 
         if self.get_argument('gcmprojectnumber', None):
             app['gcmprojectnumber'] = self.get_argument('gcmprojectnumber').strip()
@@ -438,6 +441,7 @@ class AppHandler(WebBaseHandler):
             self.start_apns(app)
 
         if update:
+            logging.info(app)
             self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
         else:
             self.masterdb.applications.insert(app)

@@ -61,14 +61,18 @@ class APIBaseHandler(tornado.web.RequestHandler):
             self.appkey = self.request.headers['X-An-App-Key']
 
         self.token = self.get_argument('token', None)
-        if self.token:
-            # If token provided, it must be 64 chars
-            if len(self.token) != 64:
-                self.send_response(dict(error='Invalid token'))
-            try:
-                value = binascii.unhexlify(self.token)
-            except Exception, ex:
-                self.send_response(dict(error='Invalid token'))
+        self.device = self.get_argument('device', DEVICE_TYPE_IOS)
+        if self.token == DEVICE_TYPE_IOS:
+            if self.token:
+                # If token provided, it must be 64 chars
+                if len(self.token) != 64:
+                    self.send_response(dict(error='Invalid token'))
+                try:
+                    value = binascii.unhexlify(self.token)
+                except Exception, ex:
+                    self.send_response(dict(error='Invalid token'))
+        else:
+            self.device = DEVICE_TYPE_ANDROID
 
         self.app = self.masterdb.applications.find_one({'shortname': self.appname})
 
