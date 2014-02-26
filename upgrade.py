@@ -54,12 +54,23 @@ if __name__ == "__main__":
     if version > VERSION:
         apps = masterdb.applications.find()
         for app in apps:
+            logging.info(app)
             appname = app['shortname']
+            appid = ObjectId(app['_id'])
+            if not 'blockediplist' in app:
+                app['blockediplist'] = ''
+            if not 'description' in app:
+                app['description'] = ''
+            if not 'gcmprojectnumber' in app:
+                app['gcmprojectnumber'] = ''
+             if not 'gcmapikey' in app:
+                app['gcmapikey'] = ''
+            masterdb.applications.update({'_id': appid}, app, safe=True, upsert=True)
+
             db = mongodb[appname]
             tokens = db['tokens'].find()
             for token in tokens:
                 tokenid = ObjectId(token['_id'])
-                logging.info(token)
                 if not 'device' in token:
                     token['device'] = DEVICE_TYPE_IOS
                     result = db['tokens'].update({'_id': tokenid}, token, safe=True, upsert=True)
