@@ -26,8 +26,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import logging
 from hashlib import sha1
 from pymongo import *
+from bson import *
 from pymongo.errors import *
 from tornado.options import define, options
 from constants import *
@@ -43,10 +45,21 @@ define("mongoport", default=27017, help="MongoDB port")
 define("mongodbname", default="airnotifier", help="MongoDB database name")
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
 
-
 if __name__ == "__main__":
     tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
     mongodb = Connection(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]
-    collection_names = masterdb.collection_names()
+    version = masterdb['options'].find_one({'name': 'version'})['value']
+    if version > VERSION:
+        apps = masterdb.applications.find()
+        for app in apps:
+            appname = app['shortname']
+            db = mongodb[appname]
+            tokens = db['tokens'].find()
+            for token in tokens:
+                tokenid = ObjectId(token['_id'])
+                logging.info(token)
+                if not 'device' in token:
+                    token['device'] = DEVICE_TYPE_IOS
+                    result = db['tokens'].update({'_id': tokenid}, token, safe=True, upsert=True)
