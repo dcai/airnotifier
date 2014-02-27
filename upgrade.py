@@ -51,22 +51,24 @@ if __name__ == "__main__":
     mongodb = Connection(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]
     version = masterdb['options'].find_one({'name': 'version'})['value']
-    if version > VERSION:
+    if version < VERSION:
         apps = masterdb.applications.find()
         for app in apps:
             logging.info(app)
             appname = app['shortname']
             appid = ObjectId(app['_id'])
+            ## Repair application setting collection
             if not 'blockediplist' in app:
                 app['blockediplist'] = ''
             if not 'description' in app:
                 app['description'] = ''
             if not 'gcmprojectnumber' in app:
                 app['gcmprojectnumber'] = ''
-             if not 'gcmapikey' in app:
+            if not 'gcmapikey' in app:
                 app['gcmapikey'] = ''
             masterdb.applications.update({'_id': appid}, app, safe=True, upsert=True)
 
+            ## Adding device to token collections
             db = mongodb[appname]
             tokens = db['tokens'].find()
             for token in tokens:

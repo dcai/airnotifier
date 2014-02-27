@@ -27,11 +27,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from hashlib import sha1
-from pymongo import *
-from pymongo.errors import *
+
+from pymongo.connection import Connection
+from pymongo.errors import CollectionInvalid
 from tornado.options import define, options
-from constants import *
 import tornado.options
+
+from constants import VERSION
 
 
 define("apns", default=(), help="APNs address and port")
@@ -54,7 +56,7 @@ if __name__ == "__main__":
         if not 'applications' in collection_names:
             masterdb.create_collection('applications')
             print("db.applications installed")
-    except CollectionInvalid, ex:
+    except CollectionInvalid as ex:
         print("Failed to created applications collection", ex)
         pass
 
@@ -63,7 +65,7 @@ if __name__ == "__main__":
             masterdb.create_collection('managers')
             masterdb.managers.ensure_index("username", unique=True)
             print("db.managers installed")
-    except CollectionInvalid, ex:
+    except CollectionInvalid:
         print("Failed to created managers collection")
         pass
 
@@ -73,14 +75,14 @@ if __name__ == "__main__":
         manager['password'] = sha1('%sadmin' % options.passwordsalt).hexdigest()
         masterdb['managers'].insert(manager)
         print("Admin user created, username: admin, password: admin")
-    except Exception, ex:
+    except Exception:
         print("Failed to create admin user")
 
     try:
         if not 'options' in collection_names:
             masterdb.create_collection('options')
             print("db.options installed")
-    except CollectionInvalid, ex:
+    except CollectionInvalid:
         print("db.options installed")
 
     try:
@@ -89,5 +91,5 @@ if __name__ == "__main__":
         option_ver['value'] = VERSION
         masterdb['options'].insert(option_ver)
         print("Version number written: %s" % VERSION)
-    except Exception, ex:
+    except Exception:
         print("Failed to write version number")

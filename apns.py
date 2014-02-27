@@ -26,15 +26,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from collections import deque
-from socket import socket, AF_INET, SOCK_STREAM
-from tornado import ioloop, iostream
 import binascii
+from collections import deque
 import json
 import logging
 import os
+from socket import socket, AF_INET, SOCK_STREAM
 import struct
 import time
+
+from tornado import ioloop, iostream
 
 
 apns = {
@@ -291,7 +292,7 @@ class APNClient(object):
             msg = self.messages.popleft()
             try:
                 self.remote_stream.write(msg)
-            except Exception, ex:
+            except Exception as ex:
                 logging.exception(ex)
                 # Push back to queue top
                 self.messages.appendleft(msg)
