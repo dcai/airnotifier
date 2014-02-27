@@ -26,16 +26,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from apns import *
-from pymongo import Connection
-from tornado.options import define, options
-from uimodules import *
-from util import *
+import logging
+import os
+import time
+
+from pymongo.connection import Connection
 import tornado.httpserver
 import tornado.ioloop
+from tornado.options import define, options
 import tornado.options
-from gcm.http import *
-import logging
+
+from apns import APNClient
+from gcm.http import GCM
+from uimodules import *
+from util import error_log
+
 
 define("port", default=8801, help="Application server listen port", type=int)
 
@@ -158,7 +163,7 @@ def init_gcm():
     return httpconns
 
 if __name__ == "__main__":
-    #apnsconns = init_apns()
+    # apnsconns = init_apns()
     apnsconns = {}
     gcmconns = init_gcm()
     (AirNotifierApp(apnsconnections=apnsconns, gcmconnections=gcmconns)).main()
