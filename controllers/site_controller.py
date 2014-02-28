@@ -27,23 +27,22 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # system
-from apns import *
-from bson import *
 from hashlib import md5, sha1
-from pymongo import *
 from routes import route
-from tornado.options import define, options
-from util import *
-from constants import *
+from tornado.options import options
 import logging
 import os
 import platform
 import random
-import re
-import sys
 import tornado.web
-import unicodedata
+from bson.objectid import ObjectId
+import time
 import uuid
+from constants import DEVICE_TYPE_IOS, VERSION
+from pymongo import DESCENDING
+from util import filter_alphabetanum
+from apns import APNClient, APNFeedback, PayLoad
+import sys
 
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement
@@ -289,6 +288,9 @@ class AppCreateNewHandler(WebBaseHandler):
         app['environment'] = 'sandbox'
         app['enableapns'] = 0
         app['connections'] = 1
+        app['blockediplist']= ''
+        app['gcmprojectnumber'] = ''
+        app['gcmapikey'] = ''
         if self.get_argument('appfullname', None):
             app['fullname'] = self.get_argument('appfullname')
         else:
@@ -296,15 +298,11 @@ class AppCreateNewHandler(WebBaseHandler):
 
         if self.get_argument('appdescription', None):
             app['description'] = self.get_argument('appdescription')
+        else:
+            app['description'] = ""
 
         self.masterdb.applications.insert(app)
         self.redirect(r"/applications/%s/settings" % self.appname)
-
-@route(r"/applications/([^/]+)")
-class AppHandler(WebBaseHandler):
-    @tornado.web.authenticated
-    def get(self, appname):
-        self.redirect(r"/applications/%s/settings" % appname)
 
 @route(r"/applications/([^/]+)/settings")
 class AppHandler(WebBaseHandler):
@@ -350,26 +348,14 @@ class AppHandler(WebBaseHandler):
 
     @tornado.web.authenticated
     def post(self, appname):
-        update = True
-        if appname == 'new':
-            # Create a new app
-            update = False
-            app = {}
-            self.appname = filter_alphabetanum(self.get_argument('appshortname').strip().lower())
-            app['shortname'] = self.appname
-            app['environment'] = 'sandbox'
-            app['enableapns'] = 0
-            app['connections'] = 1
-        else:
-            self.appname = appname
-            app = self.masterdb.applications.find_one({'shortname':self.appname})
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':self.appname})
 
         if self.get_argument('appfullname', None):
             app['fullname'] = self.get_argument('appfullname')
         else:
             app['fullname'] = self.appname
 
-        logging.info(app)
         # Update app details
         if self.request.files:
             if self.request.files.has_key('appcertfile'):
@@ -440,13 +426,17 @@ class AppHandler(WebBaseHandler):
             self.stop_apns(app)
             self.start_apns(app)
 
-        if update:
-            logging.info(app)
-            self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
-        else:
-            self.masterdb.applications.insert(app)
-
+        self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
         self.redirect(r"/applications/%s/settings" % self.appname)
+
+@route(r"/applications/([^/]+)")
+class AppHandler(WebBaseHandler):  # @DuplicatedSignature
+    '''
+    Just redirection
+    '''
+    @tornado.web.authenticated
+    def get(self, appname):
+        self.redirect(r"/applications/%s/settings" % appname)
 
 @route(r"/applications")
 class AppsListHandler(WebBaseHandler):
@@ -466,6 +456,8 @@ class StatsHandler(WebBaseHandler):
 class InfoHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
+        airnotifierinfo = {}
+        airnotifierinfo['version'] = VERSION
         mongodbinfo = self.application.mongodb.server_info()
         if mongodbinfo.has_key('versionArray'):
             del mongodbinfo['versionArray']
@@ -479,7 +471,7 @@ class InfoHandler(WebBaseHandler):
         pythoninfo['compiler'] = platform.python_compiler()
         pythoninfo['modules'] = ", ".join(sys.builtin_module_names)
 
-        self.render('info.html', pythoninfo=pythoninfo, mongodb=mongodbinfo, tornadoversion=tornado.version)
+        self.render('info.html', airnotifierinfo=airnotifierinfo, pythoninfo=pythoninfo, mongodb=mongodbinfo, tornadoversion=tornado.version)
 
 @route(r"/admin/([^/]+)")
 class AdminHandler(WebBaseHandler):

@@ -7,6 +7,7 @@
 {% block sidebaritems %}
 <ul class="nav nav-list">
     <li class="nav-header">Software</li>
+    <li><a href="#tornado">AirNotifier</a></li>
     <li><a href="#tornado">Tornado</a></li>
     <li><a href="#mongodb">MongoDB</a></li>
     <li><a href="#python">Python</a></li>
@@ -15,6 +16,11 @@
 
 {% block body %}
   <div class="row-fluid">
+    <a name="airnotifier"></a>
+    <h3>AirNotifier</h3>
+    <dl class="dl-horizontal">
+        <dt>Version</dt> <dd>{{airnotifierinfo['version']}}</dd>
+    </dl>
     <a name="tornado"></a>
     <h3>Tornado</h3>
     <dl class="dl-horizontal">
