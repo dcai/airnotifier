@@ -26,18 +26,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from apns import *
-from bson import *
-from pymongo import *
-from routes import route
-from tornado.options import define, options
-from util import *
-from constants import *
 import binascii
-from hashlib import md5, sha1
+from hashlib import md5
+import json
+import logging
 import random
 import time
+import uuid
+
+from bson.objectid import ObjectId
+from tornado.options import options
 import tornado.web
+
+from apns import PayLoad
+from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID
+from routes import route
+from util import filter_alphabetanum, json_default
+
 
 class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
@@ -62,15 +67,16 @@ class APIBaseHandler(tornado.web.RequestHandler):
 
         self.token = self.get_argument('token', None)
         self.device = self.get_argument('device', DEVICE_TYPE_IOS)
-        if self.token == DEVICE_TYPE_IOS:
+        if self.device == DEVICE_TYPE_IOS:
             if self.token:
                 # If token provided, it must be 64 chars
                 if len(self.token) != 64:
                     self.send_response(dict(error='Invalid token'))
                 try:
-                    value = binascii.unhexlify(self.token)
+                    # Validate token
+                    binascii.unhexlify(self.token)
                 except Exception, ex:
-                    self.send_response(dict(error='Invalid token'))
+                    self.send_response(dict(error='Invalid token: %s' % ex))
         else:
             self.device = DEVICE_TYPE_ANDROID
 
@@ -117,6 +123,11 @@ class APIBaseHandler(tornado.web.RequestHandler):
         """ APNs connections """
         return self.application.apnsconnections
 
+    @property
+    def gcmconnections(self):
+        """ GCM connections """
+        return self.application.gcmconnections
+
     def set_default_headers(self):
         self.set_header('Content-Type', 'application/json; charset=utf-8')
         self.set_header('X-Powered-By', 'AirNotifier/1.0')
@@ -141,7 +152,16 @@ class APIBaseHandler(tornado.web.RequestHandler):
         log['level'] = level
         log['created'] = int(time.time())
         self.db.logs.insert(log, safe=True)
-
+class EntityBuilder(object):
+    @staticmethod
+    def build_token(token, device, appname, channel, created=time.time()):
+        tokenentity = {}
+        tokenentity['device'] = device
+        tokenentity['appname'] = appname
+        tokenentity['token'] = token
+        tokenentity['channel'] = channel
+        tokenentity['created'] = created
+        return tokenentity
 @route(r"/tokens/([^/]+)")
 class TokenHandler(APIBaseHandler):
     def delete(self, token):
@@ -174,7 +194,7 @@ class TokenHandler(APIBaseHandler):
                 self.send_response(dict(error='Invalid token'))
                 return
             try:
-                value = binascii.unhexlify(devicetoken)
+                binascii.unhexlify(devicetoken)
             except Exception, ex:
                 self.send_response(dict(error='Invalid token'))
         else:
@@ -183,13 +203,7 @@ class TokenHandler(APIBaseHandler):
 
         channel = self.get_argument('channel', 'default')
 
-        now = int(time.time())
-        token = {
-            'device': device,
-            'appname': self.appname,
-            'token': devicetoken,
-            'channel': channel,
-        }
+        token = EntityBuilder.build_token(devicetoken, device, self.appname, channel)
         try:
             result = self.db.tokens.update({'device': device, 'token': devicetoken, 'appname': self.appname}, token, safe=True, upsert=True)
             # result
@@ -243,7 +257,7 @@ class BroadcastHandler(APIBaseHandler):
         try:
             for token in tokens:
                 conn.send(token['token'], pl)
-        except Exception, ex:
+        except Exception:
             pass
         delta_t = time.time() - self._time_start
         logging.warning("Broadcast took time: %sms" % (delta_t * 1000))
@@ -261,30 +275,29 @@ class NotificationHandler(APIBaseHandler):
             self.send_response(dict(error="No token provided"))
             return
 
-        token = self.db.tokens.find_one({'token': self.token})
-        if not token:
-            now = int(time.time())
-            token = {
-                    'appname': self.appname,
-                    'token': self.token,
-                    'created': now,
-                    }
-            logging.info(token)
-            try:
-                result = self.db.tokens.insert(token, safe=True)
-            except Exception, ex:
-                self.send_response(dict(error=str(ex)))
-
         alert = self.get_argument('alert')
         sound = self.get_argument('sound', None)
         badge = self.get_argument('badge', None)
         device = self.get_argument('device', 'ios')
+        channel = self.get_argument('channel', 'default')
+
+        token = self.db.tokens.find_one({'token': self.token})
+
+        if not token:
+            token = EntityBuilder.build_token(self.token, device, self.appname, channel)
+
+            try:
+                self.db.tokens.insert(token, safe=True)
+            except Exception as ex:
+                self.send_response(dict(error=str(ex)))
+
+        knownparams = ['alert', 'sound', 'badge', 'token']
+        # Build the custom params  (everything not alert/sound/badge/token)
+        customparams = {}
+        for paramname, param in self.request.arguments.items():
+            if paramname not in knownparams:
+                customparams[paramname] = self.get_argument(paramname)
         if device == 'ios':
-            # Build the custom params  (everything not alert/sound/badge/token)
-            customparams = {}
-            for paramname, param in self.request.arguments.items():
-                if paramname != 'alert' and paramname != 'sound' and paramname != 'badge' and paramname != 'token':
-                    customparams[paramname] = self.get_argument(paramname)
             pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
             if not self.apnsconnections.has_key(self.app['shortname']):
                 # TODO: add message to queue in MongoDB
@@ -303,8 +316,34 @@ class NotificationHandler(APIBaseHandler):
             except Exception, ex:
                 self.send_response(dict(error=str(ex)))
         else:
-            pass
+            gcm = self.gcmconnections[self.app['shortname']][0]
+            extradata = 'mobile app stuff'
+            data = {'param1': 'value1', 'param2': 'value2'}
+            response = gcm.send([self.token], data=data, collapse_key=extradata, ttl=3600)
+            logging.info("test")
+            responsedata = response.json()
+            logging.info(responsedata)
+            # Handling errors
+            if 'errors' in responsedata:
+                errors = []
+                for error, reg_ids in response['errors'].items():
+                    errors.append(error)
+                    # Check for errors and act accordingly
+                    if error is 'NotRegistered':
+                        # Remove reg_ids from database
+                        for reg_id in reg_ids:
+                            pass
+                            #entity.filter(registration_id=reg_id).delete()
+                    if error is 'InvalidRegistration':
+                        pass
+                self.send_response(dict(error=''.join(errors)))
 
+            if 'canonical' in responsedata:
+                msg = []
+                for reg_id, canonical_id in response['canonical'].items():
+                    msg.append(reg_id)
+            if responsedata['success'] == 1:
+                self.send_response(dict(status=responsedata['success']))
 
 @route(r"/users")
 class UsersHandler(APIBaseHandler):
