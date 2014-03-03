@@ -21,6 +21,7 @@ class GCM(object):
 
     def build_request(self, regids, data, collapse_key, ttl):
         payload = {'registration_ids': regids}
+        logging.info(data)
         if data:
             payload['data'] = data
 

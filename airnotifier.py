@@ -159,7 +159,6 @@ def init_gcm():
                 continue
             httpconns[app['shortname']].append(http)
     mongodb.close()
-    logging.info(httpconns)
     return httpconns
 
 if __name__ == "__main__":

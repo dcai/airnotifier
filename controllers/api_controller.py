@@ -275,11 +275,15 @@ class NotificationHandler(APIBaseHandler):
             self.send_response(dict(error="No token provided"))
             return
 
+        ## iOS and Android shared params
         alert = self.get_argument('alert')
-        sound = self.get_argument('sound', None)
-        badge = self.get_argument('badge', None)
         device = self.get_argument('device', 'ios')
         channel = self.get_argument('channel', 'default')
+        ## Android
+        collapse_key = self.get_argument('collapse_key', '')
+        ## iOS
+        sound = self.get_argument('sound', None)
+        badge = self.get_argument('badge', None)
 
         token = self.db.tokens.find_one({'token': self.token})
 
@@ -290,13 +294,14 @@ class NotificationHandler(APIBaseHandler):
                 self.db.tokens.insert(token, safe=True)
             except Exception as ex:
                 self.send_response(dict(error=str(ex)))
-
-        knownparams = ['alert', 'sound', 'badge', 'token']
+        knownparams = ['alert', 'sound', 'badge', 'token', 'device', 'collapse_key']
         # Build the custom params  (everything not alert/sound/badge/token)
         customparams = {}
-        for paramname, param in self.request.arguments.items():
-            if paramname not in knownparams:
-                customparams[paramname] = self.get_argument(paramname)
+        allparams = {}
+        for name, value in self.request.arguments.items():
+            allparams[name] = self.get_argument(name)
+            if name not in knownparams:
+                customparams[name] = self.get_argument(name)
         if device == 'ios':
             pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
             if not self.apnsconnections.has_key(self.app['shortname']):
@@ -317,12 +322,9 @@ class NotificationHandler(APIBaseHandler):
                 self.send_response(dict(error=str(ex)))
         else:
             gcm = self.gcmconnections[self.app['shortname']][0]
-            extradata = 'mobile app stuff'
-            data = {'param1': 'value1', 'param2': 'value2'}
-            response = gcm.send([self.token], data=data, collapse_key=extradata, ttl=3600)
-            logging.info("test")
+            data = dict({'alert': alert}.items() + customparams.items())
+            response = gcm.send([self.token], data=data, collapse_key=collapse_key, ttl=3600)
             responsedata = response.json()
-            logging.info(responsedata)
             # Handling errors
             if 'errors' in responsedata:
                 errors = []
