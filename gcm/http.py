@@ -41,6 +41,25 @@ class GCM(object):
         response = requests.post(self.endpoint, data=payload, headers={"content-type":"application/json", 'Authorization': 'key=%s' % self.apikey})
         if not response.status_code == 200:
             response.raise_for_status()
-            
+        # Handling errors
+        responsedata = response.json()
+        if 'errors' in responsedata:
+            errors = []
+            for error, reg_ids in response['errors'].items():
+                errors.append(error)
+                # Check for errors and act accordingly
+                if error is 'NotRegistered':
+                    # Remove reg_ids from database
+                    for reg_id in reg_ids:
+                        pass
+                        #entity.filter(registration_id=reg_id).delete()
+                if error is 'InvalidRegistration':
+                    pass
+            raise GCMException(''.join(errors))
+
+        if 'canonical' in responsedata:
+            msg = []
+            for reg_id, canonical_id in response['canonical'].items():
+                msg.append(reg_id)
         return response
 

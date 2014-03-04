@@ -218,51 +218,6 @@ class TokenHandler(APIBaseHandler):
             self.add_to_log('Cannot add token', devicetoken, "warning")
             self.send_response(dict(error=str(ex)))
 
-@route(r"/broadcast/")
-class BroadcastHandler(APIBaseHandler):
-    def post(self):
-        if (self.permission & 8) != 8:
-            self.send_response(dict(error="No permission to send broadcast"))
-            return
-
-        # the cannel to be boradcasted
-        channel = self.get_argument('channel', 'default')
-
-        # Message payload
-        alert = self.get_argument('alert')
-        sound = self.get_argument('sound', None)
-        badge = self.get_argument('badge', None)
-        if channel == 'default':
-            # channel is not set or channel is default
-            conditions = []
-            conditions.append({'channel': {"$exists": False}})
-            conditions.append({'channel': 'default'})
-            tokens = self.db.tokens.find({"$or": conditions})
-        else:
-            tokens = self.db.tokens.find()
-
-        # Build the custom params (everything not alert/sound/badge/channel)
-        customparams = {}
-        for paramname, param in self.request.arguments.iteritems():
-            if paramname != 'alert' and paramname != 'sound' and paramname != 'badge' and paramname != 'channel':
-                customparams[paramname] = param
-
-        pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
-
-        self.add_to_log('%s broadcast' % self.appname, alert, "important")
-        count = len(self.apnsconnections[self.app['shortname']])
-        random.seed(time.time())
-        instanceid = random.randint(0, count - 1)
-        conn = self.apnsconnections[self.app['shortname']][instanceid]
-        try:
-            for token in tokens:
-                conn.send(token['token'], pl)
-        except Exception:
-            pass
-        delta_t = time.time() - self._time_start
-        logging.warning("Broadcast took time: %sms" % (delta_t * 1000))
-        self.send_response(dict(status='ok'))
-
 @route(r"/notification/")
 class NotificationHandler(APIBaseHandler):
     def post(self):
@@ -302,7 +257,7 @@ class NotificationHandler(APIBaseHandler):
             allparams[name] = self.get_argument(name)
             if name not in knownparams:
                 customparams[name] = self.get_argument(name)
-        if device == 'ios':
+        if device == DEVICE_TYPE_IOS:
             pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
             if not self.apnsconnections.has_key(self.app['shortname']):
                 # TODO: add message to queue in MongoDB
@@ -325,27 +280,81 @@ class NotificationHandler(APIBaseHandler):
             data = dict({'alert': alert}.items() + customparams.items())
             response = gcm.send([self.token], data=data, collapse_key=collapse_key, ttl=3600)
             responsedata = response.json()
-            # Handling errors
-            if 'errors' in responsedata:
-                errors = []
-                for error, reg_ids in response['errors'].items():
-                    errors.append(error)
-                    # Check for errors and act accordingly
-                    if error is 'NotRegistered':
-                        # Remove reg_ids from database
-                        for reg_id in reg_ids:
-                            pass
-                            #entity.filter(registration_id=reg_id).delete()
-                    if error is 'InvalidRegistration':
-                        pass
-                self.send_response(dict(error=''.join(errors)))
 
-            if 'canonical' in responsedata:
-                msg = []
-                for reg_id, canonical_id in response['canonical'].items():
-                    msg.append(reg_id)
             if responsedata['success'] == 1:
                 self.send_response(dict(status=responsedata['success']))
+
+@route(r"/broadcast/")
+class BroadcastHandler(APIBaseHandler):
+    def post(self):
+        if (self.permission & 8) != 8:
+            self.send_response(dict(error="No permission to send broadcast"))
+            return
+
+        # the cannel to be boradcasted
+        channel = self.get_argument('channel', 'default')
+        ## iOS and Android shared params
+        alert = self.get_argument('alert')
+        ## Android
+        collapse_key = self.get_argument('collapse_key', '')
+        ## iOS
+        sound = self.get_argument('sound', None)
+        badge = self.get_argument('badge', None)
+
+        conditions = []
+        if channel == 'default':
+            # channel is not set or channel is default
+            conditions.append({'channel': {"$exists": False}})
+            conditions.append({'channel': 'default'})
+        else:
+            conditions.append({'channel': channel})
+        tokens = self.db.tokens.find({"$or": conditions})
+
+        knownparams = ['alert', 'sound', 'badge', 'token', 'device', 'collapse_key']
+        # Build the custom params  (everything not alert/sound/badge/token)
+        customparams = {}
+        allparams = {}
+        for name, value in self.request.arguments.items():
+            allparams[name] = self.get_argument(name)
+            if name not in knownparams:
+                customparams[name] = self.get_argument(name)
+
+        self.add_to_log('%s broadcast' % self.appname, alert, "important")
+        if self.app['shortname'] in self.apnsconnections:
+            count = len(self.apnsconnections[self.app['shortname']])
+        else:
+            count = 0
+        if count > 0:
+            random.seed(time.time())
+            instanceid = random.randint(0, count - 1)
+            conn = self.apnsconnections[self.app['shortname']][instanceid]
+        else:
+            conn = None
+        regids = []
+        try:
+            for token in tokens:
+                if token['device'] == DEVICE_TYPE_IOS:
+                    if conn is not None:
+                        pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
+                        conn.send(token['token'], pl)
+                else:
+                    regids.append(token['token'])
+        except Exception:
+            pass
+
+        try:
+            # Now sending android notifications
+            gcm = self.gcmconnections[self.app['shortname']][0]
+            data = dict({'alert': alert}.items() + customparams.items())
+            logging.info(regids)
+            response = gcm.send(regids, data=data, collapse_key=collapse_key, ttl=3600)
+            responsedata = response.json()
+        except Exception:
+            pass
+
+        delta_t = time.time() - self._time_start
+        logging.warning("Broadcast took time: %sms" % (delta_t * 1000))
+        self.send_response(dict(status='ok'))
 
 @route(r"/users")
 class UsersHandler(APIBaseHandler):
