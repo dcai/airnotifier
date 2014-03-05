@@ -43,7 +43,12 @@ from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID
 from routes import route
 from util import filter_alphabetanum, json_default
 
-
+API_PERMISSIONS = {
+    'create_token': 1,
+    'delete_token': 2,
+    'send_notification': 4,
+    'send_broadcast': 8
+}
 class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
     """
@@ -99,6 +104,12 @@ class APIBaseHandler(tornado.web.RequestHandler):
                     key['permission'] = 0
                 self.permission = int(key['permission'])
 
+    def can(self, permissionname):
+        if permissionname not in API_PERMISSIONS:
+            return False
+        else:
+            return (self.permission & API_PERMISSIONS[permissionname]) == API_PERMISSIONS[permissionname]
+
     def check_blockediplist(self, ip, app):
         if app.has_key('blockediplist') and app['blockediplist']:
             from netaddr import IPNetwork, IPAddress
@@ -152,23 +163,25 @@ class APIBaseHandler(tornado.web.RequestHandler):
         log['level'] = level
         log['created'] = int(time.time())
         self.db.logs.insert(log, safe=True)
+
 class EntityBuilder(object):
     @staticmethod
     def build_token(token, device, appname, channel, created=time.time()):
         tokenentity = {}
-        tokenentity['device'] = device
+        tokenentity['device']  = device
         tokenentity['appname'] = appname
-        tokenentity['token'] = token
+        tokenentity['token']   = token
         tokenentity['channel'] = channel
         tokenentity['created'] = created
         return tokenentity
+
 @route(r"/tokens/([^/]+)")
 class TokenHandler(APIBaseHandler):
     def delete(self, token):
         """Delete a token
         """
         # To check the access key permissions we use bitmask method.
-        if (self.permission & 2) != 2:
+        if not self.can("delete_token"):
             self.send_response(dict(error="No permission to delete token"))
             return
 
@@ -184,7 +197,7 @@ class TokenHandler(APIBaseHandler):
     def post(self, devicetoken):
         """Create a new token
         """
-        if (self.permission & 1) != 1:
+        if not self.can("create_token"):
             self.send_response(dict(error="No permission to create token"))
             return
 
@@ -222,7 +235,7 @@ class TokenHandler(APIBaseHandler):
 class NotificationHandler(APIBaseHandler):
     def post(self):
         """ Send notifications """
-        if (self.permission & 4) != 4:
+        if not self.can("send_notification"):
             self.send_response(dict(error="No permission to send notification"))
             return
 
@@ -287,7 +300,7 @@ class NotificationHandler(APIBaseHandler):
 @route(r"/broadcast/")
 class BroadcastHandler(APIBaseHandler):
     def post(self):
-        if (self.permission & 8) != 8:
+        if not self.can('send_broadcast'):
             self.send_response(dict(error="No permission to send broadcast"))
             return
 
