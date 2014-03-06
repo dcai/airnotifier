@@ -42,6 +42,7 @@ from apns import PayLoad
 from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID
 from routes import route
 from util import filter_alphabetanum, json_default
+from gcm.http import GCMException
 
 API_PERMISSIONS = {
     'create_token': 1,
@@ -289,13 +290,16 @@ class NotificationHandler(APIBaseHandler):
             except Exception, ex:
                 self.send_response(dict(error=str(ex)))
         else:
-            gcm = self.gcmconnections[self.app['shortname']][0]
-            data = dict({'alert': alert}.items() + customparams.items())
-            response = gcm.send([self.token], data=data, collapse_key=collapse_key, ttl=3600)
-            responsedata = response.json()
+            try:
+                gcm = self.gcmconnections[self.app['shortname']][0]
+                data = dict({'alert': alert}.items() + customparams.items())
+                response = gcm.send([self.token], data=data, collapse_key=collapse_key, ttl=3600)
+                responsedata = response.json()
 
-            if responsedata['success'] == 1:
-                self.send_response(dict(status=responsedata['success']))
+                if responsedata['success'] == 1:
+                    self.send_response(dict(status=responsedata['success']))
+            except GCMException as ex:
+                self.send_response(dict(error=str(ex)))
 
 @route(r"/broadcast/")
 class BroadcastHandler(APIBaseHandler):
@@ -362,8 +366,8 @@ class BroadcastHandler(APIBaseHandler):
             logging.info(regids)
             response = gcm.send(regids, data=data, collapse_key=collapse_key, ttl=3600)
             responsedata = response.json()
-        except Exception:
-            pass
+        except GCMException:
+            logging.info('GCM problem')
 
         delta_t = time.time() - self._time_start
         logging.warning("Broadcast took time: %sms" % (delta_t * 1000))
