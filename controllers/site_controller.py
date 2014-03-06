@@ -288,7 +288,7 @@ class AppCreateNewHandler(WebBaseHandler):
         app['environment'] = 'sandbox'
         app['enableapns'] = 0
         app['connections'] = 1
-        app['blockediplist']= ''
+        app['blockediplist'] = ''
         app['gcmprojectnumber'] = ''
         app['gcmapikey'] = ''
         if self.get_argument('appfullname', None):
@@ -430,7 +430,7 @@ class AppHandler(WebBaseHandler):
         self.redirect(r"/applications/%s/settings" % self.appname)
 
 @route(r"/applications/([^/]+)")
-class AppHandler(WebBaseHandler):  # @DuplicatedSignature
+class AppHandler(WebBaseHandler): # @DuplicatedSignature
     '''
     Just redirection
     '''

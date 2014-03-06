@@ -169,9 +169,9 @@ class EntityBuilder(object):
     @staticmethod
     def build_token(token, device, appname, channel, created=time.time()):
         tokenentity = {}
-        tokenentity['device']  = device
+        tokenentity['device'] = device
         tokenentity['appname'] = appname
-        tokenentity['token']   = token
+        tokenentity['token'] = token
         tokenentity['channel'] = channel
         tokenentity['created'] = created
         return tokenentity
@@ -244,13 +244,13 @@ class NotificationHandler(APIBaseHandler):
             self.send_response(dict(error="No token provided"))
             return
 
-        ## iOS and Android shared params
+        # iOS and Android shared params
         alert = self.get_argument('alert')
         device = self.get_argument('device', 'ios')
         channel = self.get_argument('channel', 'default')
-        ## Android
+        # Android
         collapse_key = self.get_argument('collapse_key', '')
-        ## iOS
+        # iOS
         sound = self.get_argument('sound', None)
         badge = self.get_argument('badge', None)
 
@@ -282,7 +282,7 @@ class NotificationHandler(APIBaseHandler):
             random.seed(time.time())
             instanceid = random.randint(0, count - 1)
             conn = self.apnsconnections[self.app['shortname']][instanceid]
-            # do the job 
+            # do the job
             try:
                 self.add_to_log('%s notification' % self.appname, alert)
                 conn.send(self.token, pl)
@@ -310,11 +310,11 @@ class BroadcastHandler(APIBaseHandler):
 
         # the cannel to be boradcasted
         channel = self.get_argument('channel', 'default')
-        ## iOS and Android shared params
+        # iOS and Android shared params
         alert = self.get_argument('alert')
-        ## Android
+        # Android
         collapse_key = self.get_argument('collapse_key', '')
-        ## iOS
+        # iOS
         sound = self.get_argument('sound', None)
         badge = self.get_argument('badge', None)
 
