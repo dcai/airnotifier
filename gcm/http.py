@@ -1,10 +1,5 @@
-import urllib
-import urllib2
 import json
-import time
-import random
 import requests
-import logging
 
 GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send'
 
@@ -56,6 +51,14 @@ class GCM(object):
         return errors
 
     def send(self, regids, data=None, collapse_key=None, ttl=None, retries=5):
+        '''
+        Send message to google gcm endpoint
+        :param regids: list
+        :param data: dict
+        :param collapse_key: string
+        :param ttl: int
+        :param retries: int
+        '''
         if not regids:
             raise GCMException("Registration IDs cannot be empty")
 
@@ -85,18 +88,18 @@ class GCM(object):
                     # database because the application was uninstalled from the device or it does not have a broadcast receiver configured to receive
                     raise GCMInvalidRegistrationException(packed_rregisteration_ids)
                 elif errorkey == 'MismatchSenderId':
-                    """
+                    '''
                     A registration ID is tied to a certain group of senders. When an application registers for GCM usage,
                     it must specify which senders are allowed to send messages. Make sure you're using one of those when
                     trying to send messages to the device. If you switch to a different sender, the existing registration
                     IDs won't work.
-                    """
+                    '''
                     raise GCMException('Mismatch sender Id')
                 elif errorkey == 'MissingRegistration':
-                    """
+                    '''
                     Check that the request contains a registration ID (either in the registration_id parameter in a
                     plain text message, or in the registration_ids field in JSON).
-                    """
+                    '''
                     raise GCMException('Missing registration')
                 elif errorkey == 'MessageTooBig':
                     raise GCMException('Message too big')
