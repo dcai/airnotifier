@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+{{ modules.NavBar('applications') }}
+{% end %}
+
+{% block tabbaritems %}
+{{ modules.TabBar(app, 'ip') }}
+{% end %}
+
+{% block sidebaritems %}
+{{ modules.AppSideBar(app, 'ip') }}
+{% end %}
+
+{% block body %}
+
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="appname" value="{{app['shortname']}}">
+    <input type="hidden" name="action" value="create">
+    <fieldset>
+        <legend>{{ _('Add an IP to block') }}</legend>
+
+        <div class="control-group">
+            <label class="control-label" for="keydesc">{{ _('IP to block') }}</label>
+            <div class="controls">
+                <textarea rows="10" class="input-xlarge" id="ipaddr" name="blockediplist">
+                    {% if app.has_key('blockediplist') and app['blockediplist'] %}
+                    {{ app['blockediplist'] }}
+                    {% end %}
+                </textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ _('Block') }}</button>
+        </div>
+    </fieldset>
+</form>
+
+{% end %}
