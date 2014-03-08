@@ -43,6 +43,7 @@ from pymongo import DESCENDING
 from util import filter_alphabetanum
 from apns import APNClient, APNFeedback, PayLoad
 import sys
+from controllers.api_controller import API_PERMISSIONS
 
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement
@@ -134,12 +135,12 @@ class AppAccessKeysHandler(WebBaseHandler):
         key_to_be_edited = self.get_argument('edit', None)
         if key_to_be_edited:
             key = self.db.keys.find_one({'key': key_to_be_edited})
-            self.render("app_edit_key.html", app=app, keys=keys, key=key)
+            self.render("app_edit_key.html", app=app, keys=keys, key=key, map=API_PERMISSIONS.items())
             return
         if key_to_be_deleted:
             self.db.keys.remove({'key':key_to_be_deleted})
             self.redirect("/applications/%s/keys" % appname)
-        self.render("app_keys.html", app=app, keys=keys, newkey=None)
+        self.render("app_keys.html", app=app, keys=keys, newkey=None, map=API_PERMISSIONS.items())
     @tornado.web.authenticated
     def post(self, appname):
         self.appname = appname
@@ -162,13 +163,11 @@ class AppAccessKeysHandler(WebBaseHandler):
             # crc = binascii.crc32(str(uuid.uuid4())) & 0xffffffff
             # key['key'] = '%08x' % crc
             keyObjectId = self.db.keys.insert(key)
-            keys = self.db.keys.find()
-            self.render("app_keys.html", app=app, keys=keys, newkey=key)
+            self.redirect("/applications/%s/keys" % appname)
         else:
             key['key'] = self.get_argument('accesskey').strip()
             self.db.keys.update({'key': key['key']}, key, safe=True)
-            keys = self.db.keys.find()
-            self.render("app_keys.html", app=app, keys=keys, newkey=None)
+            self.redirect("/applications/%s/keys" % appname)
 
 @route(r"/applications/([^/]+)/delete")
 class AppDeletionHandler(WebBaseHandler):

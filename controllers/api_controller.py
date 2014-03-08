@@ -45,11 +45,11 @@ from util import filter_alphabetanum, json_default
 from gcm.http import GCMException
 
 API_PERMISSIONS = {
-    'create_token': 1,
-    'delete_token': 2,
-    'send_notification': 4,
-    'send_broadcast': 8,
-    'create_accesskey': 16
+    'create_token': (0b00001, 'Create token'),
+    'delete_token': (0b00010, 'Delete token'),
+    'send_notification': (0b00100, 'Send notification'),
+    'send_broadcast': (0b01000, 'Send broadcast'),
+    'create_accesskey': (0b10000, 'Create access key')
 }
 class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
@@ -110,7 +110,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
         if permissionname not in API_PERMISSIONS:
             return False
         else:
-            return (self.permission & API_PERMISSIONS[permissionname]) == API_PERMISSIONS[permissionname]
+            return (self.permission & API_PERMISSIONS[permissionname][0]) == API_PERMISSIONS[permissionname][0]
 
     def check_blockediplist(self, ip, app):
         if app.has_key('blockediplist') and app['blockediplist']:
@@ -550,7 +550,8 @@ class AccessKeysHandler(APIBaseHandler):
         key['description'] = self.get_argument('description', '')
         key['created'] = int(time.time())
         # This is 1111 in binary means all permissions are granted
-        key['permission'] = API_PERMISSIONS['create_token'] | API_PERMISSIONS['delete_token'] | API_PERMISSIONS['send_notification'] | API_PERMISSIONS['send_broadcast']
+        key['permission'] = API_PERMISSIONS['create_token'][0] | API_PERMISSIONS['delete_token'][0] \
+                | API_PERMISSIONS['send_notification'][0] | API_PERMISSIONS['send_broadcast'][0]
         key['key'] = md5(str(uuid.uuid4())).hexdigest()
         keyObjectId = self.db.keys.insert(key)
         self.send_response(dict(accesskey=key['key']))
