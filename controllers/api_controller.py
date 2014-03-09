@@ -48,7 +48,8 @@ API_PERMISSIONS = {
     'create_token': 1,
     'delete_token': 2,
     'send_notification': 4,
-    'send_broadcast': 8
+    'send_broadcast': 8,
+    'create_accesskey': 16
 }
 class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
@@ -541,12 +542,15 @@ class AccessKeysHandler(APIBaseHandler):
     def post(self):
         """Create access key
         """
+        if not self.can('create_accesskey'):
+            self.send_response(dict(error="No permission to create accesskey"))
+            return
         key = {}
         key['contact'] = self.get_argument('contact', '')
         key['description'] = self.get_argument('description', '')
         key['created'] = int(time.time())
         # This is 1111 in binary means all permissions are granted
-        key['permission'] = 15
+        key['permission'] = API_PERMISSIONS['create_token'] | API_PERMISSIONS['delete_token'] | API_PERMISSIONS['send_notification'] | API_PERMISSIONS['send_broadcast']
         key['key'] = md5(str(uuid.uuid4())).hexdigest()
         keyObjectId = self.db.keys.insert(key)
         self.send_response(dict(accesskey=key['key']))
