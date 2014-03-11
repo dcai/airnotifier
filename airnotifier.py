@@ -37,7 +37,7 @@ from tornado.options import define, options
 import tornado.options
 
 from apns import APNClient
-from gcm.http import GCM
+from gcm.http import GCMClient
 from uimodules import *
 from util import error_log
 
@@ -75,7 +75,6 @@ class AirNotifierApp(tornado.web.Application):
             login_url=r"/auth/login",
             autoescape=None,
             )
-
         self.apnsconnections = apnsconnections
         self.gcmconnections = gcmconnections
 
@@ -104,23 +103,23 @@ class AirNotifierApp(tornado.web.Application):
         logging.info("AirNotifier is running")
         tornado.ioloop.IOLoop.instance().start()
 
-def init_apns():
+def init_messaging_agents():
     mongodb = None
     while not mongodb:
         try:
             mongodb = Connection(options.mongohost, options.mongoport)
-        except:
-            pass
+        except Exception as ex:
+            logging.error(ex)
         # wait 5 secs to reconnect
         time.sleep(5)
     masterdb = mongodb[options.masterdb]
-    apps = masterdb.applications.find({'enableapns': 1})
+    apps = masterdb.applications.find()
+    httpconns = {}
     apnsconns = {}
     for app in apps:
+        ''' APNs setup '''
         apnsconns[app['shortname']] = []
         conns = int(app['connections'])
-        if conns > 5:
-            conns = 5
         if conns < 1:
             conns = 1
         if 'environment' not in app:
@@ -134,35 +133,18 @@ def init_apns():
                     logging.error(ex)
                     continue
                 apnsconns[app['shortname']].append(apn)
-    mongodb.close()
-    return apnsconns
-
-def init_gcm():
-    mongodb = None
-    while not mongodb:
-        try:
-            mongodb = Connection(options.mongohost, options.mongoport)
-        except Exception as ex:
-            logging.error(ex)
-        # wait 5 secs to reconnect
-        time.sleep(5)
-    masterdb = mongodb[options.masterdb]
-    apps = masterdb.applications.find()
-    httpconns = {}
-    for app in apps:
+        ''' GCMClient setup '''
         httpconns[app['shortname']] = []
         if 'gcmprojectnumber' in app and 'gcmapikey' in app and 'shortname' in app:
             try:
-                http = GCM(app['gcmprojectnumber'], app['gcmapikey'], app['shortname'], 0)
+                http = GCMClient(app['gcmprojectnumber'], app['gcmapikey'], app['shortname'], 0)
             except Exception as ex:
                 logging.error(ex)
                 continue
             httpconns[app['shortname']].append(http)
     mongodb.close()
-    return httpconns
+    return apnsconns, httpconns
 
 if __name__ == "__main__":
-    # apnsconns = init_apns()
-    apnsconns = {}
-    gcmconns = init_gcm()
+    apnsconns, gcmconns = init_messaging_agents()
     (AirNotifierApp(apnsconnections=apnsconns, gcmconnections=gcmconns)).main()

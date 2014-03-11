@@ -15,7 +15,7 @@ class GCMInvalidRegistrationException(GCMException):
         Exception.__init__(self, "Invalid Registration")
         self.regids = regids
 
-class GCM(object):
+class GCMClient(object):
     def __init__(self, projectnumber, apikey, appname, instanceid=0, endpoint=GCM_ENDPOINT):
         self.projectnumber = projectnumber
         self.apikey = apikey
@@ -69,7 +69,7 @@ class GCM(object):
         elif response.status_code == 401:
             raise GCMException('There was an error authenticating the sender account.')
         elif response.status_code >= 500:
-            raise GCMException('GCM server is temporarily unavailable .')
+            raise GCMException('GCMClient server is temporarily unavailable .')
 
         responsedata = response.json()
 
@@ -89,7 +89,7 @@ class GCM(object):
                     raise GCMInvalidRegistrationException(packed_rregisteration_ids)
                 elif errorkey == 'MismatchSenderId':
                     '''
-                    A registration ID is tied to a certain group of senders. When an application registers for GCM usage,
+                    A registration ID is tied to a certain group of senders. When an application registers for GCMClient usage,
                     it must specify which senders are allowed to send messages. Make sure you're using one of those when
                     trying to send messages to the device. If you switch to a different sender, the existing registration
                     IDs won't work.
