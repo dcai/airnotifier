@@ -306,7 +306,9 @@ class AppCreateNewHandler(WebBaseHandler):
         else:
             app['description'] = ""
 
-        self.masterdb.applications.insert(app)
+        app = self.masterdb.applications.find_one({'shortname': self.appname})
+        if not app:
+            self.masterdb.applications.insert(app)
         self.redirect(r"/applications/%s/settings" % self.appname)
 
 @route(r"/applications/([^/]+)/settings")
