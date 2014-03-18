@@ -44,6 +44,7 @@ from util import filter_alphabetanum
 from apns import APNClient, APNFeedback, PayLoad
 import sys
 from controllers.api_controller import API_PERMISSIONS
+from gcm.http import GCMException
 
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement
@@ -77,6 +78,11 @@ class WebBaseHandler(tornado.web.RequestHandler):
     def apnsconnections(self):
         """ APNs connections"""
         return self.application.apnsconnections
+
+    @property
+    def gcmconnections(self):
+        """ GCM connections """
+        return self.application.gcmconnections
 
     @property
     def currentuser(self):
@@ -240,17 +246,39 @@ class AppBroadcastHandler(WebBaseHandler):
         if not app: raise tornado.web.HTTPError(500)
         alert = self.get_argument('notification').strip()
         sound = 'default'
-        pl = PayLoad(alert=alert, sound=sound)
         count = len(self.apnsconnections[app['shortname']])
-        random.seed(time.time())
-        instanceid = random.randint(0, count - 1)
-        conn = self.apnsconnections[app['shortname']][instanceid]
+        if appname in self.apnsconnections:
+            count = len(self.apnsconnections[appname])
+        else:
+            count = 0
+        if count > 0:
+            random.seed(time.time())
+            instanceid = random.randint(0, count - 1)
+            conn = self.apnsconnections[appname][instanceid]
+        else:
+            conn = None
+        regids = []
+
         tokens = self.db.tokens.find()
         try:
             for token in tokens:
-                conn.send(token['token'], pl)
-        except Exception, ex:
-            logging.info(ex)
+                if token['device'] == DEVICE_TYPE_IOS:
+                    if conn is not None:
+                        pl = PayLoad(alert=alert, sound=sound)
+                        conn.send(token['token'], pl)
+                else:
+                    regids.append(token['token'])
+        except Exception:
+            pass
+        try:
+            # Now sending android notifications
+            gcm = self.gcmconnections[appname][0]
+            data = dict({'alert': alert}.items())
+            logging.info(regids)
+            response = gcm.send(regids, data=data, ttl=3600)
+            responsedata = response.json()
+        except GCMException:
+            logging.info('GCM problem')
         self.render("app_broadcast.html", app=app, sent=True)
 
 @route(r"/applications/([^/]+)/logs")
