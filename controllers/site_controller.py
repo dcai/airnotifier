@@ -65,6 +65,11 @@ class WebBaseHandler(tornado.web.RequestHandler):
         return self.application.mongodb[self.appname]
 
     @property
+    def mongodbconnection(self):
+        """ mongodb connection """
+        return self.application.mongodb
+
+    @property
     def masterdb(self):
         return self.application.masterdb
 
@@ -183,6 +188,7 @@ class AppDeletionHandler(WebBaseHandler):
         app = self.masterdb.applications.find_one({'shortname':appname})
         if not app: raise tornado.web.HTTPError(500)
         self.masterdb.applications.remove({'shortname': appname}, safe=True)
+        self.mongodbconnection.drop_database(appname)
         self.redirect(r"/applications")
 
 def normalize_tokens(tokens):
