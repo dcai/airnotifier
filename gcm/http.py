@@ -1,5 +1,6 @@
 import json
 import requests
+import logging
 
 GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send'
 
@@ -72,7 +73,6 @@ class GCMClient(object):
             raise GCMException('GCMClient server is temporarily unavailable .')
 
         responsedata = response.json()
-
         # Handling errors
         if 'failure' in responsedata and responsedata['failure'] is not 0:
             errors = self.reverse_response_info('error', regids, responsedata['results'])

@@ -41,7 +41,7 @@ import tornado.web
 from apns import PayLoad
 from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID
 from routes import route
-from util import filter_alphabetanum, json_default
+from util import filter_alphabetanum, json_default, strip_tags
 from gcm.http import GCMException
 
 API_PERMISSIONS = {
@@ -160,9 +160,9 @@ class APIBaseHandler(tornado.web.RequestHandler):
 
     def add_to_log(self, action, info=None, level="info"):
         log = {}
-        log['action'] = action
-        log['info'] = info
-        log['level'] = level
+        log['action'] = strip_tags(action)
+        log['info'] = strip_tags(info)
+        log['level'] = strip_tags(level)
         log['created'] = int(time.time())
         self.db.logs.insert(log, safe=True)
 

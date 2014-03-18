@@ -26,8 +26,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from HTMLParser import HTMLParser
 import calendar
 import datetime
+import htmlentitydefs
 import re
 import sys
 import unicodedata
@@ -46,6 +48,29 @@ try:
 except ImportError:
     _use_uuid = False
 
+class HTMLTextExtractor(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.result = [ ]
+
+    def handle_data(self, d):
+        self.result.append(d)
+
+    def handle_charref(self, number):
+        codepoint = int(number[1:], 16) if number[0] in (u'x', u'X') else int(number)
+        self.result.append(unichr(codepoint))
+
+    def handle_entityref(self, name):
+        codepoint = htmlentitydefs.name2codepoint[name]
+        self.result.append(unichr(codepoint))
+
+    def get_text(self):
+        return u''.join(self.result)
+
+def strip_tags(html):
+    s = HTMLTextExtractor()
+    s.feed(html)
+    return s.get_text()
 
 def json_default(obj):
     """ adapted from bson.json_util.default """
