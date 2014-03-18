@@ -268,6 +268,12 @@ class AppLogViewHandler(WebBaseHandler):
             page = 0
             logs = self.db.logs.find().sort('created', DESCENDING).limit(perpage)
         self.render("app_logs.html", app=app, logs=logs, page=int(page))
+    def post(self, appname):
+        self.appname = appname
+        now = int(time.time())
+        thirtydaysago = now - 60 * 60 * 24
+        self.db.logs.remove({ 'created': { '$lt': thirtydaysago } })
+        self.redirect(r"/applications/%s/logs" % appname)
 
 @route(r"/applications/([^/]+)/objects")
 class AppObjectsHandler(WebBaseHandler):
