@@ -16,6 +16,11 @@ class GCMInvalidRegistrationException(GCMException):
         Exception.__init__(self, "Invalid Registration")
         self.regids = regids
 
+class GCMUpdateRegIDsException(GCMException):
+    def __init__(self, canonical_ids):
+        Exception.__init__(self, "Canonical ids")
+        self.canonical_ids = canonical_ids
+
 class GCMClient(object):
     def __init__(self, projectnumber, apikey, appname, instanceid=0, endpoint=GCM_ENDPOINT):
         self.projectnumber = projectnumber
@@ -73,8 +78,13 @@ class GCMClient(object):
             raise GCMException('GCMClient server is temporarily unavailable .')
 
         responsedata = response.json()
+        if 'canonical_ids' in responsedata and responsedata['canonical_ids'] is not 0:
+            # means we need to take a look at results, looking for registration_id key
+            responsedata['canonical_ids'] = self.reverse_response_info('registration_id', regids, responsedata['results'])
+
         # Handling errors
         if 'failure' in responsedata and responsedata['failure'] is not 0:
+            # means we need to take a look at results, looking for error key
             errors = self.reverse_response_info('error', regids, responsedata['results'])
             for errorkey, packed_rregisteration_ids in errors.items():
                 # Check for errors and act accordingly
