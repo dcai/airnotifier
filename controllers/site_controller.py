@@ -27,22 +27,24 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # system
-from apns import *
-from bson import *
 from hashlib import md5, sha1
-from pymongo import *
 from routes import route
-from tornado.options import define, options
-from util import *
+from tornado.options import options
 import logging
 import os
 import platform
 import random
-import re
-import sys
 import tornado.web
-import unicodedata
+from bson.objectid import ObjectId
+import time
 import uuid
+from constants import DEVICE_TYPE_IOS, VERSION
+from pymongo import DESCENDING
+from util import filter_alphabetanum
+from apns import APNClient, APNFeedback, PayLoad
+import sys
+from controllers.api_controller import API_PERMISSIONS
+from gcm.http import GCMException
 
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement
@@ -64,6 +66,11 @@ class WebBaseHandler(tornado.web.RequestHandler):
         return self.application.mongodb[self.appname]
 
     @property
+    def mongodbconnection(self):
+        """ mongodb connection """
+        return self.application.mongodb
+
+    @property
     def masterdb(self):
         return self.application.masterdb
 
@@ -71,6 +78,11 @@ class WebBaseHandler(tornado.web.RequestHandler):
     def apnsconnections(self):
         """ APNs connections"""
         return self.application.apnsconnections
+
+    @property
+    def gcmconnections(self):
+        """ GCM connections """
+        return self.application.gcmconnections
 
     @property
     def currentuser(self):
@@ -134,12 +146,12 @@ class AppAccessKeysHandler(WebBaseHandler):
         key_to_be_edited = self.get_argument('edit', None)
         if key_to_be_edited:
             key = self.db.keys.find_one({'key': key_to_be_edited})
-            self.render("app_edit_key.html", app=app, keys=keys, key=key)
+            self.render("app_edit_key.html", app=app, keys=keys, key=key, map=API_PERMISSIONS.items())
             return
         if key_to_be_deleted:
             self.db.keys.remove({'key':key_to_be_deleted})
             self.redirect("/applications/%s/keys" % appname)
-        self.render("app_keys.html", app=app, keys=keys, newkey=None)
+        self.render("app_keys.html", app=app, keys=keys, newkey=None, map=API_PERMISSIONS.items())
     @tornado.web.authenticated
     def post(self, appname):
         self.appname = appname
@@ -162,13 +174,11 @@ class AppAccessKeysHandler(WebBaseHandler):
             # crc = binascii.crc32(str(uuid.uuid4())) & 0xffffffff
             # key['key'] = '%08x' % crc
             keyObjectId = self.db.keys.insert(key)
-            keys = self.db.keys.find()
-            self.render("app_keys.html", app=app, keys=keys, newkey=key)
+            self.redirect("/applications/%s/keys" % appname)
         else:
             key['key'] = self.get_argument('accesskey').strip()
             self.db.keys.update({'key': key['key']}, key, safe=True)
-            keys = self.db.keys.find()
-            self.render("app_keys.html", app=app, keys=keys, newkey=None)
+            self.redirect("/applications/%s/keys" % appname)
 
 @route(r"/applications/([^/]+)/delete")
 class AppDeletionHandler(WebBaseHandler):
@@ -184,7 +194,14 @@ class AppDeletionHandler(WebBaseHandler):
         app = self.masterdb.applications.find_one({'shortname':appname})
         if not app: raise tornado.web.HTTPError(500)
         self.masterdb.applications.remove({'shortname': appname}, safe=True)
+        self.mongodbconnection.drop_database(appname)
         self.redirect(r"/applications")
+
+def normalize_tokens(tokens):
+    for token in tokens:
+        if not 'device' in token:
+            token['device'] = DEVICE_TYPE_IOS
+    return tokens
 
 @route(r"/applications/([^/]+)/tokens")
 class AppTokensHandler(WebBaseHandler):
@@ -229,17 +246,39 @@ class AppBroadcastHandler(WebBaseHandler):
         if not app: raise tornado.web.HTTPError(500)
         alert = self.get_argument('notification').strip()
         sound = 'default'
-        pl = PayLoad(alert=alert, sound=sound)
         count = len(self.apnsconnections[app['shortname']])
-        random.seed(time.time())
-        instanceid = random.randint(0, count - 1)
-        conn = self.apnsconnections[app['shortname']][instanceid]
+        if appname in self.apnsconnections:
+            count = len(self.apnsconnections[appname])
+        else:
+            count = 0
+        if count > 0:
+            random.seed(time.time())
+            instanceid = random.randint(0, count - 1)
+            conn = self.apnsconnections[appname][instanceid]
+        else:
+            conn = None
+        regids = []
+
         tokens = self.db.tokens.find()
         try:
             for token in tokens:
-                conn.send(token['token'], pl)
-        except Exception, ex:
-            logging.info(ex)
+                if token['device'] == DEVICE_TYPE_IOS:
+                    if conn is not None:
+                        pl = PayLoad(alert=alert, sound=sound)
+                        conn.send(token['token'], pl)
+                else:
+                    regids.append(token['token'])
+        except Exception:
+            pass
+        try:
+            # Now sending android notifications
+            gcm = self.gcmconnections[appname][0]
+            data = dict({'alert': alert}.items())
+            logging.info(regids)
+            response = gcm.send(regids, data=data, ttl=3600)
+            responsedata = response.json()
+        except GCMException:
+            logging.info('GCM problem')
         self.render("app_broadcast.html", app=app, sent=True)
 
 @route(r"/applications/([^/]+)/logs")
@@ -257,6 +296,12 @@ class AppLogViewHandler(WebBaseHandler):
             page = 0
             logs = self.db.logs.find().sort('created', DESCENDING).limit(perpage)
         self.render("app_logs.html", app=app, logs=logs, page=int(page))
+    def post(self, appname):
+        self.appname = appname
+        now = int(time.time())
+        thirtydaysago = now - 60 * 60 * 24
+        self.db.logs.remove({ 'created': { '$lt': thirtydaysago } })
+        self.redirect(r"/applications/%s/logs" % appname)
 
 @route(r"/applications/([^/]+)/objects")
 class AppObjectsHandler(WebBaseHandler):
@@ -282,6 +327,9 @@ class AppCreateNewHandler(WebBaseHandler):
         app['environment'] = 'sandbox'
         app['enableapns'] = 0
         app['connections'] = 1
+        app['blockediplist'] = ''
+        app['gcmprojectnumber'] = ''
+        app['gcmapikey'] = ''
         if self.get_argument('appfullname', None):
             app['fullname'] = self.get_argument('appfullname')
         else:
@@ -289,10 +337,13 @@ class AppCreateNewHandler(WebBaseHandler):
 
         if self.get_argument('appdescription', None):
             app['description'] = self.get_argument('appdescription')
+        else:
+            app['description'] = ""
 
-        self.masterdb.applications.insert(app)
+        app = self.masterdb.applications.find_one({'shortname': self.appname})
+        if not app:
+            self.masterdb.applications.insert(app)
         self.redirect(r"/applications/%s/settings" % self.appname)
-
 
 @route(r"/applications/([^/]+)/settings")
 class AppHandler(WebBaseHandler):
@@ -338,19 +389,8 @@ class AppHandler(WebBaseHandler):
 
     @tornado.web.authenticated
     def post(self, appname):
-        update = True
-        if appname == 'new':
-            # Create a new app
-            update = False
-            app = {}
-            self.appname = filter_alphabetanum(self.get_argument('appshortname').strip().lower())
-            app['shortname'] = self.appname
-            app['environment'] = 'sandbox'
-            app['enableapns'] = 0
-            app['connections'] = 1
-        else:
-            self.appname = appname
-            app = self.masterdb.applications.find_one({'shortname':self.appname})
+        self.appname = appname
+        app = self.masterdb.applications.find_one({'shortname':self.appname})
 
         if self.get_argument('appfullname', None):
             app['fullname'] = self.get_argument('appfullname')
@@ -385,6 +425,8 @@ class AppHandler(WebBaseHandler):
 
         if self.get_argument('blockediplist', None):
             app['blockediplist'] = self.get_argument('blockediplist').strip()
+        else:
+            app['blockediplist'] = ''
 
         if self.get_argument('gcmprojectnumber', None):
             app['gcmprojectnumber'] = self.get_argument('gcmprojectnumber').strip()
@@ -425,12 +467,17 @@ class AppHandler(WebBaseHandler):
             self.stop_apns(app)
             self.start_apns(app)
 
-        if update:
-            self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
-        else:
-            self.masterdb.applications.insert(app)
-
+        self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
         self.redirect(r"/applications/%s/settings" % self.appname)
+
+@route(r"/applications/([^/]+)")
+class AppHandler(WebBaseHandler): # @DuplicatedSignature
+    '''
+    Just redirection
+    '''
+    @tornado.web.authenticated
+    def get(self, appname):
+        self.redirect(r"/applications/%s/settings" % appname)
 
 @route(r"/applications")
 class AppsListHandler(WebBaseHandler):
@@ -450,6 +497,8 @@ class StatsHandler(WebBaseHandler):
 class InfoHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
+        airnotifierinfo = {}
+        airnotifierinfo['version'] = VERSION
         mongodbinfo = self.application.mongodb.server_info()
         if mongodbinfo.has_key('versionArray'):
             del mongodbinfo['versionArray']
@@ -463,7 +512,7 @@ class InfoHandler(WebBaseHandler):
         pythoninfo['compiler'] = platform.python_compiler()
         pythoninfo['modules'] = ", ".join(sys.builtin_module_names)
 
-        self.render('info.html', pythoninfo=pythoninfo, mongodb=mongodbinfo, tornadoversion=tornado.version)
+        self.render('info.html', airnotifierinfo=airnotifierinfo, pythoninfo=pythoninfo, mongodb=mongodbinfo, tornadoversion=tornado.version)
 
 @route(r"/admin/([^/]+)")
 class AdminHandler(WebBaseHandler):

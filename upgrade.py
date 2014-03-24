@@ -26,14 +26,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import logging
 from hashlib import sha1
-
-from pymongo.connection import Connection
-from pymongo.errors import CollectionInvalid
+from pymongo import *
+from bson import *
+from pymongo.errors import *
 from tornado.options import define, options
+from constants import *
 import tornado.options
-
-from constants import VERSION
 
 
 define("apns", default=(), help="APNs address and port")
@@ -45,51 +45,34 @@ define("mongoport", default=27017, help="MongoDB port")
 define("mongodbname", default="airnotifier", help="MongoDB database name")
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
 
-
 if __name__ == "__main__":
     tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
     mongodb = Connection(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]
-    collection_names = masterdb.collection_names()
-    try:
-        if not 'applications' in collection_names:
-            masterdb.create_collection('applications')
-            print("db.applications installed")
-    except CollectionInvalid as ex:
-        print("Failed to created applications collection", ex)
-        pass
+    version = masterdb['options'].find_one({'name': 'version'})['value']
+    if version < VERSION:
+        apps = masterdb.applications.find()
+        for app in apps:
+            logging.info(app)
+            appname = app['shortname']
+            appid = ObjectId(app['_id'])
+            ## Repair application setting collection
+            if not 'blockediplist' in app:
+                app['blockediplist'] = ''
+            if not 'description' in app:
+                app['description'] = ''
+            if not 'gcmprojectnumber' in app:
+                app['gcmprojectnumber'] = ''
+            if not 'gcmapikey' in app:
+                app['gcmapikey'] = ''
+            masterdb.applications.update({'_id': appid}, app, safe=True, upsert=True)
 
-    try:
-        if not 'managers' in collection_names:
-            masterdb.create_collection('managers')
-            masterdb.managers.ensure_index("username", unique=True)
-            print("db.managers installed")
-    except CollectionInvalid:
-        print("Failed to created managers collection")
-        pass
-
-    try:
-        manager = {}
-        manager['username'] = 'admin'
-        manager['password'] = sha1('%sadmin' % options.passwordsalt).hexdigest()
-        masterdb['managers'].insert(manager)
-        print("Admin user created, username: admin, password: admin")
-    except Exception:
-        print("Failed to create admin user")
-
-    try:
-        if not 'options' in collection_names:
-            masterdb.create_collection('options')
-            print("db.options installed")
-    except CollectionInvalid:
-        print("db.options installed")
-
-    try:
-        option_ver = {}
-        option_ver['name'] = 'version'
-        option_ver['value'] = VERSION
-        masterdb['options'].insert(option_ver)
-        print("Version number written: %s" % VERSION)
-    except Exception:
-        print("Failed to write version number")
+            ## Adding device to token collections
+            db = mongodb[appname]
+            tokens = db['tokens'].find()
+            for token in tokens:
+                tokenid = ObjectId(token['_id'])
+                if not 'device' in token:
+                    token['device'] = DEVICE_TYPE_IOS
+                    result = db['tokens'].update({'_id': tokenid}, token, safe=True, upsert=True)

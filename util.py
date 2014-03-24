@@ -26,23 +26,50 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from bson import *
+from HTMLParser import HTMLParser
+import calendar
+import datetime
+import htmlentitydefs
+import re
+import sys
+import unicodedata
+
 from bson.dbref import DBRef
 from bson.max_key import MaxKey
 from bson.min_key import MinKey
 from bson.objectid import ObjectId
+from bson.son import RE_TYPE
 from bson.timestamp import Timestamp
-from bson.tz_util import utc
-from pymongo import *
-import datetime
-import sys
-import unicodedata
+
 try:
     import uuid
     _use_uuid = True
 except ImportError:
     _use_uuid = False
 
+class HTMLTextExtractor(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.result = [ ]
+
+    def handle_data(self, d):
+        self.result.append(d)
+
+    def handle_charref(self, number):
+        codepoint = int(number[1:], 16) if number[0] in (u'x', u'X') else int(number)
+        self.result.append(unichr(codepoint))
+
+    def handle_entityref(self, name):
+        codepoint = htmlentitydefs.name2codepoint[name]
+        self.result.append(unichr(codepoint))
+
+    def get_text(self):
+        return u''.join(self.result)
+
+def strip_tags(html):
+    s = HTMLTextExtractor()
+    s.feed(html)
+    return s.get_text()
 
 def json_default(obj):
     """ adapted from bson.json_util.default """
@@ -58,7 +85,7 @@ def json_default(obj):
         millis = int(calendar.timegm(obj.timetuple()) * 1000 +
                      obj.microsecond / 1000)
         return {"$date": millis}
-    if isinstance(obj, _RE_TYPE):
+    if isinstance(obj, RE_TYPE):
         flags = ""
         if obj.flags & re.IGNORECASE:
             flags += "i"
