@@ -39,49 +39,12 @@
         <div class="control-group">
             <label class="control-label">{{ _('Permissions') }}</label>
             <div class="controls">
+				{% for k, value in map %}
                 <label class="checkbox">
-                    {% if key['permission'] & 1 == 1 %}
-                    <input type="checkbox" name="permissions[]" value="1" checked="checked">
-                    {% else %}
-                    <input type="checkbox" name="permissions[]" value="1">
-                    {% end %}
-                    Create token
-                </label>
-                <label class="checkbox">
-                    {% if key['permission'] & 2 == 2 %}
-                    <input type="checkbox" name="permissions[]" value="2" checked="checked">
-                    {% else %}
-                    <input type="checkbox" name="permissions[]" value="2">
-                    {% end %}
-                    Delete token
-                </label>
-
-                <label class="checkbox">
-                    {% if key['permission'] & 4 == 4 %}
-                    <input type="checkbox" name="permissions[]" value="4" checked="checked">
-                    {% else %}
-                    <input type="checkbox" name="permissions[]" value="4">
-                    {% end %}
-                    Send notification
-                </label>
-
-                <label class="checkbox">
-                    {% if key['permission'] & 8 == 8 %}
-                    <input type="checkbox" name="permissions[]" value="8" checked="checked">
-                    {% else %}
-                    <input type="checkbox" name="permissions[]" value="8">
-                    {% end %}
-                    Send broadcast
-                </label>
-
-                <label class="checkbox">
-                    {% if key['permission'] & 16 == 16 %}
-                    <input type="checkbox" name="permissions[]" value="16" checked="checked">
-                    {% else %}
-                    <input type="checkbox" name="permissions[]" value="16">
-                    {% end %}
-                    Access objects
-                </label>
+                    <input type="checkbox" name="permissions[]" value="{{ int(value[0]) }}"{% if value[0] & key['permission'] %} checked="checked"{% end %}>
+					<span>{{ value[1] }}</span>
+				</label>
+			    {% end %}
 
             </div>
         </div>

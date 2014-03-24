@@ -1,4 +1,9 @@
 #!/bin/sh
 
 #Notifiction
-curl -i -H "Accept: application/json" -H "X-AN-APP-NAME: moodle" -H "X-AN-APP-KEY: ca36ca26233a8178eb870a2e5229e803" -X POST -d "alert=AlertFromcURL&token=9116fc350fbcb47a0ed078e214b7f13a9e9cb02105d16d76381c700e1da6c2be" http://localhost:8801/notification/
+APPKEY=411b1577afcbad22202c2fae08e3af1e
+ALERT=ThisIsAnNotificationMessage2222
+DEVICE=android
+TOKEN=APA91bGDQA8sgHDZGtihbY5amXAITwhtGL3lIAnhexkkEMh3i44uaQ1JyFtNCfseEeB6gpxmAKPDUVT-Hvu1hgzqdUhZEhckVi5v7RuoEgvRGUhemR7TxfMGDJl_OJdcby6ICw9wrT2cktrpawGQSZtMfZZtJGEsfFCj6_qwRmpW8FGPeaKGov4
+curl -i -H "Accept: application/json" -H "X-AN-APP-NAME: moodle" -H "X-AN-APP-KEY: $APPKEY" -X POST -d "alert=$ALERT&device=$DEVICE&token=$TOKEN&score=198" http://localhost:8801/notification/
+curl -i -H "Accept: application/json" -H "X-AN-APP-NAME: moodle" -H "X-AN-APP-KEY: $APPKEY" -X POST -d "alert=$ALERT&device=$DEVICE&token=abc&score=198" http://localhost:8801/notification/

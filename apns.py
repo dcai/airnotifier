@@ -28,13 +28,14 @@
 
 from collections import deque
 from socket import socket, AF_INET, SOCK_STREAM
-from tornado import ioloop, iostream
 import binascii
 import json
 import logging
 import os
 import struct
 import time
+
+from tornado import ioloop, iostream
 
 
 apns = {
@@ -291,7 +292,7 @@ class APNClient(object):
             msg = self.messages.popleft()
             try:
                 self.remote_stream.write(msg)
-            except Exception, ex:
+            except Exception as ex:
                 logging.exception(ex)
                 # Push back to queue top
                 self.messages.appendleft(msg)

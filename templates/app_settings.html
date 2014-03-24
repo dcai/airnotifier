@@ -14,7 +14,7 @@
 
 {% block body %}
 
-<form class="form-horizontal" method="post">
+<form class="form-horizontal" id="form-app-settings" method="post">
 <input type="hidden" name="appname" value="{{app['shortname']}}" />
 <fieldset>
     <legend>{{ _('General') }}</legend>
@@ -47,7 +47,7 @@
     <div class="control-group">
         <label class="control-label" for="keydesc">{{ _('Blocked IP list') }}</label>
         <div class="controls">
-            <textarea rows="10" class="input-xlarge" id="ipaddr" name="blockediplist">{% if app.has_key('blockediplist') and app['blockediplist'] %}{{ app['blockediplist'] }}{% end %}</textarea>
+            <textarea rows="10" class="input-xlarge" id="ipaddr" name="blockediplist">{{ app['blockediplist'] }}</textarea>
         </div>
     </div>
 
@@ -55,11 +55,7 @@
     <div class="control-group">
         <label class="control-label" for="appdescription">Description</label>
         <div class="controls">
-            {% if app.has_key('description') %}
             <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription">{{app['description']}}</textarea>
-            {% else %}
-            <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription"></textarea>
-            {% end %}
         </div>
     </div>
 
@@ -69,9 +65,9 @@
 </fieldset>
 </form>
 
+<form class="form-horizontal" id="form-ios-settings" method="post">
 <fieldset>
     <legend>{{ _('Apple push notification settings') }}</legend>
-    <form class="form-horizontal" method="post">
         <div class="control-group">
             <label class="control-label"> {{ _('APNs service') }}</label>
             <div class="controls">
@@ -151,7 +147,34 @@
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">{{ _('Upload') }}</button>
         </div>
-    </form>
     {% end %}
 </fieldset>
+</form>
+
+<form class="form-horizontal" id="form-gcm-settings" method="post">
+<input type="hidden" name="appname" value="{{app['shortname']}}" />
+<fieldset>
+    <legend>{{ _('Google cloud messaging settings') }}</legend>
+
+    <div class="control-group">
+        <label class="control-label" for="form-element-gcmprojectnumber"> {{ _('Project number') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="form-element-gcmprojectnumber" name="gcmprojectnumber" value="{{app['gcmprojectnumber']}}">
+            <p class="help-block">Android app project number</p>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="form-element-gcmapikey">{{ _('API key') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="form-element-gcmapikey" name="gcmapikey" value="{{app['gcmapikey']}}">
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+    </div>
+</fieldset>
+</form>
+
 {% end %}

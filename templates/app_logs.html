@@ -13,7 +13,11 @@
 {% end %}
 
 {% block body %}
-
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+       <div class="form-actions">
+           <button type="submit" class="btn btn-danger">Purge logs more than 30 days old</button>
+       </div>
+</form>
 <div class="row-fluid">
     <table class="table table-bordered table-striped">
         <thead>

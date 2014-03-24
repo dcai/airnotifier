@@ -26,20 +26,37 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from apns import *
-from bson import *
-from pymongo import *
-from routes import route
-from tornado.options import define, options
-from util import *
-import urllib
-import urllib2
+from hashlib import md5
+from httplib import BAD_REQUEST, LOCKED, FORBIDDEN, NOT_FOUND, \
+    INTERNAL_SERVER_ERROR, OK
 import binascii
-from hashlib import md5, sha1
+import json
+import logging
 import random
 import time
+import urllib
+import urllib2
+import uuid
+
+from bson.objectid import ObjectId
+from tornado.options import options
 import tornado.web
 
+from apns import PayLoad
+from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID
+from gcm.http import GCMException, GCMInvalidRegistrationException, \
+    GCMNotRegisteredException, GCMUpdateRegIDsException
+from routes import route
+from util import filter_alphabetanum, json_default, strip_tags
+
+
+API_PERMISSIONS = {
+    'create_token': (0b00001, 'Create token'),
+    'delete_token': (0b00010, 'Delete token'),
+    'send_notification': (0b00100, 'Send notification'),
+    'send_broadcast': (0b01000, 'Send broadcast'),
+    'create_accesskey': (0b10000, 'Create access key')
+}
 class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
     """
@@ -62,33 +79,44 @@ class APIBaseHandler(tornado.web.RequestHandler):
             self.appkey = self.request.headers['X-An-App-Key']
 
         self.token = self.get_argument('token', None)
-        if self.token:
-            # If token provided, it must be 64 chars
-            if len(self.token) != 64:
-                self.send_response(dict(error='Invalid token'))
-            try:
-                value = binascii.unhexlify(self.token)
-            except Exception, ex:
-                self.send_response(dict(error='Invalid token'))
+        self.device = self.get_argument('device', DEVICE_TYPE_IOS)
+        if self.device == DEVICE_TYPE_IOS:
+            if self.token:
+                # If token provided, it must be 64 chars
+                if len(self.token) != 64:
+                    self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+                try:
+                    # Validate token
+                    binascii.unhexlify(self.token)
+                except Exception, ex:
+                    self.send_response(BAD_REQUEST, dict(error='Invalid token: %s' % ex))
+        else:
+            self.device = DEVICE_TYPE_ANDROID
 
         self.app = self.masterdb.applications.find_one({'shortname': self.appname})
 
         if not self.app:
-            self.send_response(dict(error='Invalid application name'))
+            self.send_response(BAD_REQUEST, dict(error='Invalid application name'))
 
         if not self.check_blockediplist(self.request.remote_ip, self.app):
-            self.send_response(dict(error='Blocked IP'))
+            self.send_response(LOCKED, dict(error='Blocked IP'))
         else:
 
             key = self.db.keys.find_one({'key':self.appkey})
             if not key:
                 self.permission = 0
                 if self.accesskeyrequired:
-                    self.send_response(dict(error='Invalid access key'))
+                    self.send_response(BAD_REQUEST, dict(error='Invalid access key'))
             else:
                 if 'permission' not in key:
                     key['permission'] = 0
                 self.permission = int(key['permission'])
+
+    def can(self, permissionname):
+        if permissionname not in API_PERMISSIONS:
+            return False
+        else:
+            return (self.permission & API_PERMISSIONS[permissionname][0]) == API_PERMISSIONS[permissionname][0]
 
     def check_blockediplist(self, ip, app):
         if app.has_key('blockediplist') and app['blockediplist']:
@@ -114,16 +142,27 @@ class APIBaseHandler(tornado.web.RequestHandler):
         """ APNs connections """
         return self.application.apnsconnections
 
+    @property
+    def gcmconnections(self):
+        """ GCM connections """
+        return self.application.gcmconnections
+
     def set_default_headers(self):
         self.set_header('Content-Type', 'application/json; charset=utf-8')
         self.set_header('X-Powered-By', 'AirNotifier/1.0')
+    def set_headers(self, headers):
+        for name in headers:
+            self.set_header(name, headers[name])
 
-    def send_response(self, data=None, headers=None):
+    def send_response(self, status_code=200, data=None, headers=None):
         """ Set REST API response """
+        self.set_status(status_code, None)
+        if headers is not None:
+            self.set_headers(headers)
         if data:
             data = json.dumps(data, default=json_default)
         else:
-            data = None
+            data = ""
 
         self.finish(data)
 
@@ -133,11 +172,22 @@ class APIBaseHandler(tornado.web.RequestHandler):
 
     def add_to_log(self, action, info=None, level="info"):
         log = {}
-        log['action'] = action
-        log['info'] = info
-        log['level'] = level
+        log['action'] = strip_tags(action)
+        log['info'] = strip_tags(info)
+        log['level'] = strip_tags(level)
         log['created'] = int(time.time())
         self.db.logs.insert(log, safe=True)
+
+class EntityBuilder(object):
+    @staticmethod
+    def build_token(token, device, appname, channel, created=time.time()):
+        tokenentity = {}
+        tokenentity['device'] = device
+        tokenentity['appname'] = appname
+        tokenentity['token'] = token
+        tokenentity['channel'] = channel
+        tokenentity['created'] = created
+        return tokenentity
 
 @route(r"/tokens/([^/]+)")
 class TokenHandler(APIBaseHandler):
@@ -145,151 +195,204 @@ class TokenHandler(APIBaseHandler):
         """Delete a token
         """
         # To check the access key permissions we use bitmask method.
-        if (self.permission & 2) != 2:
-            self.send_response(dict(error="No permission to delete token"))
+        if not self.can("delete_token"):
+            self.send_response(FORBIDDEN, dict(error="No permission to delete token"))
             return
 
         try:
             result = self.db.tokens.remove({'token':token}, safe=True)
             if result['n'] == 0:
-                self.send_response(dict(status='Token does\'t exist'))
+                self.send_response(NOT_FOUND, dict(status='Token does\'t exist'))
             else:
-                self.send_response(dict(status='deleted'))
+                self.send_response(OK, dict(status='deleted'))
         except Exception, ex:
-            self.send_response(dict(error=str(ex)))
+            self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
 
     def post(self, devicetoken):
         """Create a new token
         """
-        if (self.permission & 1) != 1:
-            self.send_response(dict(error="No permission to create token"))
+        if not self.can("create_token"):
+            self.send_response(FORBIDDEN, dict(error="No permission to create token"))
             return
 
-        if len(devicetoken) != 64:
-            self.send_response(dict(error='Invalid token'))
-            return
-
-        try:
-            value = binascii.unhexlify(devicetoken)
-        except Exception, ex:
-            self.send_response(dict(error='Invalid token'))
+        device = self.get_argument('device', 'ios')
+        if device == DEVICE_TYPE_IOS:
+            if len(devicetoken) != 64:
+                self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+                return
+            try:
+                binascii.unhexlify(devicetoken)
+            except Exception, ex:
+                self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+        else:
+            # if it's not ios then we force android type device here
+            device = DEVICE_TYPE_ANDROID
 
         channel = self.get_argument('channel', 'default')
 
-        now = int(time.time())
-        token = {
-            'appname': self.appname,
-            'token': devicetoken,
-            'channel': channel,
-        }
+        token = EntityBuilder.build_token(devicetoken, device, self.appname, channel)
         try:
-            result = self.db.tokens.update({'token': devicetoken, 'appname': self.appname}, token, safe=True, upsert=True)
+            result = self.db.tokens.update({'device': device, 'token': devicetoken, 'appname': self.appname}, token, safe=True, upsert=True)
             # result
             # {u'updatedExisting': True, u'connectionId': 47, u'ok': 1.0, u'err': None, u'n': 1}
             if result['updatedExisting']:
-                self.send_response(dict(status='token exists'))
+                self.send_response(OK, dict(status='token exists'))
                 self.add_to_log('Token exists', devicetoken)
             else:
-                self.send_response(dict(status='ok'))
+                self.send_response(OK, dict(status='ok'))
                 self.add_to_log('Add token', devicetoken)
         except Exception, ex:
             self.add_to_log('Cannot add token', devicetoken, "warning")
-            self.send_response(dict(error=str(ex)))
-
-@route(r"/broadcast/")
-class BroadcastHandler(APIBaseHandler):
-    def post(self):
-        if (self.permission & 8) != 8:
-            self.send_response(dict(error="No permission to send broadcast"))
-            return
-
-        # the cannel to be boradcasted
-        channel = self.get_argument('channel', 'default')
-
-        # Message payload
-        alert = self.get_argument('alert')
-        sound = self.get_argument('sound', None)
-        badge = self.get_argument('badge', None)
-        if channel == 'default':
-            # channel is not set or channel is default
-            conditions = []
-            conditions.append({'channel': {"$exists": False}})
-            conditions.append({'channel': 'default'})
-            tokens = self.db.tokens.find({"$or": conditions})
-        else:
-            tokens = self.db.tokens.find()
-
-        # Build the custom params (everything not alert/sound/badge/channel)
-        customparams = {}
-        for paramname, param in self.request.arguments.iteritems():
-            if paramname != 'alert' and paramname != 'sound' and paramname != 'badge' and paramname != 'channel':
-                customparams[paramname] = param
-
-        pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
-
-        self.add_to_log('%s broadcast' % self.appname, alert, "important")
-        count = len(self.apnsconnections[self.app['shortname']])
-        random.seed(time.time())
-        instanceid = random.randint(0, count - 1)
-        conn = self.apnsconnections[self.app['shortname']][instanceid]
-        try:
-            for token in tokens:
-                conn.send(token['token'], pl)
-        except Exception, ex:
-            pass
-        delta_t = time.time() - self._time_start
-        logging.warning("Broadcast took time: %sms" % (delta_t * 1000))
-        self.send_response(dict(status='ok'))
+            self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
 
 @route(r"/notification/")
 class NotificationHandler(APIBaseHandler):
     def post(self):
         """ Send notifications """
-        if (self.permission & 4) != 4:
-            self.send_response(dict(error="No permission to send notification"))
+        if not self.can("send_notification"):
+            self.send_response(FORBIDDEN, dict(error="No permission to send notification"))
             return
 
         if not self.token:
-            self.send_response(dict(error="No token provided"))
+            self.send_response(BAD_REQUEST, dict(error="No token provided"))
             return
 
-        token = self.db.tokens.find_one({'token': self.token})
-        if not token:
-            now = int(time.time())
-            token = {
-                    'appname': self.appname,
-                    'token': self.token,
-                    'created': now,
-                    }
-            logging.info(token)
-            try:
-                result = self.db.tokens.insert(token, safe=True)
-            except Exception, ex:
-                self.send_response(dict(error=str(ex)))
-
+        # iOS and Android shared params
         alert = self.get_argument('alert')
+        device = self.get_argument('device', 'ios')
+        channel = self.get_argument('channel', 'default')
+        # Android
+        collapse_key = self.get_argument('collapse_key', '')
+        # iOS
         sound = self.get_argument('sound', None)
         badge = self.get_argument('badge', None)
+
+        token = self.db.tokens.find_one({'token': self.token})
+
+        if not token:
+            token = EntityBuilder.build_token(self.token, device, self.appname, channel)
+            if not self.can("create_token"):
+                self.send_response(BAD_REQUEST, dict(error="Unknow token and you have no permission to create"))
+                return
+            try:
+                # TODO check permission to insert
+                self.db.tokens.insert(token, safe=True)
+            except Exception as ex:
+                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+        knownparams = ['alert', 'sound', 'badge', 'token', 'device', 'collapse_key']
         # Build the custom params  (everything not alert/sound/badge/token)
         customparams = {}
-        for paramname, param in self.request.arguments.items():
-            if paramname != 'alert' and paramname != 'sound' and paramname != 'badge' and paramname != 'token':
-                customparams[paramname] = self.get_argument(paramname)
-        pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
-        if not self.apnsconnections.has_key(self.app['shortname']):
-            # TODO: add message to queue in MongoDB
-            self.send_response(dict(error="APNs is offline"))
+        allparams = {}
+        for name, value in self.request.arguments.items():
+            allparams[name] = self.get_argument(name)
+            if name not in knownparams:
+                customparams[name] = self.get_argument(name)
+        if device == DEVICE_TYPE_IOS:
+            pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
+            if not self.apnsconnections.has_key(self.app['shortname']):
+                # TODO: add message to queue in MongoDB
+                self.send_response(INTERNAL_SERVER_ERROR, dict(error="APNs is offline"))
+                return
+            count = len(self.apnsconnections[self.app['shortname']])
+            # Find an APNS instance
+            random.seed(time.time())
+            instanceid = random.randint(0, count - 1)
+            conn = self.apnsconnections[self.app['shortname']][instanceid]
+            # do the job
+            try:
+                self.add_to_log('%s notification' % self.appname, alert)
+                conn.send(self.token, pl)
+                self.send_response(OK)
+            except Exception, ex:
+                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+        else:
+            try:
+                gcm = self.gcmconnections[self.app['shortname']][0]
+                data = dict({'alert': alert}.items() + customparams.items())
+                response = gcm.send([self.token], data=data, collapse_key=collapse_key, ttl=3600)
+                responsedata = response.json()
+                if responsedata['failure'] == 0:
+                    self.send_response(OK)
+            except GCMUpdateRegIDsException as ex:
+                self.send_response(OK)
+            except GCMInvalidRegistrationException as ex:
+                self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
+            except GCMNotRegisteredException as ex:
+                self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
+            except GCMException as ex:
+                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+
+@route(r"/broadcast/")
+class BroadcastHandler(APIBaseHandler):
+    def post(self):
+        if not self.can('send_broadcast'):
+            self.send_response(FORBIDDEN, dict(error="No permission to send broadcast"))
             return
-        count = len(self.apnsconnections[self.app['shortname']])
-        random.seed(time.time())
-        instanceid = random.randint(0, count - 1)
-        conn = self.apnsconnections[self.app['shortname']][instanceid]
+
+        # the cannel to be boradcasted
+        channel = self.get_argument('channel', 'default')
+        # iOS and Android shared params
+        alert = self.get_argument('alert')
+        # Android
+        collapse_key = self.get_argument('collapse_key', '')
+        # iOS
+        sound = self.get_argument('sound', None)
+        badge = self.get_argument('badge', None)
+
+        conditions = []
+        if channel == 'default':
+            # channel is not set or channel is default
+            conditions.append({'channel': {"$exists": False}})
+            conditions.append({'channel': 'default'})
+        else:
+            conditions.append({'channel': channel})
+        tokens = self.db.tokens.find({"$or": conditions})
+
+        knownparams = ['alert', 'sound', 'badge', 'token', 'device', 'collapse_key']
+        # Build the custom params  (everything not alert/sound/badge/token)
+        customparams = {}
+        allparams = {}
+        for name, value in self.request.arguments.items():
+            allparams[name] = self.get_argument(name)
+            if name not in knownparams:
+                customparams[name] = self.get_argument(name)
+
+        self.add_to_log('%s broadcast' % self.appname, alert, "important")
+        if self.app['shortname'] in self.apnsconnections:
+            count = len(self.apnsconnections[self.app['shortname']])
+        else:
+            count = 0
+        if count > 0:
+            random.seed(time.time())
+            instanceid = random.randint(0, count - 1)
+            conn = self.apnsconnections[self.app['shortname']][instanceid]
+        else:
+            conn = None
+        regids = []
         try:
-            self.add_to_log('%s notification' % self.appname, alert)
-            conn.send(self.token, pl)
-            self.send_response(dict(status='ok'))
-        except Exception, ex:
-            self.send_response(dict(error=str(ex)))
+            for token in tokens:
+                if token['device'] == DEVICE_TYPE_IOS:
+                    if conn is not None:
+                        pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
+                        conn.send(token['token'], pl)
+                else:
+                    regids.append(token['token'])
+        except Exception:
+            pass
+
+        try:
+            # Now sending android notifications
+            gcm = self.gcmconnections[self.app['shortname']][0]
+            data = dict({'alert': alert}.items() + customparams.items())
+            logging.info(regids)
+            response = gcm.send(regids, data=data, collapse_key=collapse_key, ttl=3600)
+            responsedata = response.json()
+        except GCMException:
+            logging.info('GCM problem')
+
+        delta_t = time.time() - self._time_start
+        logging.warning("Broadcast took time: %sms" % (delta_t * 1000))
+        self.send_response(OK, dict(status='ok'))
 
 @route(r"/users")
 class UsersHandler(APIBaseHandler):
@@ -313,13 +416,13 @@ class UsersHandler(APIBaseHandler):
         try:
             cursor = self.db.users.find_one({'username':username})
             if cursor:
-                self.send_response(dict(error='Username already exists'))
+                self.send_response(BAD_REQUEST, dict(error='Username already exists'))
             else:
                 userid = self.db.users.insert(user, safe=True)
                 self.add_to_log('Add user', username)
-                self.send_response({'userid': str(userid)})
+                self.send_response(OK, {'userid': str(userid)})
         except Exception, ex:
-            self.send_response(dict(error=str(ex)))
+            self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
 
     def get(self):
         """Query users
@@ -332,13 +435,13 @@ class UsersHandler(APIBaseHandler):
                 # unpack query conditions
                 data = json.loads(where)
             except Exception, ex:
-                self.send_response(dict(error=str(ex)))
+                self.send_response(BAD_REQUEST, dict(error=str(ex)))
 
         cursor = self.db.users.find(data)
         users = []
         for u in cursor:
             users.append(u)
-        self.send_response(users)
+        self.send_response(OK, users)
 
 @route(r"/users/([^/]+)")
 class UserHandler(APIBaseHandler):
@@ -376,7 +479,7 @@ class ObjectHandler(APIBaseHandler):
         self.classname = classname
         self.objectid = ObjectId(objectId)
         doc = self.db[self.collection].find_one({'_id': self.objectid})
-        self.send_response(doc)
+        self.send_response(OK, doc)
         return
 
     def delete(self, classname, objectId):
@@ -385,7 +488,7 @@ class ObjectHandler(APIBaseHandler):
         self.classname = classname
         self.objectid = ObjectId(objectId)
         result = self.db[self.collection].remove({'_id': self.objectid}, safe=True)
-        self.send_response(dict(result=result))
+        self.send_response(OK, dict(result=result))
 
     def put(self, classname, objectId):
         """Update a object
@@ -430,13 +533,13 @@ class ClassHandler(APIBaseHandler):
                 # unpack query conditions
                 data = json.loads(where)
             except Exception, ex:
-                self.send_response(dict(error=str(ex)))
+                self.send_response(BAD_REQUEST, dict(error=str(ex)))
 
         objects = self.db[self.collection].find(data)
         results = []
         for obj in objects:
             results.append(obj)
-        self.send_response(results)
+        self.send_response(OK, results)
 
     def post(self, classname):
         """Create collections
@@ -445,7 +548,7 @@ class ClassHandler(APIBaseHandler):
         try:
             data = json.loads(self.request.body)
         except Exception, ex:
-            self.send_response(ex)
+            self.send_response(BAD_REQUEST, ex)
 
         self.add_to_log('Add object to %s' % self.classname, data)
         objectId = self.db[self.collection].insert(data, safe=True)
@@ -459,19 +562,23 @@ class AccessKeysHandler(APIBaseHandler):
     def post(self):
         """Create access key
         """
+        if not self.can('create_accesskey'):
+            self.send_response(dict(error="No permission to create accesskey"))
+            return
         key = {}
         key['contact'] = self.get_argument('contact', '')
         key['description'] = self.get_argument('description', '')
         key['created'] = int(time.time())
         # This is 1111 in binary means all permissions are granted
-        key['permission'] = 15
+        key['permission'] = API_PERMISSIONS['create_token'][0] | API_PERMISSIONS['delete_token'][0] \
+                | API_PERMISSIONS['send_notification'][0] | API_PERMISSIONS['send_broadcast'][0]
         key['key'] = md5(str(uuid.uuid4())).hexdigest()
         keyObjectId = self.db.keys.insert(key)
         result = self.verify_request()
         if result:
-            self.send_response(dict(accesskey=key['key']))
+            self.send_response(OK, dict(accesskey=key['key']))
         else:
-            self.send_response("Site not registered on moodle.net")
+            self.send_response(FORBIDDEN, "Site not registered on moodle.net")
 
     def verify_request(self):
         huburl = "http://moodle.net/local/sitecheck/check.php"
@@ -489,7 +596,6 @@ class AccessKeysHandler(APIBaseHandler):
             return False
         else:
             return True
-
 
 @route(r"/files")
 class FilesHandler(APIBaseHandler):

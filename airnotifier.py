@@ -26,14 +26,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from apns import *
-from pymongo import Connection
+import logging
+import os
+import time
+
+from pymongo.connection import Connection
 from tornado.options import define, options
-from uimodules import *
-from util import *
 import tornado.httpserver
 import tornado.ioloop
 import tornado.options
+
+from apns import APNClient
+from gcm.http import GCMClient
+from uimodules import *
+from util import error_log
+
 
 define("port", default=8801, help="Application server listen port", type=int)
 
@@ -48,8 +55,7 @@ define("mongoport", default=27017, help="MongoDB port")
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
 define("dbprefix", default="obj_", help="Collection name prefix")
 
-
-# logging.getLogger().setLevel(logging.DEBUG)
+logging.basicConfig(level=logging.INFO, format='%(levelname)-8s %(message)s')
 
 class AirNotifierApp(tornado.web.Application):
 
@@ -57,7 +63,7 @@ class AirNotifierApp(tornado.web.Application):
         from routes import RouteLoader
         return RouteLoader.load('controllers')
 
-    def __init__(self, apnsconnections={}):
+    def __init__(self, apnsconnections={}, gcmconnections={}):
         app_settings = dict(
             debug=True,
             # debug=options.debug,
@@ -69,8 +75,8 @@ class AirNotifierApp(tornado.web.Application):
             login_url=r"/auth/login",
             autoescape=None,
             )
-
         self.apnsconnections = apnsconnections
+        self.gcmconnections = gcmconnections
 
         handlers = self.init_routes()
 
@@ -97,23 +103,23 @@ class AirNotifierApp(tornado.web.Application):
         logging.info("AirNotifier is running")
         tornado.ioloop.IOLoop.instance().start()
 
-def init_apns():
+def init_messaging_agents():
     mongodb = None
     while not mongodb:
         try:
             mongodb = Connection(options.mongohost, options.mongoport)
-        except:
-            pass
+        except Exception as ex:
+            logging.error(ex)
         # wait 5 secs to reconnect
         time.sleep(5)
     masterdb = mongodb[options.masterdb]
-    apps = masterdb.applications.find({'enableapns': 1})
+    apps = masterdb.applications.find()
+    httpconns = {}
     apnsconns = {}
     for app in apps:
+        ''' APNs setup '''
         apnsconns[app['shortname']] = []
         conns = int(app['connections'])
-        if conns > 5:
-            conns = 5
         if conns < 1:
             conns = 1
         if 'environment' not in app:
@@ -127,9 +133,18 @@ def init_apns():
                     logging.error(ex)
                     continue
                 apnsconns[app['shortname']].append(apn)
+        ''' GCMClient setup '''
+        httpconns[app['shortname']] = []
+        if 'gcmprojectnumber' in app and 'gcmapikey' in app and 'shortname' in app:
+            try:
+                http = GCMClient(app['gcmprojectnumber'], app['gcmapikey'], app['shortname'], 0)
+            except Exception as ex:
+                logging.error(ex)
+                continue
+            httpconns[app['shortname']].append(http)
     mongodb.close()
-    return apnsconns
+    return apnsconns, httpconns
 
 if __name__ == "__main__":
-    apnsconns = init_apns()
-    (AirNotifierApp(apnsconnections=apnsconns)).main()
+    apnsconns, gcmconns = init_messaging_agents()
+    (AirNotifierApp(apnsconnections=apnsconns, gcmconnections=gcmconns)).main()
