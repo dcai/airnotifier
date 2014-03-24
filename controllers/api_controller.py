@@ -34,12 +34,11 @@ import json
 import logging
 import random
 import time
-import urllib
-import urllib2
 import uuid
 
 from bson.objectid import ObjectId
 from tornado.options import options
+import requests
 import tornado.web
 
 from apns import PayLoad
@@ -562,6 +561,10 @@ class AccessKeysHandler(APIBaseHandler):
     def post(self):
         """Create access key
         """
+        result = self.verify_request()
+        if not result:
+            self.send_response(FORBIDDEN, dict(error="Site not registered on moodle.net"))
+            return
         if not self.can('create_accesskey'):
             self.send_response(dict(error="No permission to create accesskey"))
             return
@@ -573,25 +576,16 @@ class AccessKeysHandler(APIBaseHandler):
         key['permission'] = API_PERMISSIONS['create_token'][0] | API_PERMISSIONS['delete_token'][0] \
                 | API_PERMISSIONS['send_notification'][0] | API_PERMISSIONS['send_broadcast'][0]
         key['key'] = md5(str(uuid.uuid4())).hexdigest()
-        keyObjectId = self.db.keys.insert(key)
-        result = self.verify_request()
-        if result:
-            self.send_response(OK, dict(accesskey=key['key']))
-        else:
-            self.send_response(FORBIDDEN, "Site not registered on moodle.net")
+        self.db.keys.insert(key)
+        self.send_response(OK, dict(accesskey=key['key']))
 
     def verify_request(self):
         huburl = "http://moodle.net/local/sitecheck/check.php"
         mdlurl = self.get_argument('url', '')
         mdlsiteid = self.get_argument('siteid', '')
-        data = {
-                'siteid': mdlsiteid,
-                'url': mdlurl
-                }
-        postdata = urllib.urlencode(data)
-        request = urllib2.Request(huburl, postdata)
-        response = urllib2.urlopen(request)
-        result = int(response.read())
+        params = {'siteid': mdlsiteid, 'url': mdlurl}
+        response = requests.get(huburl, params=params)
+        result = int(response.text)
         if result == 0:
             return False
         else:
