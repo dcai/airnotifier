@@ -551,7 +551,7 @@ class ClassHandler(APIBaseHandler):
 
         self.add_to_log('Add object to %s' % self.classname, data)
         objectId = self.db[self.collection].insert(data, safe=True)
-        self.send_response(dict(objectId=objectId))
+        self.send_response(OK, dict(objectId=objectId))
 
 @route(r"/accesskeys/")
 class AccessKeysHandler(APIBaseHandler):
