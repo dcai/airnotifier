@@ -549,7 +549,7 @@ class ClassHandler(APIBaseHandler):
 
         self.add_to_log('Add object to %s' % self.classname, data)
         objectId = self.db[self.collection].insert(data, safe=True)
-        self.send_response(dict(objectId=objectId))
+        self.send_response(OK, dict(objectId=objectId))
 
 @route(r"/accesskeys/")
 class AccessKeysHandler(APIBaseHandler):
@@ -560,7 +560,7 @@ class AccessKeysHandler(APIBaseHandler):
         """Create access key
         """
         if not self.can('create_accesskey'):
-            self.send_response(dict(error="No permission to create accesskey"))
+            self.send_response(FORBIDDEN, dict(error="No permission to create accesskey"))
             return
         key = {}
         key['contact'] = self.get_argument('contact', '')
