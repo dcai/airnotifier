@@ -286,6 +286,8 @@ class NotificationHandler(APIBaseHandler):
             allparams[name] = self.get_argument(name)
             if name not in knownparams:
                 customparams[name] = self.get_argument(name)
+        logmessage = 'Message length: %s, Access key: %s' %(len(alert), self.appkey)
+        self.add_to_log('%s notification' % self.appname, logmessage)
         if device == DEVICE_TYPE_IOS:
             pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
             if not self.apnsconnections.has_key(self.app['shortname']):
@@ -299,7 +301,6 @@ class NotificationHandler(APIBaseHandler):
             conn = self.apnsconnections[self.app['shortname']][instanceid]
             # do the job
             try:
-                self.add_to_log('%s notification' % self.appname, alert)
                 conn.send(self.token, pl)
                 self.send_response(OK)
             except Exception, ex:
@@ -383,7 +384,6 @@ class BroadcastHandler(APIBaseHandler):
             # Now sending android notifications
             gcm = self.gcmconnections[self.app['shortname']][0]
             data = dict({'alert': alert}.items() + customparams.items())
-            logging.info(regids)
             response = gcm.send(regids, data=data, collapse_key=collapse_key, ttl=3600)
             responsedata = response.json()
         except GCMException:
