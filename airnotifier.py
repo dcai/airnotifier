@@ -64,6 +64,9 @@ class AirNotifierApp(tornado.web.Application):
         return RouteLoader.load('controllers')
 
     def __init__(self, apnsconnections={}, gcmconnections={}):
+        tornado.options.parse_config_file("airnotifier.conf")
+        tornado.options.parse_command_line()
+        
         app_settings = dict(
             debug=True,
             # debug=options.debug,
@@ -95,8 +98,6 @@ class AirNotifierApp(tornado.web.Application):
         self.masterdb = mongodb[options.masterdb]
         assert self.masterdb.connection == self.mongodb
     def main(self):
-        tornado.options.parse_config_file("airnotifier.conf")
-        tornado.options.parse_command_line()
         logging.info("Starting AirNotifier server")
         http_server = tornado.httpserver.HTTPServer(self)
         http_server.listen(options.port)
