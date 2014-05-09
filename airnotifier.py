@@ -64,9 +64,7 @@ class AirNotifierApp(tornado.web.Application):
         return RouteLoader.load('controllers')
 
     def __init__(self, apnsconnections={}, gcmconnections={}):
-        tornado.options.parse_config_file("airnotifier.conf")
-        tornado.options.parse_command_line()
-        
+
         app_settings = dict(
             debug=True,
             # debug=options.debug,
@@ -147,5 +145,7 @@ def init_messaging_agents():
     return apnsconns, httpconns
 
 if __name__ == "__main__":
+    tornado.options.parse_config_file("airnotifier.conf")
+    tornado.options.parse_command_line()
     apnsconns, gcmconns = init_messaging_agents()
     (AirNotifierApp(apnsconnections=apnsconns, gcmconnections=gcmconns)).main()
