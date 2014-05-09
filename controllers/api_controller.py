@@ -308,7 +308,7 @@ class NotificationHandler(APIBaseHandler):
         else:
             try:
                 gcm = self.gcmconnections[self.app['shortname']][0]
-                data = dict({'alert': alert}.items() + customparams.items())
+                data = dict({'message': alert}.items() + customparams.items())
                 response = gcm.send([self.token], data=data, collapse_key=collapse_key, ttl=3600)
                 responsedata = response.json()
                 if responsedata['failure'] == 0:
