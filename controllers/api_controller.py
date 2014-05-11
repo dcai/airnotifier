@@ -256,8 +256,9 @@ class NotificationHandler(APIBaseHandler):
             self.send_response(BAD_REQUEST, dict(error="No token provided"))
             return
 
-        # iOS and Android shared params
-        alert = self.get_argument('alert')
+        # iOS and Android shared params (use sliptlines trick to remove line ending)
+        alert = ''.join(self.get_argument('alert').splitlines())
+
         device = self.get_argument('device', 'ios')
         channel = self.get_argument('channel', 'default')
         # Android
@@ -305,7 +306,7 @@ class NotificationHandler(APIBaseHandler):
                 self.send_response(OK)
             except Exception, ex:
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-        else:
+        elif device == DEVICE_TYPE_ANDROID:
             try:
                 gcm = self.gcmconnections[self.app['shortname']][0]
                 data = dict({'message': alert}.items() + customparams.items())
@@ -321,6 +322,10 @@ class NotificationHandler(APIBaseHandler):
                 self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
             except GCMException as ex:
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+        else:
+            self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
+
+
 
 @route(r"/broadcast/")
 class BroadcastHandler(APIBaseHandler):
@@ -332,7 +337,7 @@ class BroadcastHandler(APIBaseHandler):
         # the cannel to be boradcasted
         channel = self.get_argument('channel', 'default')
         # iOS and Android shared params
-        alert = self.get_argument('alert')
+        alert = ''.join(self.get_argument('alert').splitlines())
         # Android
         collapse_key = self.get_argument('collapse_key', '')
         # iOS
