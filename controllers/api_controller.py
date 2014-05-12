@@ -78,7 +78,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
             self.appkey = self.request.headers['X-An-App-Key']
 
         self.token = self.get_argument('token', None)
-        self.device = self.get_argument('device', DEVICE_TYPE_IOS)
+        self.device = self.get_argument('device', DEVICE_TYPE_IOS).lower()
         if self.device == DEVICE_TYPE_IOS:
             if self.token:
                 # If token provided, it must be 64 chars
@@ -214,7 +214,7 @@ class TokenHandler(APIBaseHandler):
             self.send_response(FORBIDDEN, dict(error="No permission to create token"))
             return
 
-        device = self.get_argument('device', 'ios')
+        device = self.get_argument('device', DEVICE_TYPE_IOS).lower()
         if device == DEVICE_TYPE_IOS:
             if len(devicetoken) != 64:
                 self.send_response(BAD_REQUEST, dict(error='Invalid token'))
@@ -259,7 +259,7 @@ class NotificationHandler(APIBaseHandler):
         # iOS and Android shared params (use sliptlines trick to remove line ending)
         alert = ''.join(self.get_argument('alert').splitlines())
 
-        device = self.get_argument('device', 'ios')
+        device = self.get_argument('device', DEVICE_TYPE_IOS).lower()
         channel = self.get_argument('channel', 'default')
         # Android
         collapse_key = self.get_argument('collapse_key', '')
