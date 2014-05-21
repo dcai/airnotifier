@@ -575,9 +575,6 @@ class AccessKeysHandler(APIBaseHandler):
         if not result:
             self.send_response(FORBIDDEN, dict(error="Site not registered on moodle.net"))
             return
-        if not self.can('create_accesskey'):
-            self.send_response(FORBIDDEN, dict(error="No permission to create accesskey"))
-            return
         key = {}
         key['contact'] = self.get_argument('contact', '')
         key['description'] = self.get_argument('description', '')
