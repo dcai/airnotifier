@@ -1,11 +1,22 @@
 ## Introduction
-AirNotifier is an application server for apple push notification service, users and resources management, it's a strong and generic backend for iOS apps.
+AirNotifier is an easy-to-use yet professional application server for sending real-time notifications to mobile and desktop applications. AirNotifier provides an unified web service interface to deliver messages to multi devices using multi protocols, it also features a friendly web based administrator UI to configure and manage services.
 
-APNs requires a certification to set up SSL connection, we needs multi server instances without sharing certification file with all peers under certain circumstances, AirNotifier works as a push notification forwarder, each peer sends notification requests to it, it setup the SSL connection and forward notification to application notification server.
+## Features
+- Multi devices: iOS(APNs), Android(GCM), Windows Phone(WNS/MPNS), Windows 8.1(MPNS)
+- Subscribe to multi channels
+- Unlimited number of devices and channels
+- API access control
+- Web-based UI to configure
+- Broadcase notifications
+- Access key management
+- Logging activities
+- Apple Feedback API
+- GCM broadcast API
+- Non-blocking API design allows master provider to handle large loads of request smoothly
 
 ## Installation
 
-[Installation guide](https://github.com/dongsheng/airnotifier/wiki/Installation)
+Please read [Installation guide](https://github.com/airnotifier/airnotifier/wiki/Installation)
 
 ## Configuration
 `airnotifier.conf` is the config file, options:
@@ -18,15 +29,8 @@ APNs requires a certification to set up SSL connection, we needs multi server in
 ## Design
 - [Product design](https://github.com/dongsheng/airnotifier/wiki/Specification)
 
-## API documentation
-- [API (In progress)](https://github.com/dongsheng/airnotifier/wiki/API)
-
-## Features
-- Generic backend for iOS app (Users, resources management) in the Cloud
-- Restful API allows providers to send notification through straightforward restful interface
-- Access key management
-- Logging activities
-- Non-blocking API design allows master provider to handle large loads of request smoothly
+## Web service documentation
+- [Web service interfaces (In progress)](https://github.com/dongsheng/airnotifier/wiki/API)
 
 ## Requirements
 
