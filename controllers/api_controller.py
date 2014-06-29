@@ -256,6 +256,12 @@ class NotificationHandler(APIBaseHandler):
             self.send_response(BAD_REQUEST, dict(error="No token provided"))
             return
 
+        #try:
+        #    # if request body is json entity
+        #    data = json.loads(self.request.body)
+        #except:
+        #    data = json.loads(urllib.unquote_plus(self.request.body))
+
         # iOS and Android shared params (use sliptlines trick to remove line ending)
         alert = ''.join(self.get_argument('alert').splitlines())
 
