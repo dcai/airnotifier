@@ -36,8 +36,8 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.options
 
-from apns import APNClient
-from gcm.http import GCMClient
+from pushservices.apns import APNClient
+from pushservices.gcm import GCMClient
 from uimodules import *
 from util import error_log
 

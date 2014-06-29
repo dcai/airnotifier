@@ -41,9 +41,9 @@ from tornado.options import options
 import requests
 import tornado.web
 
-from apns import PayLoad
+from pushservices.apns import PayLoad
 from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID
-from gcm.http import GCMException, GCMInvalidRegistrationException, \
+from pushservices.gcm import GCMException, GCMInvalidRegistrationException, \
     GCMNotRegisteredException, GCMUpdateRegIDsException
 from routes import route
 from util import filter_alphabetanum, json_default, strip_tags

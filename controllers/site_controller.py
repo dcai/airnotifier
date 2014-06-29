@@ -41,10 +41,10 @@ import uuid
 from constants import DEVICE_TYPE_IOS, VERSION
 from pymongo import DESCENDING
 from util import filter_alphabetanum
-from apns import APNClient, APNFeedback, PayLoad
+from pushservices.apns import APNClient, APNFeedback, PayLoad
 import sys
 from controllers.api_controller import API_PERMISSIONS
-from gcm.http import GCMException
+from pushservices.gcm import GCMException
 
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement
