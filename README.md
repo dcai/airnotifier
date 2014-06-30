@@ -27,10 +27,10 @@ Please read [Installation guide](https://github.com/airnotifier/airnotifier/wiki
 - dbprefix: MongoDB collection name prefix, this will be used to create object data collection
 
 ## Design
-- [Product design](https://github.com/dongsheng/airnotifier/wiki/Specification)
+- [Product design](https://github.com/airnotifier/airnotifier/wiki/Specification)
 
 ## Web service documentation
-- [Web service interfaces (In progress)](https://github.com/dongsheng/airnotifier/wiki/API)
+- [Web service interfaces (In progress)](https://github.com/airnotifier/airnotifier/wiki/API)
 
 ## Requirements
 
