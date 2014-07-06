@@ -38,6 +38,7 @@ import tornado.options
 
 from pushservices.apns import APNClient
 from pushservices.gcm import GCMClient
+from pushservices.wns import WNSClient
 from uimodules import *
 from util import error_log
 
@@ -63,7 +64,7 @@ class AirNotifierApp(tornado.web.Application):
         from routes import RouteLoader
         return RouteLoader.load('controllers')
 
-    def __init__(self, apnsconnections={}, gcmconnections={}):
+    def __init__(self, apnsconnections={}, gcmconnections={}, wnsconnections={}):
 
         app_settings = dict(
             debug=True,
@@ -78,6 +79,7 @@ class AirNotifierApp(tornado.web.Application):
             )
         self.apnsconnections = apnsconnections
         self.gcmconnections = gcmconnections
+        self.wnsconnections = wnsconnections
 
         handlers = self.init_routes()
 
@@ -113,8 +115,9 @@ def init_messaging_agents():
         time.sleep(5)
     masterdb = mongodb[options.masterdb]
     apps = masterdb.applications.find()
-    httpconns = {}
+    gcmconns = {}
     apnsconns = {}
+    wnsconns = {}
     for app in apps:
         ''' APNs setup '''
         apnsconns[app['shortname']] = []
@@ -133,19 +136,28 @@ def init_messaging_agents():
                     continue
                 apnsconns[app['shortname']].append(apn)
         ''' GCMClient setup '''
-        httpconns[app['shortname']] = []
+        gcmconns[app['shortname']] = []
         if 'gcmprojectnumber' in app and 'gcmapikey' in app and 'shortname' in app:
             try:
                 http = GCMClient(app['gcmprojectnumber'], app['gcmapikey'], app['shortname'], 0)
             except Exception as ex:
                 logging.error(ex)
                 continue
-            httpconns[app['shortname']].append(http)
+            gcmconns[app['shortname']].append(http)
+        ''' WNS setup '''
+        wnsconns[app['shortname']] = []
+        try:
+            wns = WNSClient()
+        except Exception as ex:
+            logging.error(ex)
+            continue
+        wnsconns[app['shortname']].append(wns)
+
     mongodb.close()
-    return apnsconns, httpconns
+    return apnsconns, gcmconns,wnsconns
 
 if __name__ == "__main__":
     tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
-    apnsconns, gcmconns = init_messaging_agents()
-    (AirNotifierApp(apnsconnections=apnsconns, gcmconnections=gcmconns)).main()
+    apnsconns, gcmconns,wnsconns = init_messaging_agents()
+    (AirNotifierApp(apnsconnections=apnsconns, gcmconnections=gcmconns, wnsconnections=wnsconns)).main()
