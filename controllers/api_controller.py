@@ -42,7 +42,7 @@ import requests
 import tornado.web
 
 from pushservices.apns import PayLoad
-from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID
+from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS
 from pushservices.gcm import GCMException, GCMInvalidRegistrationException, \
     GCMNotRegisteredException, GCMUpdateRegIDsException
 from routes import route
@@ -145,6 +145,11 @@ class APIBaseHandler(tornado.web.RequestHandler):
     def gcmconnections(self):
         """ GCM connections """
         return self.application.gcmconnections
+
+    @property
+    def wnsconnections(self):
+        """ WNS connections """
+        return self.application.wnsconnections
 
     def set_default_headers(self):
         self.set_header('Content-Type', 'application/json; charset=utf-8')
@@ -328,6 +333,8 @@ class NotificationHandler(APIBaseHandler):
                 self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
             except GCMException as ex:
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+        elif device == DEVICE_TYPE_WNS:
+            self.send_response(OK)
         else:
             self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
 
@@ -607,3 +614,105 @@ class FilesHandler(APIBaseHandler):
     def post(self):
         # hash and store a file
         pass
+
+@route(r"/api/v2/notification/")
+class NotificationV3Handler(APIBaseHandler):
+    def validate_data(self, data):
+        if 'channel' not in data:
+            data['channel'] = 'default'
+        if 'sound' not in data:
+            data['sound'] = None
+        if 'badge' not in data:
+            data['badge'] = None
+        return data
+    def post(self):
+        """ Send notifications """
+        if not self.can("send_notification"):
+            self.send_response(FORBIDDEN, dict(error="No permission to send notification"))
+            return
+
+        try:
+           # if request body is json entity
+           data = json.loads(self.request.body)
+        except:
+           data = json.loads(urllib.unquote_plus(self.request.body))
+
+        data = self.validate_data(data)
+
+        if not self.token:
+            self.token = data['token']
+
+
+        # iOS and Android shared params (use sliptlines trick to remove line ending)
+        alert = ''.join(data['alert'].splitlines())
+
+        device = data['device'].lower()
+        channel = data['channel']
+        # Android
+        #collapse_key = self.get_argument('collapse_key', '')
+        # iOS
+        sound = data['sound']
+        badge = data['badge']
+
+        token = self.db.tokens.find_one({'token': self.token})
+
+        if not token:
+            token = EntityBuilder.build_token(self.token, device, self.appname, channel)
+            if not self.can("create_token"):
+                self.send_response(BAD_REQUEST, dict(error="Unknow token and you have no permission to create"))
+                return
+            try:
+                # TODO check permission to insert
+                self.db.tokens.insert(token, safe=True)
+            except Exception as ex:
+                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+        knownparams = ['alert', 'sound', 'badge', 'token', 'device', 'collapse_key']
+        # Build the custom params  (everything not alert/sound/badge/token)
+        customparams = {}
+        allparams = {}
+        for name, value in self.request.arguments.items():
+            allparams[name] = self.get_argument(name)
+            if name not in knownparams:
+                customparams[name] = self.get_argument(name)
+        logmessage = 'Message length: %s, Access key: %s' %(len(alert), self.appkey)
+        self.add_to_log('%s notification' % self.appname, logmessage)
+        if device == DEVICE_TYPE_IOS:
+            pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
+            if not self.apnsconnections.has_key(self.app['shortname']):
+                # TODO: add message to queue in MongoDB
+                self.send_response(INTERNAL_SERVER_ERROR, dict(error="APNs is offline"))
+                return
+            count = len(self.apnsconnections[self.app['shortname']])
+            # Find an APNS instance
+            random.seed(time.time())
+            instanceid = random.randint(0, count - 1)
+            conn = self.apnsconnections[self.app['shortname']][instanceid]
+            # do the job
+            try:
+                conn.send(self.token, pl)
+                self.send_response(OK)
+            except Exception, ex:
+                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+        elif device == DEVICE_TYPE_ANDROID:
+            try:
+                gcm = self.gcmconnections[self.app['shortname']][0]
+                data = dict({'message': alert}.items() + customparams.items())
+                response = gcm.send([self.token], data=data, collapse_key=collapse_key, ttl=3600)
+                responsedata = response.json()
+                if responsedata['failure'] == 0:
+                    self.send_response(OK)
+            except GCMUpdateRegIDsException as ex:
+                self.send_response(OK)
+            except GCMInvalidRegistrationException as ex:
+                self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
+            except GCMNotRegisteredException as ex:
+                self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
+            except GCMException as ex:
+                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+        elif device == DEVICE_TYPE_WNS:
+            wns = self.wnsconnections[self.app['shortname']][0]
+            data['add'] = wns.send("my message")
+
+            self.send_response(OK, data)
+        else:
+            self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
