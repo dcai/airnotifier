@@ -670,10 +670,11 @@ class NotificationV3Handler(APIBaseHandler):
         # Build the custom params  (everything not alert/sound/badge/token)
         customparams = {}
         allparams = {}
-        for name, value in self.request.arguments.items():
-            allparams[name] = self.get_argument(name)
-            if name not in knownparams:
-                customparams[name] = self.get_argument(name)
+        if 'extra' in data:
+            for name, value in data['extra'].items():
+                allparams[name] = data['extra'][name]
+                if name not in knownparams:
+                    customparams[name] = data['extra'][name]
         logmessage = 'Message length: %s, Access key: %s' %(len(alert), self.appkey)
         self.add_to_log('%s notification' % self.appname, logmessage)
         if device == DEVICE_TYPE_IOS:
@@ -711,8 +712,9 @@ class NotificationV3Handler(APIBaseHandler):
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
         elif device == DEVICE_TYPE_WNS:
             wns = self.wnsconnections[self.app['shortname']][0]
-            data['add'] = wns.send("my message")
-
+            data['add'] = wns.send(self.token, alert)
+            self.send_response(OK, data)
+        elif device == DEVICE_TYPE_MPNS:
             self.send_response(OK, data)
         else:
             self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
