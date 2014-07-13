@@ -175,6 +175,31 @@
         <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
     </div>
 </fieldset>
+
+
+<fieldset>
+    <legend>{{ _('WNS settings') }}</legend>
+
+    <div class="control-group">
+        <label class="control-label" for="form-element-gcmprojectnumber"> {{ _('Client ID') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="form-element-wnsclientid" name="wnsclientid" value="{{app['wnsclientid']}}">
+            <p class="help-block">Client ID</p>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="form-element-gcmapikey">{{ _('Client secret') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="form-element-wnsclientsecret" name="wnsclientsecret" value="{{app['wnsclientsecret']}}">
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+    </div>
+</fieldset>
+
 </form>
 
 {% end %}

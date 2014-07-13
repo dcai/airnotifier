@@ -147,7 +147,7 @@ def init_messaging_agents():
         ''' WNS setup '''
         wnsconns[app['shortname']] = []
         try:
-            wns = WNSClient()
+            wns = WNSClient(app['wnsclientid'], app['wnsclientsecret'], app['wnsaccesstoken'], app['wnstokentype'],app['wnstokenexpiry'])
         except Exception as ex:
             logging.error(ex)
             continue

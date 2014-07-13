@@ -45,6 +45,7 @@ from pushservices.apns import APNClient, APNFeedback, PayLoad
 import sys
 from controllers.api_controller import API_PERMISSIONS
 from pushservices.gcm import GCMException
+import requests
 
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement
@@ -466,6 +467,29 @@ class AppHandler(WebBaseHandler):
             app['environment'] = 'sandbox'
             self.stop_apns(app)
             self.start_apns(app)
+
+        updatewnsaccesstoken = False
+        if self.get_argument('wnsclientid', None):
+            wnsclientid = self.get_argument('wnsclientid').strip()
+            if not wnsclientid == app['wnsclientid']:
+                app['wnsclientid'] = wnsclientid
+                updatewnsaccesstoken = True
+
+        if self.get_argument('wnsclientsecret', None):
+            wnsclientsecret = self.get_argument('wnsclientsecret').strip()
+            if not wnsclientsecret == app['wnsclientsecret']:
+                app['wnsclientsecret'] = wnsclientsecret
+                updatewnsaccesstoken = True
+
+        if updatewnsaccesstoken:
+            url = 'https://login.live.com/accesstoken.srf'
+            payload = {'grant_type': 'client_credentials', 'client_id': app['wnsclientid'], 'client_secret': app['wnsclientsecret'], 'scope': 'notify.windows.com'}
+            response = requests.post(url, data=payload)
+            responsedata = response.json()
+            if 'access_token' in responsedata and 'token_type' in responsedata:
+                app['wnsaccesstoken'] = responsedata['access_token']
+                app['wnstokentype'] = responsedata['token_type']
+                app['wnstokenexpiry'] = int(responsedata['expires_in']) + int(time.time())
 
         self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
         self.redirect(r"/applications/%s/settings" % self.appname)

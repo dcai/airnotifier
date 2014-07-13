@@ -50,11 +50,11 @@ if __name__ == "__main__":
     tornado.options.parse_command_line()
     mongodb = Connection(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]
-    version = masterdb['options'].find_one({'name': 'version'})['value']
-    if version < VERSION:
+    version_object = masterdb['options'].find_one({'name': 'version'})
+    version = version_object['value']
+    if version < 20140315:
         apps = masterdb.applications.find()
         for app in apps:
-            logging.info(app)
             appname = app['shortname']
             appid = ObjectId(app['_id'])
             ## Repair application setting collection
@@ -76,3 +76,27 @@ if __name__ == "__main__":
                 if not 'device' in token:
                     token['device'] = DEVICE_TYPE_IOS
                     result = db['tokens'].update({'_id': tokenid}, token, safe=True, upsert=True)
+
+        version_object['value'] = 20140315
+        masterdb['option'].update({'name': 'version'}, version_object, safe=True, upsert=True)
+
+    if version < 20140720:
+        apps = masterdb.applications.find()
+        for app in apps:
+            logging.info(app)
+            appname = app['shortname']
+            appid = ObjectId(app['_id'])
+            ## Repair application setting collection
+            if not 'wnsclientid' in app:
+                app['wnsclientid'] = ''
+            if not 'wnsclientsecret' in app:
+                app['wnsclientsecret'] = ''
+            if not 'wnsaccesstoken' in app:
+                app['wnsaccesstoken'] = ''
+            if not 'wnstokentype' in app:
+                app['wnstokentype'] = ''
+            if not 'wnstokenexpiry' in app:
+                app['wnstokenexpiry'] = ''
+            masterdb.applications.update({'_id': appid}, app, safe=True, upsert=True)
+        version_object['value'] = 20140720
+        masterdb['option'].update({'name': 'version'}, version_object, safe=True, upsert=True)
