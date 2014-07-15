@@ -139,17 +139,22 @@ class APIBaseHandler(tornado.web.RequestHandler):
     @property
     def apnsconnections(self):
         """ APNs connections """
-        return self.application.apnsconnections
+        return self.application.services['apns']
 
     @property
     def gcmconnections(self):
         """ GCM connections """
-        return self.application.gcmconnections
+        return self.application.services['gcm']
 
     @property
     def wnsconnections(self):
         """ WNS connections """
-        return self.application.wnsconnections
+        return self.application.services['wns']
+
+    @property
+    def mpnsconnections(self):
+        """ WNS connections """
+        return self.application.services['mpns']
 
     def set_default_headers(self):
         self.set_header('Content-Type', 'application/json; charset=utf-8')
