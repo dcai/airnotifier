@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from pushservice import PushService
 
 # Copyright (c) 2012, Dongsheng Cai
 #
@@ -130,7 +131,7 @@ class APNFeedback(object):
         """ Feedback """
         pass
 
-class APNClient(object):
+class APNClient(PushService):
 
     def is_oneline(self):
         return self.connected

@@ -1,3 +1,4 @@
+from pushservice import PushService
 import json
 import requests
 import logging
@@ -21,7 +22,7 @@ class GCMUpdateRegIDsException(GCMException):
         Exception.__init__(self, "Canonical ids")
         self.canonical_ids = canonical_ids
 
-class GCMClient(object):
+class GCMClient(PushService):
     def __init__(self, projectnumber, apikey, appname, instanceid=0, endpoint=GCM_ENDPOINT):
         self.projectnumber = projectnumber
         self.apikey = apikey

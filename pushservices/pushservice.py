@@ -1,0 +1,3 @@
+
+class PushService(object):
+    pass

@@ -1,8 +1,9 @@
+from pushservice import PushService
 import requests
 import logging
 import time
 
-class WNSClient(object):
+class WNSClient(PushService):
     def __init__(self, clientid, clientsecret, accesstoken, tokentype, expiry):
         self.clientid = clientid
         self.clientsecret = clientsecret
