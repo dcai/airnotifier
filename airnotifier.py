@@ -149,8 +149,7 @@ def init_messaging_agents():
         services['wns'][app['shortname']] = []
         if 'wnsclientid' in app and 'wnsclientsecret' in app and 'shortname' in app:
             try:
-                wns = WNSClient(app['wnsclientid'], app['wnsclientsecret'],
-                        app['wnsaccesstoken'], app['wnstokentype'],app['wnstokenexpiry'])
+                wns = WNSClient(masterdb, app, 0)
             except Exception as ex:
                 logging.error(ex)
                 continue

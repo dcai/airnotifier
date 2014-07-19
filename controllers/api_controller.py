@@ -338,8 +338,6 @@ class NotificationHandler(APIBaseHandler):
                 self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
             except GCMException as ex:
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-        elif device == DEVICE_TYPE_WNS:
-            self.send_response(OK)
         else:
             self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
 
@@ -647,9 +645,13 @@ class NotificationV3Handler(APIBaseHandler):
         if not self.token:
             self.token = data['token']
 
-
         # iOS and Android shared params (use sliptlines trick to remove line ending)
         alert = ''.join(data['alert'].splitlines())
+
+        # application specific data
+        extra = {}
+        if "extra" in data:
+            extra = data['extra']
 
         device = data['device'].lower()
         channel = data['channel']
@@ -717,9 +719,11 @@ class NotificationV3Handler(APIBaseHandler):
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
         elif device == DEVICE_TYPE_WNS:
             wns = self.wnsconnections[self.app['shortname']][0]
-            data['add'] = wns.send(self.token, alert)
-            self.send_response(OK, data)
+            wns.send(token=data['token'], alert=data['alert'], extra=extra, wns=data['wns'])
+            self.send_response(OK)
         elif device == DEVICE_TYPE_MPNS:
+            mpns = self.mpnsconnections[self.app['shortname']][0]
+            data['add'] = mpns.send(token=data['token'], alert=data['alert'], extra=extra, mpns=data['mpns'])
             self.send_response(OK, data)
         else:
             self.send_response(BAD_REQUEST, dict(error='Invalid device type'))

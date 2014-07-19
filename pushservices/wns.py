@@ -4,19 +4,26 @@ import logging
 import time
 
 class WNSClient(PushService):
-    def __init__(self, clientid, clientsecret, accesstoken, tokentype, expiry):
-        self.clientid = clientid
-        self.clientsecret = clientsecret
-        self.accesstoken = accesstoken
-        self.tokentype = tokentype
-        self.expiry = expiry
+    def __init__(self, masterdb, app, instanceid=0):
+        self.app = app
+        self.clientid = app['wnsclientid']
+        self.clientsecret = app['wnsclientsecret']
+        self.accesstoken = app['wnsaccesstoken']
+        self.tokentype = app['wnstokentype']
+        self.expiry = app['wnstokenexpiry']
 
-    def send(self, url, message):
+    def send(self, **kwargs):
+        url = kwargs['token']
+        message = kwargs['alert']
         now = int(time.time())
+        wnsparams = kwargs['wns']
+        wnstype = wnsparams['type']
+        if wnstype in ['toast', 'tile']:
+            wnstype = "wns/" + wnstype
+        logging.info(wnstype)
         accesstoken = self.accesstoken
         if self.expiry <= now:
             accesstoken = self.request_token()
-        xml1 = '<toast launch=""><visual lang="en-US"><binding template="ToastImageAndText01"><image id="1" src="World" /><text id="1">%s</text></binding></visual></toast>' % message
         xml = """
             <toast>
                 <visual>
@@ -28,7 +35,7 @@ class WNSClient(PushService):
             """
         headers = {
                 'Content-Type': 'text/xml',
-                'X-WNS-Type': 'wns/tile',
+                'X-WNS-Type': wnstype,
                 'Authorization': 'Bearer %s' % (accesstoken),
                 }
         response = requests.post(url, data=xml, headers=headers)
@@ -47,4 +54,6 @@ class WNSClient(PushService):
         response = requests.post(url, data=payload)
         responsedata = response.json()
         accesstoken = responsedata['access_token']
+        self.app['wnsaccesstoken'] = accesstoken
+        masterdb.applications.update({'shortname': self.app['shortname']}, self.app, safe=True)
         return accesstoken
