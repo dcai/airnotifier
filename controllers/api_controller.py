@@ -28,7 +28,7 @@
 
 from hashlib import md5
 from httplib import BAD_REQUEST, LOCKED, FORBIDDEN, NOT_FOUND, \
-    INTERNAL_SERVER_ERROR, OK
+    INTERNAL_SERVER_ERROR, OK, ACCEPTED
 import binascii
 import json
 import logging
@@ -66,6 +66,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
     def prepare(self):
         """Pre-process HTTP request
         """
+        self.appname = None
         if self.request.headers.has_key('X-An-App-Name'):
             """ App name """
             self.appname = self.request.headers['X-An-App-Name'];
@@ -73,6 +74,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
         if not self.appname:
             self.appname = filter_alphabetanum(self.get_argument('appname'))
 
+        self.appkey = None
         if self.request.headers.has_key('X-An-App-Key'):
             """ App key """
             self.appkey = self.request.headers['X-An-App-Key']
@@ -102,6 +104,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
         else:
 
             key = self.db.keys.find_one({'key':self.appkey})
+            logging.info(key)
             if not key:
                 self.permission = 0
                 if self.accesskeyrequired:
@@ -199,6 +202,7 @@ class EntityBuilder(object):
         return tokenentity
 
 @route(r"/tokens/([^/]+)")
+@route(r"/api/v2/tokens/([^/]+)")
 class TokenHandler(APIBaseHandler):
     def delete(self, token):
         """Delete a token
@@ -344,6 +348,7 @@ class NotificationHandler(APIBaseHandler):
 
 
 @route(r"/broadcast/")
+@route(r"/api/v2/broadcast/")
 class BroadcastHandler(APIBaseHandler):
     def post(self):
         if not self.can('send_broadcast'):
@@ -415,6 +420,7 @@ class BroadcastHandler(APIBaseHandler):
         self.send_response(OK, dict(status='ok'))
 
 @route(r"/users")
+@route(r"/api/v2/users")
 class UsersHandler(APIBaseHandler):
     """Handle users
     - Take application ID and secret
@@ -464,6 +470,7 @@ class UsersHandler(APIBaseHandler):
         self.send_response(OK, users)
 
 @route(r"/users/([^/]+)")
+@route(r"/api/v2/users/([^/]+)")
 class UserHandler(APIBaseHandler):
     def delete(self, userId):
         """ Delete user """
@@ -489,6 +496,7 @@ class UserHandler(APIBaseHandler):
 
 
 @route(r"/objects/([^/]+)/([^/]+)")
+@route(r"/api/v2/objects/([^/]+)/([^/]+)")
 class ObjectHandler(APIBaseHandler):
     """Object Handler
     http://airnotifier.xxx/objects/cars/4f794f7329ddda1cb9000000
@@ -524,6 +532,7 @@ class ObjectHandler(APIBaseHandler):
         return collectionname
 
 @route(r"/objects/([^/]+)")
+@route(r"/api/v2/objects/([^/]+)")
 class ClassHandler(APIBaseHandler):
     """Object Handler
     http://airnotifier.xxx/objects/cars
@@ -575,10 +584,12 @@ class ClassHandler(APIBaseHandler):
         self.send_response(OK, dict(objectId=objectId))
 
 @route(r"/accesskeys/")
+@route(r"/api/v2/accesskeys/")
 class AccessKeysHandler(APIBaseHandler):
     def initialize(self):
         self.accesskeyrequired = False
         self._time_start = time.time()
+
     def post(self):
         """Create access key
         """
@@ -612,14 +623,10 @@ class AccessKeysHandler(APIBaseHandler):
         else:
             return True
 
-@route(r"/files")
-class FilesHandler(APIBaseHandler):
-    def post(self):
-        # hash and store a file
-        pass
-
 @route(r"/api/v2/notification/")
 class NotificationV3Handler(APIBaseHandler):
+    def get(self):
+        self.send_response(200, 'fine')
     def validate_data(self, data):
         if 'channel' not in data:
             data['channel'] = 'default'
@@ -698,7 +705,7 @@ class NotificationV3Handler(APIBaseHandler):
             # do the job
             try:
                 conn.send(self.token, pl)
-                self.send_response(OK)
+                self.send_response(ACCEPTED)
             except Exception, ex:
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
         elif device == DEVICE_TYPE_ANDROID:
@@ -708,9 +715,9 @@ class NotificationV3Handler(APIBaseHandler):
                 response = gcm.send([self.token], data=data, collapse_key=collapse_key, ttl=3600)
                 responsedata = response.json()
                 if responsedata['failure'] == 0:
-                    self.send_response(OK)
+                    self.send_response(ACCEPTED)
             except GCMUpdateRegIDsException as ex:
-                self.send_response(OK)
+                self.send_response(ACCEPTED)
             except GCMInvalidRegistrationException as ex:
                 self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
             except GCMNotRegisteredException as ex:
@@ -720,10 +727,10 @@ class NotificationV3Handler(APIBaseHandler):
         elif device == DEVICE_TYPE_WNS:
             wns = self.wnsconnections[self.app['shortname']][0]
             wns.send(token=data['token'], alert=data['alert'], extra=extra, wns=data['wns'])
-            self.send_response(OK)
+            self.send_response(ACCEPTED)
         elif device == DEVICE_TYPE_MPNS:
             mpns = self.mpnsconnections[self.app['shortname']][0]
             data['add'] = mpns.send(token=data['token'], alert=data['alert'], extra=extra, mpns=data['mpns'])
-            self.send_response(OK, data)
+            self.send_response(ACCEPTED)
         else:
             self.send_response(BAD_REQUEST, dict(error='Invalid device type'))

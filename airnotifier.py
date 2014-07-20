@@ -39,6 +39,7 @@ import tornado.options
 from pushservices.apns import APNClient
 from pushservices.gcm import GCMClient
 from pushservices.wns import WNSClient
+from pushservices.mpns import MPNSClient
 from uimodules import *
 from util import error_log
 
@@ -155,6 +156,15 @@ def init_messaging_agents():
                 continue
             services['wns'][app['shortname']].append(wns)
 
+        ''' MPNS setup '''
+        services['mpns'][app['shortname']] = []
+        if 'mpnsclientid' in app and 'mpnsclientsecret' in app and 'shortname' in app:
+            try:
+                mpns = MPNSClient(masterdb, app, 0)
+            except Exception as ex:
+                logging.error(ex)
+                continue
+            services['mpns'][app['shortname']].append(mpns)
     mongodb.close()
     return services
 
