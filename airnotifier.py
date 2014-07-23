@@ -90,7 +90,6 @@ class AirNotifierApp(tornado.web.Application):
                 mongodb = Connection(options.mongohost, options.mongoport)
             except:
                 error_log("Cannot not connect to MongoDB")
-            time.sleep(5)
 
         self.mongodb = mongodb
 
@@ -101,7 +100,11 @@ class AirNotifierApp(tornado.web.Application):
         http_server = tornado.httpserver.HTTPServer(self)
         http_server.listen(options.port)
         logging.info("AirNotifier is running")
-        tornado.ioloop.IOLoop.instance().start()
+        try:
+            tornado.ioloop.IOLoop.instance().start()
+        except KeyboardInterrupt:
+            logging.info("AirNotifier is quiting")
+            tornado.ioloop.IOLoop.instance().stop()
 
 def init_messaging_agents():
     services = {
@@ -116,8 +119,6 @@ def init_messaging_agents():
             mongodb = Connection(options.mongohost, options.mongoport)
         except Exception as ex:
             logging.error(ex)
-        # wait 5 secs to reconnect
-        time.sleep(5)
     masterdb = mongodb[options.masterdb]
     apps = masterdb.applications.find()
     for app in apps:
