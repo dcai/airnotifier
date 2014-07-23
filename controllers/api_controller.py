@@ -42,11 +42,13 @@ import requests
 import tornado.web
 
 from pushservices.apns import PayLoad
-from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS
+from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
+    DEVICE_TYPE_MPNS
 from pushservices.gcm import GCMException, GCMInvalidRegistrationException, \
     GCMNotRegisteredException, GCMUpdateRegIDsException
 from routes import route
 from util import filter_alphabetanum, json_default, strip_tags
+import urllib
 
 
 API_PERMISSIONS = {
@@ -623,10 +625,8 @@ class AccessKeysHandler(APIBaseHandler):
         else:
             return True
 
-@route(r"/api/v2/notification/")
-class NotificationV3Handler(APIBaseHandler):
-    def get(self):
-        self.send_response(200, 'fine')
+@route(r"/api/v2/push/")
+class PushHandler(APIBaseHandler):
     def validate_data(self, data):
         if 'channel' not in data:
             data['channel'] = 'default'
@@ -634,18 +634,33 @@ class NotificationV3Handler(APIBaseHandler):
             data['sound'] = None
         if 'badge' not in data:
             data['badge'] = None
+        if 'wns' not in data:
+            data['wns'] = {}
+        if 'apns' not in data:
+            data['apns'] = {}
+        if 'gcm' not in data:
+            data['gcm'] = {}
         return data
+    def get_apns_conn(self):
+        if not self.apnsconnections.has_key(self.app['shortname']):
+            self.send_response(INTERNAL_SERVER_ERROR, dict(error="APNs is offline"))
+            return
+        count = len(self.apnsconnections[self.app['shortname']])
+        # Find an APNS instance
+        random.seed(time.time())
+        instanceid = random.randint(0, count - 1)
+        return self.apnsconnections[self.app['shortname']][instanceid]
     def post(self):
         """ Send notifications """
         if not self.can("send_notification"):
             self.send_response(FORBIDDEN, dict(error="No permission to send notification"))
             return
 
+        # if request body is json entity
         try:
-           # if request body is json entity
-           data = json.loads(self.request.body)
+            data = json.loads(self.request.body)
         except:
-           data = json.loads(urllib.unquote_plus(self.request.body))
+            data = json.loads(urllib.unquote_plus(self.request.body))
 
         data = self.validate_data(data)
 
@@ -662,11 +677,6 @@ class NotificationV3Handler(APIBaseHandler):
 
         device = data['device'].lower()
         channel = data['channel']
-        # Android
-        #collapse_key = self.get_argument('collapse_key', '')
-        # iOS
-        sound = data['sound']
-        badge = data['badge']
 
         token = self.db.tokens.find_one({'token': self.token})
 
@@ -680,39 +690,18 @@ class NotificationV3Handler(APIBaseHandler):
                 self.db.tokens.insert(token, safe=True)
             except Exception as ex:
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-        knownparams = ['alert', 'sound', 'badge', 'token', 'device', 'collapse_key']
-        # Build the custom params  (everything not alert/sound/badge/token)
-        customparams = {}
-        allparams = {}
-        if 'extra' in data:
-            for name, value in data['extra'].items():
-                allparams[name] = data['extra'][name]
-                if name not in knownparams:
-                    customparams[name] = data['extra'][name]
         logmessage = 'Message length: %s, Access key: %s' %(len(alert), self.appkey)
         self.add_to_log('%s notification' % self.appname, logmessage)
         if device == DEVICE_TYPE_IOS:
-            pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
-            if not self.apnsconnections.has_key(self.app['shortname']):
-                # TODO: add message to queue in MongoDB
-                self.send_response(INTERNAL_SERVER_ERROR, dict(error="APNs is offline"))
-                return
-            count = len(self.apnsconnections[self.app['shortname']])
-            # Find an APNS instance
-            random.seed(time.time())
-            instanceid = random.randint(0, count - 1)
-            conn = self.apnsconnections[self.app['shortname']][instanceid]
-            # do the job
             try:
-                conn.send(self.token, pl)
+                self.get_apns_conn().process(token=self.token, alert=alert, extra=extra, apns=data['apns'])
                 self.send_response(ACCEPTED)
             except Exception, ex:
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
         elif device == DEVICE_TYPE_ANDROID:
             try:
                 gcm = self.gcmconnections[self.app['shortname']][0]
-                data = dict({'message': alert}.items() + customparams.items())
-                response = gcm.send([self.token], data=data, collapse_key=collapse_key, ttl=3600)
+                response = gcm.process([self.token], alert, extra=data['extra'], gcm=data['gcm'])
                 responsedata = response.json()
                 if responsedata['failure'] == 0:
                     self.send_response(ACCEPTED)
@@ -726,11 +715,11 @@ class NotificationV3Handler(APIBaseHandler):
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
         elif device == DEVICE_TYPE_WNS:
             wns = self.wnsconnections[self.app['shortname']][0]
-            wns.send(token=data['token'], alert=data['alert'], extra=extra, wns=data['wns'])
+            wns.process(token=data['token'], alert=data['alert'], extra=extra, wns=data['wns'])
             self.send_response(ACCEPTED)
         elif device == DEVICE_TYPE_MPNS:
             mpns = self.mpnsconnections[self.app['shortname']][0]
-            data['add'] = mpns.send(token=data['token'], alert=data['alert'], extra=extra, mpns=data['mpns'])
+            mpns.process(token=data['token'], alert=data['alert'], extra=extra, mpns=data['mpns'])
             self.send_response(ACCEPTED)
         else:
             self.send_response(BAD_REQUEST, dict(error='Invalid device type'))

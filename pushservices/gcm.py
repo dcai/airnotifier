@@ -1,7 +1,6 @@
 from pushservice import PushService
 import json
 import requests
-import logging
 
 GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send'
 
@@ -56,6 +55,17 @@ class GCMClient(PushService):
                 errors[v] = []
             errors[v].append(k)
         return errors
+
+    def process(self, **kwargs):
+        collapse_key = None
+        ttl = None
+        if 'gcm' in kwargs['data']:
+            gcmparam = kwargs['data']
+            if 'collapse_key' in gcmparam:
+                collapse_key = gcmparam['collapse_key']
+            if 'ttl' in gcmparam:
+                collapse_key = gcmparam['ttl']
+        return self.send([kwargs['token']], data=kwargs['data'], collapse_key=collapse_key, ttl=ttl)
 
     def send(self, regids, data=None, collapse_key=None, ttl=None, retries=5):
         '''

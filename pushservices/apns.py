@@ -245,6 +245,21 @@ class APNClient(PushService):
         self.remote_stream.close()
         self.sock.close()
 
+    def process(self, **kwargs):
+        token = kwargs['token']
+        apnsparams = kwargs['apns']
+        sound = None
+        if 'sound' in apnsparams:
+            sound = apnsparams['sound']
+        badge = None
+        if 'badge' in apnsparams:
+            badge = apnsparams['badge']
+        customparams = None
+        if 'custom' in apnsparams:
+            customparams = apnsparams['custom']
+        pl = PayLoad(alert=kwargs['alert'], sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
+        self.send(token, pl)
+
     def send(self, deviceToken, payload):
         """ Pack payload and append to message queue """
         # logging.info("Notification through %s[%d]" % (self.appname, self.instanceid))
