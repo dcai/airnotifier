@@ -239,9 +239,6 @@ class TokenHandler(APIBaseHandler):
                 binascii.unhexlify(devicetoken)
             except Exception, ex:
                 self.send_response(BAD_REQUEST, dict(error='Invalid token'))
-        else:
-            # if it's not ios then we force android type device here
-            device = DEVICE_TYPE_ANDROID
 
         channel = self.get_argument('channel', 'default')
 
