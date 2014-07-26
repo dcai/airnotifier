@@ -46,6 +46,7 @@ from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
     DEVICE_TYPE_MPNS
 from pushservices.gcm import GCMException, GCMInvalidRegistrationException, \
     GCMNotRegisteredException, GCMUpdateRegIDsException
+from pushservices.wns import WNSInvalidPushTypeException
 from routes import route
 from util import filter_alphabetanum, json_default, strip_tags
 import urllib
@@ -711,9 +712,12 @@ class PushHandler(APIBaseHandler):
             except GCMException as ex:
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
         elif device == DEVICE_TYPE_WNS:
-            wns = self.wnsconnections[self.app['shortname']][0]
-            wns.process(token=data['token'], alert=data['alert'], extra=extra, wns=data['wns'])
-            self.send_response(ACCEPTED)
+            try:
+                wns = self.wnsconnections[self.app['shortname']][0]
+                wns.process(token=data['token'], alert=data['alert'], extra=extra, wns=data['wns'])
+                self.send_response(ACCEPTED)
+            except WNSInvalidPushTypeException as ex:
+                self.send_response(BAD_REQUEST, dict(error=str(ex)))
         elif device == DEVICE_TYPE_MPNS:
             mpns = self.mpnsconnections[self.app['shortname']][0]
             mpns.process(token=data['token'], alert=data['alert'], extra=extra, mpns=data['mpns'])
