@@ -6,15 +6,15 @@ import time
 class WNSException(Exception): pass
 
 class WNSInvalidPushTypeException(WNSException):
-    def __init__(self, regids):
-        Exception.__init__(self, "WNS: Invalid push notification type")
+    def __init__(self, type):
+        Exception.__init__(self, "WNS Invalid push notification type :" + type)
 
 WNSACCESSTOKEN_URL = 'https://login.live.com/accesstoken.srf'
 TOAST_XML = """
 <toast>
     <visual>
         <binding template="%s">
-            <text id="1">%s</text>
+        %s %s
         </binding>
     </visual>
 </toast>
@@ -52,14 +52,27 @@ class WNSClient(PushService):
         wnstype = 'toast'
         if 'type' in wnsparams:
             wnstype = wnsparams['type']
-        if wnstype in ['toast', 'tile', 'badge', 'raw']:
-            wnstype = "wns/" + wnstype
-        else:
-            raise WNSInvalidPushTypeException()
+        if wnstype not in ['toast', 'tile', 'badge', 'raw']:
+            raise WNSInvalidPushTypeException(wnstype)
 
         if wnstype == 'toast':
             template = 'ToastText01'
-            xml = TOAST_XML % (template, message)
+            if 'template' in wnsparams:
+                template = wnsparams['template']
+            text = ""
+            if 'text' in wnsparams:
+                count = 1
+                for t in wnsparams['text']:
+                    text = text + '<text id="%d">%s</text>' % (count, t)
+                    count = count + 1
+            image = ''
+            if 'image' in wnsparams:
+                count = 1
+                for img in wnsparams['image']:
+                    image = image + '<img id="%d" src="%s" />' % (count, img)
+                    count = count + 1
+            xml = TOAST_XML % (template, image, text)
+            logging.info(xml)
         elif wnstype == 'tile':
             if 'tile' in wnsparams:
                 if 'text' in wnsparams['tile']:
@@ -72,20 +85,22 @@ class WNSClient(PushService):
                         count = count + 1
                     xml = TILE_XML % (template, xml)
                 else:
-                    raise WNSInvalidPushTypeException()
+                    raise WNSInvalidPushTypeException('tile')
             else:
-                raise WNSInvalidPushTypeException()
+                raise WNSInvalidPushTypeException('tile')
         elif wnstype == 'badge':
             if 'badge' in wnsparams:
                 if 'value' in wnsparams['badge']:
                     badgevalue = wnsparams['badge']['value']
                     xml = BADGE_XML % badgevalue
                 else:
-                    raise WNSInvalidPushTypeException()
+                    raise WNSInvalidPushTypeException('badge')
             else:
-                raise WNSInvalidPushTypeException()
+                raise WNSInvalidPushTypeException('badge')
         else:
-            raise WNSInvalidPushTypeException()
+            raise WNSInvalidPushTypeException(wnstype)
+
+        wnstype = 'wns/' + wnstype
 
         accesstoken = self.accesstoken
         if self.expiry <= now:
@@ -99,8 +114,10 @@ class WNSClient(PushService):
         if response.status_code == 400:
             logging.info('400 Bad Request: One or more headers were specified incorrectly')
         elif response.status_code == 401:
-            pass
+            logging.info('401 Unauthorized: The cloud service did not present a valid authentication ticket. The OAuth ticket may be invalid.')
         elif response.status_code >= 500:
+            logging.info(response.status_code + ' Service issue')
+        else:
             pass
 
         return message
