@@ -35,6 +35,7 @@ import logging
 import random
 import time
 import uuid
+from importlib import import_module
 
 from bson.objectid import ObjectId
 from tornado.options import options
@@ -661,6 +662,19 @@ class PushHandler(APIBaseHandler):
             data = json.loads(urllib.unquote_plus(self.request.body))
 
         data = self.validate_data(data)
+
+        # Hook
+        if 'extra' in data:
+            if 'processor' in data['extra']:
+                try:
+                    proc = import_module('hooks.' + data['extra']['processor'])
+                    if 'data' in data['extra']:
+                        params = data['extra']['data']
+                    else:
+                        params = {}
+                    data = proc.process_pushnotification_payload(data)
+                except Exception, ex:
+                    self.send_response(BAD_REQUEST, dict(error=str(ex)))
 
         if not self.token:
             self.token = data['token']

@@ -159,13 +159,12 @@ def init_messaging_agents():
 
         ''' MPNS setup '''
         services['mpns'][app['shortname']] = []
-        if 'mpnsclientid' in app and 'mpnsclientsecret' in app and 'shortname' in app:
-            try:
-                mpns = MPNSClient(masterdb, app, 0)
-            except Exception as ex:
-                logging.error(ex)
-                continue
-            services['mpns'][app['shortname']].append(mpns)
+        try:
+            mpns = MPNSClient(masterdb, app, 0)
+        except Exception as ex:
+            logging.error(ex)
+            continue
+        services['mpns'][app['shortname']].append(mpns)
     mongodb.close()
     return services
 
