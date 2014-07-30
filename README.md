@@ -2,7 +2,7 @@
 AirNotifier is an easy-to-use yet professional application server for sending real-time notifications to mobile and desktop applications. AirNotifier provides an unified web service interface to deliver messages to multi devices using multi protocols, it also features a friendly web based administrator UI to configure and manage services.
 
 ## Features
-- Multi devices: iOS(APNs), Android(GCM), Windows Phone(WNS/MPNS), Windows 8.1(MPNS)
+- Multi devices: iOS(APNs), Android(GCM), Windows Phone(WNS/MPNS)
 - Subscribe to multi channels
 - Unlimited number of devices and channels
 - API access control
