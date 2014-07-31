@@ -24,5 +24,20 @@ def process_pushnotification_payload(data):
     if 'timecreated' in extra:
         timecreated = extra['timecreated']
 
-    return data
+    if not 'wns' in extra:
+        data['extra']['wns'] = {
+                'type': 'toast',
+                'template': 'ToastText01',
+                'text': [data['alert']]
+                }
 
+    if not 'mpns' in extra:
+        data['extra']['mpns'] = {
+                'type': 'toast',
+                'text1': [data['alert']]
+                }
+
+    if not 'gcm' in extra:
+        pass
+
+    return data
