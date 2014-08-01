@@ -108,11 +108,11 @@ class WNSClient(PushService):
                 }
         response = requests.post(url, data=xml, headers=headers)
         if response.status_code == 400:
-            logging.info('400 Bad Request: One or more headers were specified incorrectly')
+            raise WNSException('WNS 400 Bad Request: One or more headers were specified incorrectly')
         elif response.status_code == 401:
-            logging.info('401 Unauthorized: The cloud service did not present a valid authentication ticket. The OAuth ticket may be invalid.')
+            raise WNSException('WNS 401 Unauthorized: The cloud service did not present a valid authentication ticket. The OAuth ticket may be invalid.')
         elif response.status_code >= 500:
-            logging.info(response.status_code + ' Service issue')
+            raise WNSEsception('WNS ' + response.status_code + ' Service issue')
         else:
             pass
 

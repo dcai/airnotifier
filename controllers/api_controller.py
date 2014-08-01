@@ -106,9 +106,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
         if not self.check_blockediplist(self.request.remote_ip, self.app):
             self.send_response(LOCKED, dict(error='Blocked IP'))
         else:
-
             key = self.db.keys.find_one({'key':self.appkey})
-            logging.info(key)
             if not key:
                 self.permission = 0
                 if self.accesskeyrequired:
@@ -584,8 +582,7 @@ class ClassHandler(APIBaseHandler):
         self.send_response(OK, dict(objectId=objectId))
 
 @route(r"/accesskeys/")
-@route(r"/api/v2/accesskeys/")
-class AccessKeysHandler(APIBaseHandler):
+class AccessKeysV1Handler(APIBaseHandler):
     def initialize(self):
         self.accesskeyrequired = False
         self._time_start = time.time()
@@ -623,7 +620,7 @@ class AccessKeysHandler(APIBaseHandler):
         else:
             return True
 
-@route(r"/api/v2/push/")
+@route(r"/api/v2/push[\/]?")
 class PushHandler(APIBaseHandler):
     def validate_data(self, data):
         if 'channel' not in data:
@@ -685,9 +682,8 @@ class PushHandler(APIBaseHandler):
             # application specific data
             extra = data.get('extra', {})
 
-            device = data['device'].lower()
-            channel = data['channel']
-
+            device = data.get('device', DEVICE_TYPE_IOS).lower()
+            channel = data.get('channel', 'default')
             token = self.db.tokens.find_one({'token': self.token})
 
             if not token:
@@ -705,11 +701,8 @@ class PushHandler(APIBaseHandler):
             self.add_to_log('%s notification' % self.appname, logmessage)
 
             if device == DEVICE_TYPE_IOS:
-                try:
-                    self.get_apns_conn().process(token=self.token, alert=alert, extra=extra, apns=data['apns'])
-                    self.send_response(ACCEPTED)
-                except Exception, ex:
-                    self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+                self.get_apns_conn().process(token=self.token, alert=alert, extra=extra, apns=data['apns'])
+                self.send_response(ACCEPTED)
             elif device == DEVICE_TYPE_ANDROID:
                 try:
                     gcm = self.gcmconnections[self.app['shortname']][0]
@@ -736,7 +729,7 @@ class PushHandler(APIBaseHandler):
             else:
                 self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
         except Exception, ex:
-            self.send_response(INTERNAL_SERVER_ERROR, dict(ex))
+            self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
 
 
 @route(r"/api/v2/tokens/([^/]+)")
@@ -798,4 +791,45 @@ class TokenV2Handler(APIBaseHandler):
                 self.add_to_log('Add token', devicetoken)
         except Exception, ex:
             self.add_to_log('Cannot add token', devicetoken, "warning")
+            self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+
+@route(r"/api/v2/accesskeys[\/]?")
+class AccessKeysV2Handler(APIBaseHandler):
+    def initialize(self):
+        self.accesskeyrequired = False
+        self._time_start = time.time()
+
+    def post(self):
+        """Create access key
+        """
+        try:
+            try:
+                data = json.loads(self.request.body)
+            except:
+                data = json.loads(urllib.unquote_plus(self.request.body))
+
+            #if not self.can('create_accesskey'):
+                #self.send_response(FORBIDDEN, dict(error="No permission to create accesskey"))
+                #return
+
+            processor = data.get('processor', None)
+            if not processor:
+                data['permission'] = 0
+            else:
+                try:
+                    proc = import_module('hooks.' + processor)
+                    data = proc.process_accesskey_payload(data)
+                except Exception, ex:
+                    self.send_response(FORBIDDEN, dict(error=str(ex)))
+                    return
+
+            key = {}
+            key['contact'] = data.get('contact', '')
+            key['description'] = data.get('description', '')
+            key['created'] = int(time.time())
+            key['permission'] = data['permission']
+            key['key'] = md5(str(uuid.uuid4())).hexdigest()
+            self.db.keys.insert(key)
+            self.send_response(OK, dict(accesskey=key['key']))
+        except Exception, ex:
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
