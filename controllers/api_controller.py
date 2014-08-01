@@ -191,6 +191,13 @@ class APIBaseHandler(tornado.web.RequestHandler):
         log['level'] = strip_tags(level)
         log['created'] = int(time.time())
         self.db.logs.insert(log, safe=True)
+    def json_decode(self, text):
+        try:
+            data = json.loads(text)
+        except:
+            data = json.loads(urllib.unquote_plus(text))
+
+        return data
 
 class EntityBuilder(object):
     @staticmethod
@@ -267,12 +274,6 @@ class NotificationHandler(APIBaseHandler):
         if not self.token:
             self.send_response(BAD_REQUEST, dict(error="No token provided"))
             return
-
-        #try:
-        #    # if request body is json entity
-        #    data = json.loads(self.request.body)
-        #except:
-        #    data = json.loads(urllib.unquote_plus(self.request.body))
 
         # iOS and Android shared params (use sliptlines trick to remove line ending)
         alert = ''.join(self.get_argument('alert').splitlines())
@@ -457,7 +458,7 @@ class UsersHandler(APIBaseHandler):
         else:
             try:
                 # unpack query conditions
-                data = json.loads(where)
+                data = self.json_decode(where)
             except Exception, ex:
                 self.send_response(BAD_REQUEST, dict(error=str(ex)))
 
@@ -520,7 +521,7 @@ class ObjectHandler(APIBaseHandler):
         """Update a object
         """
         self.classname = classname
-        data = json.loads(self.request.body)
+        data = self.json_decode(self.request.body)
         self.objectid = ObjectId(objectId)
         result = self.db[self.collection].update({'_id': self.objectid}, data, safe=True)
 
@@ -558,7 +559,7 @@ class ClassHandler(APIBaseHandler):
         else:
             try:
                 # unpack query conditions
-                data = json.loads(where)
+                data = self.json_decode(where)
             except Exception, ex:
                 self.send_response(BAD_REQUEST, dict(error=str(ex)))
 
@@ -573,7 +574,7 @@ class ClassHandler(APIBaseHandler):
         """
         self.classname = classname
         try:
-            data = json.loads(self.request.body)
+            data = self.json_decode(self.request.body)
         except Exception, ex:
             self.send_response(BAD_REQUEST, ex)
 
@@ -657,10 +658,7 @@ class PushHandler(APIBaseHandler):
                 return
 
             # if request body is json entity
-            try:
-                data = json.loads(self.request.body)
-            except:
-                data = json.loads(urllib.unquote_plus(self.request.body))
+            data = self.json_decode(self.request.body)
 
             data = self.validate_data(data)
 
@@ -759,11 +757,7 @@ class TokenV2Handler(APIBaseHandler):
         if not self.can("create_token"):
             self.send_response(FORBIDDEN, dict(error="No permission to create token"))
             return
-        # if request body is json entity
-        try:
-            data = json.loads(self.request.body)
-        except:
-            data = json.loads(urllib.unquote_plus(self.request.body))
+        data = self.json_decode(self.request.body)
 
         device = data.get('device', DEVICE_TYPE_IOS).lower()
         channel = data.get('channel', 'default')
@@ -803,10 +797,7 @@ class AccessKeysV2Handler(APIBaseHandler):
         """Create access key
         """
         try:
-            try:
-                data = json.loads(self.request.body)
-            except:
-                data = json.loads(urllib.unquote_plus(self.request.body))
+            data = self.json_decode(self.request.body)
 
             #if not self.can('create_accesskey'):
                 #self.send_response(FORBIDDEN, dict(error="No permission to create accesskey"))
