@@ -1,28 +1,15 @@
 import logging
 
 def process_pushnotification_payload(data):
-    extra = {}
-    if 'extra' in data:
-        extra = data['extra']
+    extra = data.get('extra', {})
+    userfrom = extra.get('userfrom', None)
+    timecreated = extra.get('timecreated', None)
+    userto = extra.get('userto', None)
+    subject = extra.get('subject', None)
+    fullmessage = extra.get('fullmessage', None)
 
-    userfrom = None
-    if 'userfrom' in extra:
-        userfrom = extra['userfrom']
-    userto = None
-    if 'userto' in extra:
-        userto = extra['userto']
-    subject = None
-    if 'subject' in extra:
-        subject = extra['subject']
-
-    fullmessage = None
-    if 'fullmessage' in extra:
-        fullmessage = extra['fullmessage']
+    if 'alert' not in data
         data['alert'] = fullmessage
-
-    timecreated = None
-    if 'timecreated' in extra:
-        timecreated = extra['timecreated']
 
     if not 'wns' in extra:
         data['extra']['wns'] = {
