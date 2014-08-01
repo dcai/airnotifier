@@ -45,6 +45,8 @@ from pushservices.apns import APNClient, APNFeedback, PayLoad
 import sys
 from controllers.api_controller import API_PERMISSIONS
 from pushservices.gcm import GCMException
+from pushservices.wns import WNSClient
+from pushservices.gcm import GCMClient
 import requests
 
 def buildUpdateFields(params):
@@ -77,13 +79,23 @@ class WebBaseHandler(tornado.web.RequestHandler):
 
     @property
     def apnsconnections(self):
-        """ APNs connections"""
-        return self.application.apnsconnections
+        """ APNs connections """
+        return self.application.services['apns']
 
     @property
     def gcmconnections(self):
         """ GCM connections """
-        return self.application.gcmconnections
+        return self.application.services['gcm']
+
+    @property
+    def wnsconnections(self):
+        """ WNS connections """
+        return self.application.services['wns']
+
+    @property
+    def mpnsconnections(self):
+        """ WNS connections """
+        return self.application.services['mpns']
 
     @property
     def currentuser(self):
@@ -369,11 +381,7 @@ class AppHandler(WebBaseHandler):
                 app['environment'] = 'sandbox'
 
             for instanceid in range(0, count):
-                try:
-                    apn = APNClient(app['environment'], app['certfile'], app['keyfile'], app['shortname'], instanceid)
-                except Exception as ex:
-                    logging.error(ex)
-                    return
+                apn = APNClient(app['environment'], app.get('certfile', ''), app.get('keyfile', ''), app['shortname'], instanceid)
                 self.apnsconnections[app['shortname']].append(apn)
         else:
             return
@@ -390,109 +398,126 @@ class AppHandler(WebBaseHandler):
 
     @tornado.web.authenticated
     def post(self, appname):
-        self.appname = appname
-        app = self.masterdb.applications.find_one({'shortname':self.appname})
+        try:
+            self.appname = appname
+            app = self.masterdb.applications.find_one({'shortname':self.appname})
 
-        if self.get_argument('appfullname', None):
-            app['fullname'] = self.get_argument('appfullname')
-        else:
-            app['fullname'] = self.appname
+            if self.get_argument('appfullname', None):
+                app['fullname'] = self.get_argument('appfullname')
+            else:
+                app['fullname'] = self.appname
 
-        # Update app details
-        if self.request.files:
-            if self.request.files.has_key('appcertfile'):
-                certfile = self.request.files['appcertfile'][0]
-                certfilename = sha1(certfile['body']).hexdigest()
-                logging.info(certfilename)
-                certfilepath = options.pemdir + certfilename
-                thefile = open(certfilepath, "w")
-                thefile.write(certfile['body'])
-                thefile.close()
-                app['certfile'] = certfilepath
+            # Update app details
+            if self.request.files:
+                if self.request.files.has_key('appcertfile'):
+                    certfile = self.request.files['appcertfile'][0]
+                    certfilename = sha1(certfile['body']).hexdigest()
+                    certfilepath = options.pemdir + certfilename
+                    thefile = open(certfilepath, "w")
+                    thefile.write(certfile['body'])
+                    thefile.close()
+                    app['certfile'] = certfilepath
 
-            if self.request.files.has_key('appkeyfile'):
-                keyfile = self.request.files['appkeyfile'][0]
-                keyfilename = sha1(keyfile['body']).hexdigest()
-                logging.info(keyfilename)
-                keyfilepath = options.pemdir + keyfilename
-                thefile = open(keyfilepath, "w")
-                thefile.write(keyfile['body'])
-                thefile.close()
-                app['keyfile'] = keyfilepath
+                if self.request.files.has_key('appkeyfile'):
+                    keyfile = self.request.files['appkeyfile'][0]
+                    keyfilename = sha1(keyfile['body']).hexdigest()
+                    keyfilepath = options.pemdir + keyfilename
+                    thefile = open(keyfilepath, "w")
+                    thefile.write(keyfile['body'])
+                    thefile.close()
+                    app['keyfile'] = keyfilepath
 
-        if self.get_argument('appdescription', None):
-            app['description'] = self.get_argument('appdescription')
+            if self.get_argument('appdescription', None):
+                app['description'] = self.get_argument('appdescription')
 
 
-        if self.get_argument('blockediplist', None):
-            app['blockediplist'] = self.get_argument('blockediplist').strip()
-        else:
-            app['blockediplist'] = ''
+            if self.get_argument('blockediplist', None):
+                app['blockediplist'] = self.get_argument('blockediplist').strip()
+            else:
+                app['blockediplist'] = ''
 
-        if self.get_argument('gcmprojectnumber', None):
-            app['gcmprojectnumber'] = self.get_argument('gcmprojectnumber').strip()
+            updategcm = False
+            if self.get_argument('gcmprojectnumber', None):
+                if app['gcmprojectnumber'] != self.get_argument('gcmprojectnumber').strip():
+                    app['gcmprojectnumber'] = self.get_argument('gcmprojectnumber').strip()
+                    updategcm = True
 
-        if self.get_argument('gcmapikey', None):
-            app['gcmapikey'] = self.get_argument('gcmapikey').strip()
+            if self.get_argument('gcmapikey', None):
+                if app['gcmapikey'] != self.get_argument('gcmapikey').strip():
+                    app['gcmapikey'] = self.get_argument('gcmapikey').strip()
+                    updategcm = True
 
-        if self.get_argument('connections', None):
-            """If this value is greater than current apns connections,
-            creating more
-            If less than current apns connections, kill extra instances
-            """
-            if app['connections'] != int(self.get_argument('connections')):
-                app['connections'] = int(self.get_argument('connections'))
+            if updategcm:
+                ## Update connections too
+                self.gcmconnections[app['shortname']] = []
+                gcm = GCMClient(app['gcmprojectnumber'], app['gcmapikey'], app['shortname'], 0)
+                self.gcmconnections[app['shortname']].append(gcm)
+
+            if self.get_argument('connections', None):
+                """If this value is greater than current apns connections,
+                creating more
+                If less than current apns connections, kill extra instances
+                """
+                if app['connections'] != int(self.get_argument('connections')):
+                    app['connections'] = int(self.get_argument('connections'))
+                    self.stop_apns(app)
+                    self.start_apns(app)
+
+            if self.get_argument('performfeedbacktask', None):
+                self.perform_feedback(app)
+
+            if self.get_argument('launchapns', None):
+                logging.info("Start APNS")
+                app['enableapns'] = 1
+                self.start_apns(app)
+
+            if self.get_argument('stopapns', None):
+                logging.info("Shutdown APNS")
+                app['enableapns'] = 0
+                self.stop_apns(app)
+
+            if self.get_argument('turnonproduction', None):
+                app['environment'] = 'production'
                 self.stop_apns(app)
                 self.start_apns(app)
 
-        if self.get_argument('performfeedbacktask', None):
-            self.perform_feedback(app)
+            if self.get_argument('turnonsandbox', None):
+                app['environment'] = 'sandbox'
+                self.stop_apns(app)
+                self.start_apns(app)
 
-        if self.get_argument('launchapns', None):
-            logging.info("Start APNS")
-            app['enableapns'] = 1
-            self.start_apns(app)
+            updatewnsaccesstoken = False
+            if self.get_argument('wnsclientid', None):
+                wnsclientid = self.get_argument('wnsclientid').strip()
+                if not wnsclientid == app['wnsclientid']:
+                    app['wnsclientid'] = wnsclientid
+                    updatewnsaccesstoken = True
 
-        if self.get_argument('stopapns', None):
-            logging.info("Shutdown APNS")
-            app['enableapns'] = 0
-            self.stop_apns(app)
+            if self.get_argument('wnsclientsecret', None):
+                wnsclientsecret = self.get_argument('wnsclientsecret').strip()
+                if not wnsclientsecret == app['wnsclientsecret']:
+                    app['wnsclientsecret'] = wnsclientsecret
+                    updatewnsaccesstoken = True
 
-        if self.get_argument('turnonproduction', None):
-            app['environment'] = 'production'
-            self.stop_apns(app)
-            self.start_apns(app)
+            if updatewnsaccesstoken:
+                url = 'https://login.live.com/accesstoken.srf'
+                payload = {'grant_type': 'client_credentials', 'client_id': app['wnsclientid'], 'client_secret': app['wnsclientsecret'], 'scope': 'notify.windows.com'}
+                response = requests.post(url, data=payload)
+                if response.status_code != 200:
+                    raise Exception('Invalid WNS secret')
+                if 'access_token' in responsedata and 'token_type' in responsedata:
+                    app['wnsaccesstoken'] = responsedata['access_token']
+                    app['wnstokentype'] = responsedata['token_type']
+                    app['wnstokenexpiry'] = int(responsedata['expires_in']) + int(time.time())
+                    ## Update connections too
+                    self.wnsconnections[app['shortname']] = []
+                    wns = WNSClient(self.masterdb, app, 0)
+                    self.wnsconnections[app['shortname']].append(wns)
 
-        if self.get_argument('turnonsandbox', None):
-            app['environment'] = 'sandbox'
-            self.stop_apns(app)
-            self.start_apns(app)
-
-        updatewnsaccesstoken = False
-        if self.get_argument('wnsclientid', None):
-            wnsclientid = self.get_argument('wnsclientid').strip()
-            if not wnsclientid == app['wnsclientid']:
-                app['wnsclientid'] = wnsclientid
-                updatewnsaccesstoken = True
-
-        if self.get_argument('wnsclientsecret', None):
-            wnsclientsecret = self.get_argument('wnsclientsecret').strip()
-            if not wnsclientsecret == app['wnsclientsecret']:
-                app['wnsclientsecret'] = wnsclientsecret
-                updatewnsaccesstoken = True
-
-        if updatewnsaccesstoken:
-            url = 'https://login.live.com/accesstoken.srf'
-            payload = {'grant_type': 'client_credentials', 'client_id': app['wnsclientid'], 'client_secret': app['wnsclientsecret'], 'scope': 'notify.windows.com'}
-            response = requests.post(url, data=payload)
-            responsedata = response.json()
-            if 'access_token' in responsedata and 'token_type' in responsedata:
-                app['wnsaccesstoken'] = responsedata['access_token']
-                app['wnstokentype'] = responsedata['token_type']
-                app['wnstokenexpiry'] = int(responsedata['expires_in']) + int(time.time())
-
-        self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
-        self.redirect(r"/applications/%s/settings" % self.appname)
+            self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
+            self.redirect(r"/applications/%s/settings" % self.appname)
+        except Exception, ex:
+            self.render("app_settings.html", app=app, error=str(ex))
 
 @route(r"/applications/([^/]+)")
 class AppHandler(WebBaseHandler): # @DuplicatedSignature

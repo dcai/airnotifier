@@ -134,18 +134,14 @@ class APNFeedback(object):
 
 class APNClient(PushService):
 
-    def is_oneline(self):
+    def is_online(self):
         return self.connected
 
     def __init__(self, env='sandbox', certfile="", keyfile="", appname="", instanceid=0):
         certexists = os.path.exists(certfile)
         keyexists = os.path.exists(keyfile)
-        if not certexists:
-            logging.error("Certificate file doesn't exist")
-        if not keyexists:
-            logging.error("Key file doesn't exist")
-        if not certexists and not keyexists:
-            raise Exception("Cert or Key not exist")
+        if not certexists or not keyexists:
+            raise Exception("APNs certificate or key files do not exist")
         self.apns = apns[env]
         self.certfile = certfile
         self.keyfile = keyfile
@@ -174,7 +170,7 @@ class APNClient(PushService):
             if self.reconnect:
                 self.connect()
         except Exception, ex:
-            logging.error(ex)
+            raise ex
 
     def _on_remote_read_streaming(self, data):
         """ Something bad happened """
