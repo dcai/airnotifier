@@ -57,15 +57,14 @@ class GCMClient(PushService):
         return errors
 
     def process(self, **kwargs):
-        collapse_key = None
-        ttl = None
-        if 'gcm' in kwargs['data']:
-            gcmparam = kwargs['data']
-            if 'collapse_key' in gcmparam:
-                collapse_key = gcmparam['collapse_key']
-            if 'ttl' in gcmparam:
-                collapse_key = gcmparam['ttl']
-        return self.send([kwargs['token']], data=kwargs['data'], collapse_key=collapse_key, ttl=ttl)
+        gcmparam = kwargs.get('gcm', {})
+        collapse_key = gcmparam.get('collapse_key', None)
+        ttl = gcmparam.get('ttl', None)
+        alert = kwargs.get('alert', None)
+        data = gcmparam.get('data', {})
+        if 'message' not in data:
+            data['message'] = kwargs.get('alert', '')
+        return self.send(kwargs['token'], data=data, collapse_key=collapse_key, ttl=ttl)
 
     def send(self, regids, data=None, collapse_key=None, ttl=None, retries=5):
         '''

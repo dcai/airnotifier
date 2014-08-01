@@ -61,9 +61,9 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)-8s %(message)s')
 
 class AirNotifierApp(tornado.web.Application):
 
-    def init_routes(self):
+    def init_routes(self, dir):
         from routes import RouteLoader
-        return RouteLoader.load('controllers')
+        return RouteLoader.load(dir)
 
     def __init__(self, services):
 
@@ -80,9 +80,10 @@ class AirNotifierApp(tornado.web.Application):
             )
         self.services = services
 
-        handlers = self.init_routes()
+        sitehandlers = self.init_routes('controllers')
+        apihandlers = self.init_routes('api')
 
-        tornado.web.Application.__init__(self, handlers, **app_settings)
+        tornado.web.Application.__init__(self, sitehandlers + apihandlers, **app_settings)
 
         mongodb = None
         while not mongodb:

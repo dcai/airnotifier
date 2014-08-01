@@ -48,6 +48,7 @@ class PushHandler(APIBaseHandler):
         data.setdefault('gcm', {})
         data.setdefault('mpns', {})
         data.setdefault('apns', {})
+        data.setdefault('extra', {})
         return data
 
     def get_apns_conn(self):
@@ -114,7 +115,7 @@ class PushHandler(APIBaseHandler):
             elif device == DEVICE_TYPE_ANDROID:
                 try:
                     gcm = self.gcmconnections[self.app['shortname']][0]
-                    response = gcm.process([self.token], alert, extra=data['extra'], gcm=data['gcm'])
+                    response = gcm.process(token=[self.token], alert=alert, extra=data['extra'], gcm=data['gcm'])
                     responsedata = response.json()
                     if responsedata['failure'] == 0:
                         self.send_response(ACCEPTED)

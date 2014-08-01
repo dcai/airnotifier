@@ -52,7 +52,6 @@ from pushservices.wns import WNSInvalidPushTypeException
 from routes import route
 from util import filter_alphabetanum, json_default, strip_tags
 
-
 API_PERMISSIONS = {
     'create_token': (0b00001, 'Create token'),
     'delete_token': (0b00010, 'Delete token'),
