@@ -29,28 +29,28 @@
 from hashlib import md5
 from httplib import BAD_REQUEST, LOCKED, FORBIDDEN, NOT_FOUND, \
     INTERNAL_SERVER_ERROR, OK, ACCEPTED
+from importlib import import_module
 import binascii
 import json
 import logging
 import random
 import time
+import urllib
 import uuid
-from importlib import import_module
 
 from bson.objectid import ObjectId
 from tornado.options import options
 import requests
 import tornado.web
 
-from pushservices.apns import PayLoad
 from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
     DEVICE_TYPE_MPNS
+from pushservices.apns import PayLoad
 from pushservices.gcm import GCMException, GCMInvalidRegistrationException, \
     GCMNotRegisteredException, GCMUpdateRegIDsException
 from pushservices.wns import WNSInvalidPushTypeException
 from routes import route
 from util import filter_alphabetanum, json_default, strip_tags
-import urllib
 
 
 API_PERMISSIONS = {
@@ -60,6 +60,7 @@ API_PERMISSIONS = {
     'send_broadcast': (0b01000, 'Send broadcast'),
     'create_accesskey': (0b10000, 'Create access key')
 }
+
 class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
     """
@@ -344,80 +345,6 @@ class NotificationHandler(APIBaseHandler):
         else:
             self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
 
-
-
-@route(r"/broadcast/")
-@route(r"/api/v2/broadcast/")
-class BroadcastHandler(APIBaseHandler):
-    def post(self):
-        if not self.can('send_broadcast'):
-            self.send_response(FORBIDDEN, dict(error="No permission to send broadcast"))
-            return
-
-        # the cannel to be boradcasted
-        channel = self.get_argument('channel', 'default')
-        # iOS and Android shared params
-        alert = ''.join(self.get_argument('alert').splitlines())
-        # Android
-        collapse_key = self.get_argument('collapse_key', '')
-        # iOS
-        sound = self.get_argument('sound', None)
-        badge = self.get_argument('badge', None)
-
-        conditions = []
-        if channel == 'default':
-            # channel is not set or channel is default
-            conditions.append({'channel': {"$exists": False}})
-            conditions.append({'channel': 'default'})
-        else:
-            conditions.append({'channel': channel})
-        tokens = self.db.tokens.find({"$or": conditions})
-
-        knownparams = ['alert', 'sound', 'badge', 'token', 'device', 'collapse_key']
-        # Build the custom params  (everything not alert/sound/badge/token)
-        customparams = {}
-        allparams = {}
-        for name, value in self.request.arguments.items():
-            allparams[name] = self.get_argument(name)
-            if name not in knownparams:
-                customparams[name] = self.get_argument(name)
-
-        self.add_to_log('%s broadcast' % self.appname, alert, "important")
-        if self.app['shortname'] in self.apnsconnections:
-            count = len(self.apnsconnections[self.app['shortname']])
-        else:
-            count = 0
-        if count > 0:
-            random.seed(time.time())
-            instanceid = random.randint(0, count - 1)
-            conn = self.apnsconnections[self.app['shortname']][instanceid]
-        else:
-            conn = None
-        regids = []
-        try:
-            for token in tokens:
-                if token['device'] == DEVICE_TYPE_IOS:
-                    if conn is not None:
-                        pl = PayLoad(alert=alert, sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
-                        conn.send(token['token'], pl)
-                else:
-                    regids.append(token['token'])
-        except Exception:
-            pass
-
-        try:
-            # Now sending android notifications
-            gcm = self.gcmconnections[self.app['shortname']][0]
-            data = dict({'alert': alert}.items() + customparams.items())
-            response = gcm.send(regids, data=data, collapse_key=collapse_key, ttl=3600)
-            responsedata = response.json()
-        except GCMException:
-            logging.info('GCM problem')
-
-        delta_t = time.time() - self._time_start
-        logging.warning("Broadcast took time: %sms" % (delta_t * 1000))
-        self.send_response(OK, dict(status='ok'))
-
 @route(r"/users")
 @route(r"/api/v2/users")
 class UsersHandler(APIBaseHandler):
@@ -620,200 +547,3 @@ class AccessKeysV1Handler(APIBaseHandler):
             return False
         else:
             return True
-
-@route(r"/api/v2/push[\/]?")
-class PushHandler(APIBaseHandler):
-    def validate_data(self, data):
-        data.setdefault('channel', 'default')
-        data.setdefault('sound', None)
-        data.setdefault('badge', None)
-        data.setdefault('wns', {})
-        data.setdefault('gcm', {})
-        data.setdefault('mpns', {})
-        data.setdefault('apns', {})
-        return data
-
-    def get_apns_conn(self):
-        if not self.apnsconnections.has_key(self.app['shortname']):
-            self.send_response(INTERNAL_SERVER_ERROR, dict(error="APNs is offline"))
-            return
-        count = len(self.apnsconnections[self.app['shortname']])
-        # Find an APNS instance
-        random.seed(time.time())
-        instanceid = random.randint(0, count - 1)
-        return self.apnsconnections[self.app['shortname']][instanceid]
-
-    def post(self):
-        try:
-            """ Send notifications """
-            if not self.can("send_notification"):
-                self.send_response(FORBIDDEN, dict(error="No permission to send notification"))
-                return
-
-            # if request body is json entity
-            data = self.json_decode(self.request.body)
-
-            data = self.validate_data(data)
-
-            # Hook
-            if 'extra' in data:
-                if 'processor' in data['extra']:
-                    try:
-                        proc = import_module('hooks.' + data['extra']['processor'])
-                        data = proc.process_pushnotification_payload(data)
-                    except Exception, ex:
-                        self.send_response(BAD_REQUEST, dict(error=str(ex)))
-
-            if not self.token:
-                self.token = data.get('token', None)
-
-            # iOS and Android shared params (use sliptlines trick to remove line ending)
-            alert = ''.join(data['alert'].splitlines())
-
-            # application specific data
-            extra = data.get('extra', {})
-
-            device = data.get('device', DEVICE_TYPE_IOS).lower()
-            channel = data.get('channel', 'default')
-            token = self.db.tokens.find_one({'token': self.token})
-
-            if not token:
-                token = EntityBuilder.build_token(self.token, device, self.appname, channel)
-                if not self.can("create_token"):
-                    self.send_response(BAD_REQUEST, dict(error="Unknow token and you have no permission to create"))
-                    return
-                try:
-                    # TODO check permission to insert
-                    self.db.tokens.insert(token, safe=True)
-                except Exception as ex:
-                    self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-
-            logmessage = 'Message length: %s, Access key: %s' %(len(alert), self.appkey)
-            self.add_to_log('%s notification' % self.appname, logmessage)
-
-            if device == DEVICE_TYPE_IOS:
-                self.get_apns_conn().process(token=self.token, alert=alert, extra=extra, apns=data['apns'])
-                self.send_response(ACCEPTED)
-            elif device == DEVICE_TYPE_ANDROID:
-                try:
-                    gcm = self.gcmconnections[self.app['shortname']][0]
-                    response = gcm.process([self.token], alert, extra=data['extra'], gcm=data['gcm'])
-                    responsedata = response.json()
-                    if responsedata['failure'] == 0:
-                        self.send_response(ACCEPTED)
-                except GCMUpdateRegIDsException as ex:
-                    self.send_response(ACCEPTED)
-                except GCMInvalidRegistrationException as ex:
-                    self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
-                except GCMNotRegisteredException as ex:
-                    self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
-                except GCMException as ex:
-                    self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-            elif device == DEVICE_TYPE_WNS:
-                wns = self.wnsconnections[self.app['shortname']][0]
-                wns.process(token=data['token'], alert=data['alert'], extra=extra, wns=data['wns'])
-                self.send_response(ACCEPTED)
-            elif device == DEVICE_TYPE_MPNS:
-                mpns = self.mpnsconnections[self.app['shortname']][0]
-                mpns.process(token=data['token'], alert=data['alert'], extra=extra, mpns=data['mpns'])
-                self.send_response(ACCEPTED)
-            else:
-                self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
-        except Exception, ex:
-            self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-
-
-@route(r"/api/v2/tokens/([^/]+)")
-class TokenV2HandlerGet(APIBaseHandler):
-    def delete(self, token):
-        """Delete a token
-        """
-        # To check the access key permissions we use bitmask method.
-        if not self.can("delete_token"):
-            self.send_response(FORBIDDEN, dict(error="No permission to delete token"))
-            return
-
-        try:
-            result = self.db.tokens.remove({'token':token}, safe=True)
-            if result['n'] == 0:
-                self.send_response(NOT_FOUND, dict(status='Token does\'t exist'))
-            else:
-                self.send_response(OK, dict(status='deleted'))
-        except Exception, ex:
-            self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-
-@route(r"/api/v2/tokens[\/]?")
-class TokenV2Handler(APIBaseHandler):
-    def post(self):
-        """Create a new token
-        """
-        if not self.can("create_token"):
-            self.send_response(FORBIDDEN, dict(error="No permission to create token"))
-            return
-        data = self.json_decode(self.request.body)
-
-        device = data.get('device', DEVICE_TYPE_IOS).lower()
-        channel = data.get('channel', 'default')
-        devicetoken = data.get('token', '')
-
-        if device == DEVICE_TYPE_IOS:
-            if len(devicetoken) != 64:
-                self.send_response(BAD_REQUEST, dict(error='Invalid token'))
-                return
-            try:
-                binascii.unhexlify(devicetoken)
-            except Exception, ex:
-                self.send_response(BAD_REQUEST, dict(error='Invalid token'))
-
-        token = EntityBuilder.build_token(devicetoken, device, self.appname, channel)
-        try:
-            result = self.db.tokens.update({'device': device, 'token': devicetoken, 'appname': self.appname}, token, safe=True, upsert=True)
-            # result
-            # {u'updatedExisting': True, u'connectionId': 47, u'ok': 1.0, u'err': None, u'n': 1}
-            if result['updatedExisting']:
-                self.add_to_log('Token exists', devicetoken)
-                self.send_response(OK)
-            else:
-                self.send_response(OK)
-                self.add_to_log('Add token', devicetoken)
-        except Exception, ex:
-            self.add_to_log('Cannot add token', devicetoken, "warning")
-            self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-
-@route(r"/api/v2/accesskeys[\/]?")
-class AccessKeysV2Handler(APIBaseHandler):
-    def initialize(self):
-        self.accesskeyrequired = False
-        self._time_start = time.time()
-
-    def post(self):
-        """Create access key
-        """
-        try:
-            data = self.json_decode(self.request.body)
-
-            #if not self.can('create_accesskey'):
-                #self.send_response(FORBIDDEN, dict(error="No permission to create accesskey"))
-                #return
-
-            processor = data.get('processor', None)
-            if not processor:
-                data['permission'] = 0
-            else:
-                try:
-                    proc = import_module('hooks.' + processor)
-                    data = proc.process_accesskey_payload(data)
-                except Exception, ex:
-                    self.send_response(FORBIDDEN, dict(error=str(ex)))
-                    return
-
-            key = {}
-            key['contact'] = data.get('contact', '')
-            key['description'] = data.get('description', '')
-            key['created'] = int(time.time())
-            key['permission'] = data['permission']
-            key['key'] = md5(str(uuid.uuid4())).hexdigest()
-            self.db.keys.insert(key)
-            self.send_response(OK, dict(accesskey=key['key']))
-        except Exception, ex:
-            self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
