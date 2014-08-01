@@ -43,7 +43,7 @@ from pymongo import DESCENDING
 from util import filter_alphabetanum
 from pushservices.apns import APNClient, APNFeedback, PayLoad
 import sys
-from controllers.api_controller import API_PERMISSIONS
+from api import API_PERMISSIONS
 from pushservices.gcm import GCMException
 from pushservices.wns import WNSClient
 from pushservices.gcm import GCMClient

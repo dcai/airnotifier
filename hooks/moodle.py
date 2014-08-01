@@ -1,6 +1,6 @@
 import logging
 import requests
-from controllers.api_controller import API_PERMISSIONS
+from api import API_PERMISSIONS
 
 HUBURL = "http://moodle.net/local/sitecheck/check.php"
 
@@ -39,7 +39,6 @@ def process_accesskey_payload(data):
     params = {'siteid': mdlsiteid, 'url': mdlurl}
     response = requests.get(HUBURL, params=params)
     result = int(response.text)
-    result = 1
     if result == 0:
         raise Exception('Site not registered on moodle.net')
     else:
