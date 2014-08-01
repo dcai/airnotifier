@@ -635,11 +635,14 @@ class PushHandler(APIBaseHandler):
             data['badge'] = None
         if 'wns' not in data:
             data['wns'] = {}
+        if 'mpns' not in data:
+            data['mpns'] = {}
         if 'apns' not in data:
             data['apns'] = {}
         if 'gcm' not in data:
             data['gcm'] = {}
         return data
+
     def get_apns_conn(self):
         if not self.apnsconnections.has_key(self.app['shortname']):
             self.send_response(INTERNAL_SERVER_ERROR, dict(error="APNs is offline"))
@@ -649,6 +652,7 @@ class PushHandler(APIBaseHandler):
         random.seed(time.time())
         instanceid = random.randint(0, count - 1)
         return self.apnsconnections[self.app['shortname']][instanceid]
+
     def post(self):
         """ Send notifications """
         if not self.can("send_notification"):
@@ -668,24 +672,18 @@ class PushHandler(APIBaseHandler):
             if 'processor' in data['extra']:
                 try:
                     proc = import_module('hooks.' + data['extra']['processor'])
-                    if 'data' in data['extra']:
-                        params = data['extra']['data']
-                    else:
-                        params = {}
                     data = proc.process_pushnotification_payload(data)
                 except Exception, ex:
                     self.send_response(BAD_REQUEST, dict(error=str(ex)))
 
         if not self.token:
-            self.token = data['token']
+            self.token = data.get('token', None)
 
         # iOS and Android shared params (use sliptlines trick to remove line ending)
         alert = ''.join(data['alert'].splitlines())
 
         # application specific data
-        extra = {}
-        if "extra" in data:
-            extra = data['extra']
+        extra = data.get('extra', {})
 
         device = data['device'].lower()
         channel = data['channel']
@@ -702,8 +700,10 @@ class PushHandler(APIBaseHandler):
                 self.db.tokens.insert(token, safe=True)
             except Exception as ex:
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+
         logmessage = 'Message length: %s, Access key: %s' %(len(alert), self.appkey)
         self.add_to_log('%s notification' % self.appname, logmessage)
+
         if device == DEVICE_TYPE_IOS:
             try:
                 self.get_apns_conn().process(token=self.token, alert=alert, extra=extra, apns=data['apns'])
