@@ -49,16 +49,13 @@ class WNSClient(PushService):
         message = kwargs['alert']
         now = int(time.time())
         wnsparams = kwargs['wns']
-        wnstype = 'toast'
-        if 'type' in wnsparams:
-            wnstype = wnsparams['type']
+        wnstype = wnsparams.get('type', 'toast')
+
         if wnstype not in ['toast', 'tile', 'badge', 'raw']:
             raise WNSInvalidPushTypeException(wnstype)
 
         if wnstype == 'toast':
-            template = 'ToastText01'
-            if 'template' in wnsparams:
-                template = wnsparams['template']
+            template = wnsparams.get('template', 'ToastText01')
             text = ""
             if 'text' in wnsparams:
                 count = 1
@@ -72,7 +69,6 @@ class WNSClient(PushService):
                     image = image + '<img id="%d" src="%s" />' % (count, img)
                     count = count + 1
             xml = TOAST_XML % (template, image, text)
-            logging.info(xml)
         elif wnstype == 'tile':
             if 'tile' in wnsparams:
                 if 'text' in wnsparams['tile']:
