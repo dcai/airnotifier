@@ -8,7 +8,7 @@ def process_pushnotification_payload(data):
     subject = extra.get('subject', None)
     fullmessage = extra.get('fullmessage', None)
 
-    if 'alert' not in data
+    if 'alert' not in data:
         data['alert'] = fullmessage
 
     if not 'wns' in extra:

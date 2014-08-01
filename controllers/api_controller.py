@@ -653,90 +653,91 @@ class PushHandler(APIBaseHandler):
         return self.apnsconnections[self.app['shortname']][instanceid]
 
     def post(self):
-        """ Send notifications """
-        if not self.can("send_notification"):
-            self.send_response(FORBIDDEN, dict(error="No permission to send notification"))
-            return
-
-        # if request body is json entity
         try:
-            data = json.loads(self.request.body)
-        except:
-            data = json.loads(urllib.unquote_plus(self.request.body))
-
-        data = self.validate_data(data)
-
-        # Hook
-        if 'extra' in data:
-            if 'processor' in data['extra']:
-                try:
-                    proc = import_module('hooks.' + data['extra']['processor'])
-                    data = proc.process_pushnotification_payload(data)
-                except Exception, ex:
-                    self.send_response(BAD_REQUEST, dict(error=str(ex)))
-
-        if not self.token:
-            self.token = data.get('token', None)
-
-        # iOS and Android shared params (use sliptlines trick to remove line ending)
-        alert = ''.join(data['alert'].splitlines())
-
-        # application specific data
-        extra = data.get('extra', {})
-
-        device = data['device'].lower()
-        channel = data['channel']
-
-        token = self.db.tokens.find_one({'token': self.token})
-
-        if not token:
-            token = EntityBuilder.build_token(self.token, device, self.appname, channel)
-            if not self.can("create_token"):
-                self.send_response(BAD_REQUEST, dict(error="Unknow token and you have no permission to create"))
+            """ Send notifications """
+            if not self.can("send_notification"):
+                self.send_response(FORBIDDEN, dict(error="No permission to send notification"))
                 return
-            try:
-                # TODO check permission to insert
-                self.db.tokens.insert(token, safe=True)
-            except Exception as ex:
-                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
 
-        logmessage = 'Message length: %s, Access key: %s' %(len(alert), self.appkey)
-        self.add_to_log('%s notification' % self.appname, logmessage)
+            # if request body is json entity
+            try:
+                data = json.loads(self.request.body)
+            except:
+                data = json.loads(urllib.unquote_plus(self.request.body))
 
-        if device == DEVICE_TYPE_IOS:
-            try:
-                self.get_apns_conn().process(token=self.token, alert=alert, extra=extra, apns=data['apns'])
-                self.send_response(ACCEPTED)
-            except Exception, ex:
-                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-        elif device == DEVICE_TYPE_ANDROID:
-            try:
-                gcm = self.gcmconnections[self.app['shortname']][0]
-                response = gcm.process([self.token], alert, extra=data['extra'], gcm=data['gcm'])
-                responsedata = response.json()
-                if responsedata['failure'] == 0:
+            data = self.validate_data(data)
+
+            # Hook
+            if 'extra' in data:
+                if 'processor' in data['extra']:
+                    try:
+                        proc = import_module('hooks.' + data['extra']['processor'])
+                        data = proc.process_pushnotification_payload(data)
+                    except Exception, ex:
+                        self.send_response(BAD_REQUEST, dict(error=str(ex)))
+
+            if not self.token:
+                self.token = data.get('token', None)
+
+            # iOS and Android shared params (use sliptlines trick to remove line ending)
+            alert = ''.join(data['alert'].splitlines())
+
+            # application specific data
+            extra = data.get('extra', {})
+
+            device = data['device'].lower()
+            channel = data['channel']
+
+            token = self.db.tokens.find_one({'token': self.token})
+
+            if not token:
+                token = EntityBuilder.build_token(self.token, device, self.appname, channel)
+                if not self.can("create_token"):
+                    self.send_response(BAD_REQUEST, dict(error="Unknow token and you have no permission to create"))
+                    return
+                try:
+                    # TODO check permission to insert
+                    self.db.tokens.insert(token, safe=True)
+                except Exception as ex:
+                    self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+
+            logmessage = 'Message length: %s, Access key: %s' %(len(alert), self.appkey)
+            self.add_to_log('%s notification' % self.appname, logmessage)
+
+            if device == DEVICE_TYPE_IOS:
+                try:
+                    self.get_apns_conn().process(token=self.token, alert=alert, extra=extra, apns=data['apns'])
                     self.send_response(ACCEPTED)
-            except GCMUpdateRegIDsException as ex:
-                self.send_response(ACCEPTED)
-            except GCMInvalidRegistrationException as ex:
-                self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
-            except GCMNotRegisteredException as ex:
-                self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
-            except GCMException as ex:
-                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-        elif device == DEVICE_TYPE_WNS:
-            try:
+                except Exception, ex:
+                    self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+            elif device == DEVICE_TYPE_ANDROID:
+                try:
+                    gcm = self.gcmconnections[self.app['shortname']][0]
+                    response = gcm.process([self.token], alert, extra=data['extra'], gcm=data['gcm'])
+                    responsedata = response.json()
+                    if responsedata['failure'] == 0:
+                        self.send_response(ACCEPTED)
+                except GCMUpdateRegIDsException as ex:
+                    self.send_response(ACCEPTED)
+                except GCMInvalidRegistrationException as ex:
+                    self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
+                except GCMNotRegisteredException as ex:
+                    self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
+                except GCMException as ex:
+                    self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+            elif device == DEVICE_TYPE_WNS:
                 wns = self.wnsconnections[self.app['shortname']][0]
                 wns.process(token=data['token'], alert=data['alert'], extra=extra, wns=data['wns'])
                 self.send_response(ACCEPTED)
-            except WNSInvalidPushTypeException as ex:
-                self.send_response(BAD_REQUEST, dict(error=str(ex)))
-        elif device == DEVICE_TYPE_MPNS:
-            mpns = self.mpnsconnections[self.app['shortname']][0]
-            mpns.process(token=data['token'], alert=data['alert'], extra=extra, mpns=data['mpns'])
-            self.send_response(ACCEPTED)
-        else:
-            self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
+            elif device == DEVICE_TYPE_MPNS:
+                mpns = self.mpnsconnections[self.app['shortname']][0]
+                mpns.process(token=data['token'], alert=data['alert'], extra=extra, mpns=data['mpns'])
+                self.send_response(ACCEPTED)
+            else:
+                self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
+        except Exception, ex:
+            self.send_response(INTERNAL_SERVER_ERROR, dict(ex))
+
 
 @route(r"/api/v2/tokens/([^/]+)")
 class TokenV2HandlerGet(APIBaseHandler):
