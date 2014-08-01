@@ -624,20 +624,13 @@ class AccessKeysV1Handler(APIBaseHandler):
 @route(r"/api/v2/push[\/]?")
 class PushHandler(APIBaseHandler):
     def validate_data(self, data):
-        if 'channel' not in data:
-            data['channel'] = 'default'
-        if 'sound' not in data:
-            data['sound'] = None
-        if 'badge' not in data:
-            data['badge'] = None
-        if 'wns' not in data:
-            data['wns'] = {}
-        if 'mpns' not in data:
-            data['mpns'] = {}
-        if 'apns' not in data:
-            data['apns'] = {}
-        if 'gcm' not in data:
-            data['gcm'] = {}
+        data.setdefault('channel', 'default')
+        data.setdefault('sound', None)
+        data.setdefault('badge', None)
+        data.setdefault('wns', {})
+        data.setdefault('gcm', {})
+        data.setdefault('mpns', {})
+        data.setdefault('apns', {})
         return data
 
     def get_apns_conn(self):
