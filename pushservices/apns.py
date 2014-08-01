@@ -38,6 +38,7 @@ import time
 
 from tornado import ioloop, iostream
 
+PAYLOAD_LENGTH = 256
 
 apns = {
     'sandbox': ("gateway.sandbox.push.apple.com", 2195),
@@ -63,8 +64,7 @@ class PayLoad(object):
         self.customparams = customparams
 
     def build_payload(self):
-        limit = 256
-        alertlength = limit
+        alertlength = PAYLOAD_LENGTH
         # remove {"aps":{"alert":""}}
         alertlength = alertlength - 20
         item = {}
@@ -78,7 +78,8 @@ class PayLoad(object):
             item['badge'] = int(self.badge)
 
         if len(self.alert) > alertlength:
-            item['alert'] = self.alert[:alertlength]
+            alertlength = alertlength - 3
+            item['alert'] = self.alert[:alertlength] + '...'
         else:
             item['alert'] = self.alert
 
@@ -248,15 +249,9 @@ class APNClient(PushService):
     def process(self, **kwargs):
         token = kwargs['token']
         apnsparams = kwargs['apns']
-        sound = None
-        if 'sound' in apnsparams:
-            sound = apnsparams['sound']
-        badge = None
-        if 'badge' in apnsparams:
-            badge = apnsparams['badge']
-        customparams = None
-        if 'custom' in apnsparams:
-            customparams = apnsparams['custom']
+        sound = apnsparams.get('sound', None)
+        badge = apnsparams.get('badge', None)
+        customparams = apnsparams.get('custom', None)
         pl = PayLoad(alert=kwargs['alert'], sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
         self.send(token, pl)
 
