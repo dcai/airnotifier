@@ -44,10 +44,6 @@ class PushHandler(APIBaseHandler):
         data.setdefault('channel', 'default')
         data.setdefault('sound', None)
         data.setdefault('badge', None)
-        data.setdefault('wns', {})
-        data.setdefault('gcm', {})
-        data.setdefault('mpns', {})
-        data.setdefault('apns', {})
         data.setdefault('extra', {})
         return data
 
@@ -110,9 +106,11 @@ class PushHandler(APIBaseHandler):
             self.add_to_log('%s notification' % self.appname, logmessage)
 
             if device == DEVICE_TYPE_IOS:
+                data.setdefault('apns', {})
                 self.get_apns_conn().process(token=self.token, alert=alert, extra=extra, apns=data['apns'])
                 self.send_response(ACCEPTED)
             elif device == DEVICE_TYPE_ANDROID:
+                data.setdefault('gcm', {})
                 try:
                     gcm = self.gcmconnections[self.app['shortname']][0]
                     response = gcm.process(token=[self.token], alert=alert, extra=data['extra'], gcm=data['gcm'])
@@ -128,10 +126,12 @@ class PushHandler(APIBaseHandler):
                 except GCMException as ex:
                     self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
             elif device == DEVICE_TYPE_WNS:
+                data.setdefault('wns', {})
                 wns = self.wnsconnections[self.app['shortname']][0]
                 wns.process(token=data['token'], alert=data['alert'], extra=extra, wns=data['wns'])
                 self.send_response(ACCEPTED)
             elif device == DEVICE_TYPE_MPNS:
+                data.setdefault('mpns', {})
                 mpns = self.mpnsconnections[self.app['shortname']][0]
                 mpns.process(token=data['token'], alert=data['alert'], extra=extra, mpns=data['mpns'])
                 self.send_response(ACCEPTED)
