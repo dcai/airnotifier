@@ -1,14 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from httplib import  FORBIDDEN, OK
-from importlib import import_module
-import md5
-import time
-import uuid
-
-from api import APIBaseHandler
-from routes import route
-
 
 # Copyright (c) 2012, Dongsheng Cai
 #
@@ -34,6 +25,15 @@ from routes import route
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from httplib import  FORBIDDEN, OK
+from importlib import import_module
+import md5
+import time
+import uuid
+
+from api import APIBaseHandler
+from routes import route
 @route(r"/api/v2/accesskeys[\/]?")
 class AccessKeysV2Handler(APIBaseHandler):
     def initialize(self):
