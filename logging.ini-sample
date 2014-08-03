@@ -28,4 +28,4 @@ args=(sys.stdout,)
 [formatter_default]
 datefmt = %s
 class=logging.Formatter
-format = %(asctime)s %(levelname)-1.1s [%(name)s][%(threadName)s][%(pathname)s:%(lineno)s] %(message)s 
+format = %(asctime)s %(levelname)-1.1s [%(name)s][%(threadName)s][%(filename)s:%(lineno)s] %(message)s
