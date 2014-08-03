@@ -57,7 +57,8 @@ define("mongoport", default=27017, help="MongoDB port")
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
 define("dbprefix", default="obj_", help="Collection name prefix")
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)-8s %(message)s')
+requests_log = logging.getLogger("requests")
+requests_log.setLevel(logging.WARNING)
 
 class AirNotifierApp(tornado.web.Application):
 

@@ -99,7 +99,7 @@ class WNSClient(PushService):
         wnstype = 'wns/' + wnstype
 
         accesstoken = self.accesstoken
-        if self.expiry <= now:
+        if self.expiry >= now:
             accesstoken = self.request_token()
         headers = {
                 'Content-Type': 'text/xml',

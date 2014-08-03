@@ -92,10 +92,9 @@ class AppBroadcastHandler(WebBaseHandler):
             # Now sending android notifications
             gcm = self.gcmconnections[appname][0]
             data = dict({'alert': alert}.items())
-            logging.info(regids)
             response = gcm.send(regids, data=data, ttl=3600)
             responsedata = response.json()
         except GCMException:
-            logging.info('GCM problem')
+            logging.error('GCM problem')
         self.render("app_broadcast.html", app=app, sent=True)
 

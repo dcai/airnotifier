@@ -103,8 +103,8 @@ class BroadcastHandler(APIBaseHandler):
             response = gcm.send(regids, data=data, collapse_key=collapse_key, ttl=3600)
             responsedata = response.json()
         except GCMException:
-            logging.info('GCM problem')
+            logging.error('GCM problem')
 
         delta_t = time.time() - self._time_start
-        logging.warning("Broadcast took time: %sms" % (delta_t * 1000))
+        logging.info("Broadcast took time: %sms" % (delta_t * 1000))
         self.send_response(OK, dict(status='ok'))
