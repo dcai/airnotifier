@@ -1,0 +1,31 @@
+[loggers]
+keys=root,requests
+
+[handlers]
+keys=console,silent
+
+[formatters]
+keys=default
+
+[logger_root]
+handlers=console
+
+[logger_requests]
+handlers=silent
+qualname=requests.*
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = default
+
+[handler_silent]
+class=StreamHandler
+level=WARNING
+args=(sys.stdout,)
+
+[formatter_default]
+datefmt = %s
+class=logging.Formatter
+format = %(asctime)s %(levelname)-1.1s [%(name)s][%(threadName)s][%(pathname)s:%(lineno)s] %(message)s 

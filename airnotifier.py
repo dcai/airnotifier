@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import logging
+import logging.config
 import os
 import time
 
@@ -57,8 +57,9 @@ define("mongoport", default=27017, help="MongoDB port")
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
 define("dbprefix", default="obj_", help="Collection name prefix")
 
-requests_log = logging.getLogger("requests")
-requests_log.setLevel(logging.WARNING)
+loggingconfigfile='logging.ini'
+if os.path.isfile(loggingconfigfile):
+    logging.config.fileConfig(loggingconfigfile)
 
 class AirNotifierApp(tornado.web.Application):
 
