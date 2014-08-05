@@ -124,6 +124,10 @@ class AppHandler(WebBaseHandler):
                 if self.request.files.has_key('mpnscertificatefile'):
                     self.rm_file(app['mpnscertificatefile'])
                     app['mpnscertificatefile'] = self.save_file(self.request.files['mpnscertificatefile'][0])
+                    ## Update connections
+                    self.mpnsconnections[app['shortname']] = []
+                    mpns = MPNSClient(self.masterdb, app, 0)
+                    self.mpnsconnections[app['shortname']].append(mpns)
 
             if self.get_argument('appdescription', None):
                 app['description'] = self.get_argument('appdescription')
