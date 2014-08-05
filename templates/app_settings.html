@@ -181,8 +181,9 @@
         <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
     </div>
 </fieldset>
+</form>
 
-
+<form class="form-horizontal" id="form-wns-settings" method="post">
 <fieldset>
     <legend>{{ _('WNS settings') }}</legend>
 
@@ -205,7 +206,31 @@
         <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
     </div>
 </fieldset>
+</form>
 
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+<fieldset>
+    <legend>{{ _('MPNS settings') }}</legend>
+
+        <div class="control-group">
+            <label class="control-label" for="id-mpnscertificatefile">{{ _('Certificate (this is optional)') }}</label>
+            <div class="controls">
+                {% if 'mpnscertificatefile' in app %}
+                <div class="alert alert-success">
+                    {{ _('Already uploaded') }}
+                {% else %}
+                <div class="alert alert-warning">
+                    {{ _('MPNS certificate not set') }}
+                {% end %}
+                    <input class="input-file" id="id-mpnscertificatefile" type="file" name="mpnscertificatefile">
+                </div>
+            </div>
+        </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ _('Upload') }}</button>
+    </div>
+</fieldset>
 </form>
 
 {% end %}

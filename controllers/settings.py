@@ -65,20 +65,17 @@ class AppHandler(WebBaseHandler):
                 self.render("app_settings.html", app=app)
 
     def start_apns(self, app):
-        if not self.apnsconnections.has_key(app['shortname']):
-            self.apnsconnections[app['shortname']] = []
-            count = app['connections']
-            if not app.has_key('environment'):
-                app['environment'] = 'sandbox'
+        self.apnsconnections[app['shortname']] = []
+        count = app.get('connections', 1)
+        if not 'environment' in app:
+            app['environment'] = 'sandbox'
 
-            for instanceid in range(0, count):
-                apn = APNClient(app['environment'], app.get('certfile', ''), app.get('keyfile', ''), app['shortname'], instanceid)
-                self.apnsconnections[app['shortname']].append(apn)
-        else:
-            return
+        for instanceid in range(0, count):
+            apn = APNClient(app['environment'], app.get('certfile', ''), app.get('keyfile', ''), app['shortname'], instanceid)
+            self.apnsconnections[app['shortname']].append(apn)
 
     def stop_apns(self, app):
-        if self.apnsconnections.has_key(app['shortname']):
+        if app['shortname'] in self.apnsconnections:
             conns = self.apnsconnections[app['shortname']]
             for conn in conns:
                 conn.shutdown()
@@ -86,6 +83,14 @@ class AppHandler(WebBaseHandler):
 
     def perform_feedback(self, app):
         apn = APNFeedback(app['environment'], app['certfile'], app['keyfile'], app['shortname'])
+
+    def save_file(self, req):
+        filename = sha1(req['body']).hexdigest()
+        filepath = options.pemdir + filename
+        thefile = open(filepath, "w")
+        thefile.write(req['body'])
+        thefile.close()
+        return filename
 
     @tornado.web.authenticated
     def post(self, appname):
@@ -101,22 +106,13 @@ class AppHandler(WebBaseHandler):
             # Update app details
             if self.request.files:
                 if self.request.files.has_key('appcertfile'):
-                    certfile = self.request.files['appcertfile'][0]
-                    certfilename = sha1(certfile['body']).hexdigest()
-                    certfilepath = options.pemdir + certfilename
-                    thefile = open(certfilepath, "w")
-                    thefile.write(certfile['body'])
-                    thefile.close()
-                    app['certfile'] = certfilepath
+                    app['certfile'] = self.save_file(self.request.files['appcertfile'][0])
 
                 if self.request.files.has_key('appkeyfile'):
-                    keyfile = self.request.files['appkeyfile'][0]
-                    keyfilename = sha1(keyfile['body']).hexdigest()
-                    keyfilepath = options.pemdir + keyfilename
-                    thefile = open(keyfilepath, "w")
-                    thefile.write(keyfile['body'])
-                    thefile.close()
-                    app['keyfile'] = keyfilepath
+                    app['keyfile'] = self.save_file(self.request.files['appkeyfile'][0])
+
+                if self.request.files.has_key('mpnscertificatefile'):
+                    app['mpnscertificatefile'] = self.save_file(self.request.files['mpnscertificatefile'][0])
 
             if self.get_argument('appdescription', None):
                 app['description'] = self.get_argument('appdescription')

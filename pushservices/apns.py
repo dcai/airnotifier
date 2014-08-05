@@ -103,8 +103,8 @@ class APNFeedback(object):
         if not certexists and not keyexists:
             raise Exception("Cert or Key not exist")
         self.host = feedbackhost[env]
-        self.certfile = certfile
-        self.keyfile = keyfile
+        self.certfile = self.find_file(certfile)
+        self.keyfile = self.find_file(keyfile)
         self.ioloop = ioloop.IOLoop.instance()
         self.appname = appname
         self.connect()
@@ -138,13 +138,13 @@ class APNClient(PushService):
         return self.connected
 
     def __init__(self, env='sandbox', certfile="", keyfile="", appname="", instanceid=0):
-        certexists = os.path.exists(certfile)
-        keyexists = os.path.exists(keyfile)
+        certexists = self.find_file(certfile)
+        keyexists = self.find_file(keyfile)
         if not certexists or not keyexists:
             raise Exception("APNs certificate or key files do not exist")
         self.apns = apns[env]
-        self.certfile = certfile
-        self.keyfile = keyfile
+        self.certfile = self.find_file(certfile)
+        self.keyfile = self.find_file(keyfile)
         self.messages = deque()
         self.reconnect = True
         self.ioloop = ioloop.IOLoop.instance()

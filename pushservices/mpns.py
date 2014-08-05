@@ -4,6 +4,8 @@
 from pushservice import PushService
 import requests
 import logging
+from tornado.options import options
+import os.path
 
 import xml.etree.ElementTree as ET
 from cStringIO import StringIO
@@ -18,6 +20,9 @@ class MPNSClient(PushService):
     def __init__(self, masterdb, app, instanceid=0):
         self.app = app
         self.masterdb = masterdb
+        self.cert = None
+        if 'mpnscertificatefile' in app:
+            self.cert = self.find_file(app['mpnscertificatefile'])
     def process(self, **kwargs):
         uri = kwargs['token']
         message = kwargs['alert']
@@ -26,12 +31,12 @@ class MPNSClient(PushService):
         if 'type' in mpnsparams:
             mpnstype = mpnsparams['type']
         if mpnstype == 'toast':
+            mpns = MPNSToast()
             if 'text1' not in mpnsparams:
                 mpnsparams['text1'] = message
-            toast.send(uri, mpnsparams)
         elif mpnstype == 'tile':
-            tile = MPNSTile()
-            tile.send(uri, mpnsparams)
+            mpns = MPNSTile()
+        mpns.send(uri, mpnsparams, cert=self.cert)
 
 # https://github.com/max-arnold/python-mpns
 #

@@ -134,13 +134,14 @@ def init_messaging_agents():
             app['environment'] = 'sandbox'
 
         if 'certfile' in app and 'keyfile' in app and 'shortname' in app:
-            for instanceid in range(0, conns):
-                try:
-                    apn = APNClient(app['environment'], app['certfile'], app['keyfile'], app['shortname'], instanceid)
-                except Exception as ex:
-                    logging.error(ex)
-                    continue
-                services['apns'][app['shortname']].append(apn)
+            if app.get('enableapns', False):
+                for instanceid in range(0, conns):
+                    try:
+                        apn = APNClient(app['environment'], app['certfile'], app['keyfile'], app['shortname'], instanceid)
+                    except Exception as ex:
+                        logging.error(ex)
+                        continue
+                    services['apns'][app['shortname']].append(apn)
         ''' GCMClient setup '''
         services['gcm'][app['shortname']] = []
         if 'gcmprojectnumber' in app and 'gcmapikey' in app and 'shortname' in app:
