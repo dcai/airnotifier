@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from pushservice import PushService
 
 # Copyright (c) 2012, Dongsheng Cai
 #
@@ -27,6 +26,7 @@ from pushservice import PushService
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from . import PushService
 from collections import deque
 from socket import socket, AF_INET, SOCK_STREAM
 import binascii
