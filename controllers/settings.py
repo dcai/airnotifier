@@ -92,6 +92,14 @@ class AppHandler(WebBaseHandler):
         thefile.close()
         return filename
 
+    def rm_file(self, filename):
+        fullpath = options.pemdir + filename
+        if os.path.isfile(filename):
+            os.remove(filename)
+        elif os.path.isfile(fullpath):
+            os.remove(fullpath)
+
+
     @tornado.web.authenticated
     def post(self, appname):
         try:
@@ -106,12 +114,15 @@ class AppHandler(WebBaseHandler):
             # Update app details
             if self.request.files:
                 if self.request.files.has_key('appcertfile'):
+                    self.rm_file(app['certfile'])
                     app['certfile'] = self.save_file(self.request.files['appcertfile'][0])
 
                 if self.request.files.has_key('appkeyfile'):
+                    self.rm_file(app['keyfile'])
                     app['keyfile'] = self.save_file(self.request.files['appkeyfile'][0])
 
                 if self.request.files.has_key('mpnscertificatefile'):
+                    self.rm_file(app['mpnscertificatefile'])
                     app['mpnscertificatefile'] = self.save_file(self.request.files['mpnscertificatefile'][0])
 
             if self.get_argument('appdescription', None):
