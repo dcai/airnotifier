@@ -138,4 +138,6 @@ class PushHandler(APIBaseHandler):
             else:
                 self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
         except Exception, ex:
+            import traceback
+            traceback.print_exc()
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
