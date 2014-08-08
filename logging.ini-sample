@@ -1,14 +1,28 @@
 [loggers]
-keys=root,requests
+keys=root,requests,web,app,general
 
 [handlers]
-keys=console,silent
+keys=console,silent,accesslog,general
 
 [formatters]
 keys=default
 
 [logger_root]
-handlers=console
+handlers=general
+qualname=root
+
+[logger_web]
+propagate=0
+handlers=accesslog
+qualname=tornado.access
+
+[logger_app]
+handlers=general
+qualname=tornado.application
+
+[logger_general]
+handlers=general
+qualname=tornado.general
 
 [logger_requests]
 handlers=silent
@@ -16,9 +30,21 @@ qualname=requests.*
 
 [handler_console]
 class = StreamHandler
-args = (sys.stderr,)
+args = (sys.stdout,)
 level = NOTSET
 formatter = default
+
+[handler_accesslog]
+class = logging.FileHandler
+level = NOTSET
+formatter = default
+args = ("/var/log/airnotifier/access.log", "w")
+
+[handler_general]
+class = logging.FileHandler
+level = NOTSET
+formatter = default
+args = ("/var/log/airnotifier/app.log", "w")
 
 [handler_silent]
 class=StreamHandler
