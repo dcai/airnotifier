@@ -28,6 +28,7 @@
 
 from . import PushService
 import json
+from tornado.httpclient import AsyncHTTPClient
 import requests
 
 GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send'
@@ -107,7 +108,9 @@ class GCMClient(PushService):
             raise GCMException("Registration IDs cannot be empty")
 
         payload = self.build_request(regids, data, collapse_key, ttl)
-        response = requests.post(self.endpoint, data=payload, headers={"content-type":"application/json", 'Authorization': 'key=%s' % self.apikey})
+        headers = {"content-type":"application/json", 'Authorization': 'key=%s' % self.apikey}
+        response = requests.post(self.endpoint, data=payload, headers=headers)
+
         if response.status_code == 400:
             raise GCMException('Request could not be parsed as JSON, or it contained invalid fields.')
         elif response.status_code == 401:

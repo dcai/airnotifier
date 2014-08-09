@@ -31,6 +31,7 @@ import requests
 import logging
 from tornado.options import options
 import os.path
+from tornado.httpclient import AsyncHTTPClient
 
 import xml.etree.ElementTree as ET
 from cStringIO import StringIO
@@ -143,7 +144,7 @@ class MPNSBase(object):
             'message_id': response.headers.get('x-messageid'),                                # 00000000-0000-0000-0000-000000000000
             }
 
-        code = response.status_code
+        code = response.code
         status['http_status_code'] = code
 
         if code == 200:
@@ -212,12 +213,13 @@ class MPNSBase(object):
 
         data = self.prepare_payload(payload)
 
-        res = requests.post(uri, data=data, headers=self.headers, cert=cert)
-        result = self.parse_response(res)
-        if debug:
-            result['request'] = {'data': data, 'headers': dict(self.headers) }
-            result['response'] = {'status': res.status_code, 'headers': dict(res.headers), 'text': res.text}
-        return result
+        http = AsyncHTTPClient()
+        http.fetch(uri, self.handle_response, method="POST", headers=self.headers, body=data, ca_certs=cert)
+
+    def handle_response(self, response):
+        result = self.parse_response(response)
+        #result['request'] = {'data': data, 'headers': dict(self.headers) }
+        result['response'] = {'status': response.code, 'headers': dict(response.headers), 'text': response.body}
 
 
 # TODO: create separate classes for FlipTile, Cycle and Iconic notifications (also add version 2.0)

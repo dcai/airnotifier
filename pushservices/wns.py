@@ -28,6 +28,7 @@
 
 from . import PushService
 import requests
+from tornado.httpclient import AsyncHTTPClient
 import logging
 import time
 import xml.etree.ElementTree as ET
@@ -137,7 +138,7 @@ class WNSBase(object):
             'status': response.headers.get('X-WNS-Status',''),
             }
 
-        code = response.status_code
+        code = response.code
         status['http_status_code'] = code
 
         if code == 200:
@@ -163,8 +164,12 @@ class WNSBase(object):
             status['error'] = 'Unexpected status'
 
         return status
+    def handle_response(self, response):
+        result = self.parse_response(response)
+        #result['request'] = {'data': data, 'headers': dict(self.headers) }
+        result['response'] = {'status': response.code, 'headers': dict(response.headers), 'text': response.body}
 
-    def send(self, uri, payload, debug=False):
+    def send(self, uri, payload):
         """
         Send push message. Input parameters:
 
@@ -173,15 +178,9 @@ class WNSBase(object):
         accesstoken - token
 
         """
-
         data = self.prepare_payload(payload)
-
-        res = requests.post(uri, data=data, headers=self.headers)
-        result = self.parse_response(res)
-        if debug:
-            result['request'] = {'data': data, 'headers': dict(self.headers) }
-            result['response'] = {'status': res.status_code, 'headers': dict(res.headers), 'text': res.text}
-        return result
+        http = AsyncHTTPClient()
+        http.fetch(uri, self.handle_response, method="POST", headers=self.headers, body=data)
 
 class WNSToast(WNSBase):
 
