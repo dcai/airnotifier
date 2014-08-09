@@ -28,6 +28,7 @@
 
 from . import PushService
 import json
+import logging
 from tornado.httpclient import AsyncHTTPClient
 import requests
 
@@ -119,12 +120,12 @@ class GCMClient(PushService):
             raise GCMException('GCMClient server is temporarily unavailable .')
 
         responsedata = response.json()
-        if 'canonical_ids' in responsedata and responsedata['canonical_ids'] is not 0:
+        if responsedata.get('canonical_ids', 0) != 0:
             # means we need to take a look at results, looking for registration_id key
             responsedata['canonical_ids'] = self.reverse_response_info('registration_id', regids, responsedata['results'])
 
         # Handling errors
-        if 'failure' in responsedata and responsedata['failure'] is not 0:
+        if responsedata.get('failure', 0) != 0:
             # means we need to take a look at results, looking for error key
             errors = self.reverse_response_info('error', regids, responsedata['results'])
             for errorkey, packed_rregisteration_ids in errors.items():
