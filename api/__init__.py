@@ -546,3 +546,24 @@ class AccessKeysV1Handler(APIBaseHandler):
             return False
         else:
             return True
+
+@route(r"/broadcast/")
+class BroadcastV1Handler(APIBaseHandler):
+    def post(self):
+        if not self.can('send_broadcast'):
+            self.send_response(FORBIDDEN, dict(error="No permission to send broadcast"))
+            return
+        # the cannel to be boradcasted
+        channel = self.get_argument('channel', 'default')
+        # iOS and Android shared params
+        alert = ''.join(self.get_argument('alert').splitlines())
+        # Android
+        collapse_key = self.get_argument('collapse_key', '')
+        # iOS
+        sound = self.get_argument('sound', None)
+        badge = self.get_argument('badge', None)
+        self.add_to_log('%s broadcast' % self.appname, alert, "important")
+        self.application.send_broadcast(self.appname, self.db, channel, alert)
+        delta_t = time.time() - self._time_start
+        logging.info("Broadcast took time: %sms" % (delta_t * 1000))
+        self.send_response(OK, dict(status='ok'))

@@ -64,37 +64,6 @@ class AppBroadcastHandler(WebBaseHandler):
         if not app: raise tornado.web.HTTPError(500)
         alert = self.get_argument('notification').strip()
         sound = 'default'
-        count = len(self.apnsconnections[app['shortname']])
-        if appname in self.apnsconnections:
-            count = len(self.apnsconnections[appname])
-        else:
-            count = 0
-        if count > 0:
-            random.seed(time.time())
-            instanceid = random.randint(0, count - 1)
-            conn = self.apnsconnections[appname][instanceid]
-        else:
-            conn = None
-        regids = []
-
-        tokens = self.db.tokens.find()
-        try:
-            for token in tokens:
-                if token['device'] == DEVICE_TYPE_IOS:
-                    if conn is not None:
-                        pl = PayLoad(alert=alert, sound=sound)
-                        conn.send(token['token'], pl)
-                else:
-                    regids.append(token['token'])
-        except Exception:
-            pass
-        try:
-            # Now sending android notifications
-            gcm = self.gcmconnections[appname][0]
-            data = dict({'alert': alert}.items())
-            response = gcm.send(regids, data=data, ttl=3600)
-            responsedata = response.json()
-        except GCMException:
-            logging.error('GCM problem')
+        channel = 'default'
+        self.application.send_broadcast(self.appname, self.db, channel, alert)
         self.render("app_broadcast.html", app=app, sent=True)
-

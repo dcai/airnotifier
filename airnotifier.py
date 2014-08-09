@@ -42,6 +42,8 @@ from pushservices.wns import WNSClient
 from pushservices.mpns import MPNSClient
 from uimodules import *
 from util import error_log
+from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
+    DEVICE_TYPE_MPNS
 
 
 define("port", default=8801, help="Application server listen port", type=int)
@@ -66,6 +68,61 @@ class AirNotifierApp(tornado.web.Application):
     def init_routes(self, dir):
         from routes import RouteLoader
         return RouteLoader.load(dir)
+
+    def send_broadcast(self, appname, appdb, channel, msg):
+
+        try:
+            apns = self.services['apns'][appname][0]
+        except IndexError:
+            apns = None
+        try:
+            wns = self.services['wns'][appname][0]
+        except IndexError:
+            wns = None
+        try:
+            mpns = self.services['mpns'][appname][0]
+        except IndexError:
+            mpns = None
+        try:
+            gcm = self.services['gcm'][appname][0]
+        except IndexError:
+            gcm = None
+
+        conditions = []
+        if channel == 'default':
+            # channel is not set or channel is default
+            conditions.append({'channel': {"$exists": False}})
+            conditions.append({'channel': 'default'})
+        else:
+            conditions.append({'channel': channel})
+        tokens = appdb.tokens.find({"$or": conditions})
+
+        regids = []
+        try:
+            for token in tokens:
+                if token['device'] == DEVICE_TYPE_IOS:
+                    if apns is not None:
+                        pl = PayLoad(alert=alert)
+                        apns.send(token['token'], pl)
+                elif token['device'] == DEVICE_TYPE_ANDROID:
+                    regids.append(token['token'])
+                elif token['device'] == DEVICE_TYPE_WNS:
+                    if wns is not None:
+                        wns.process(token=token['token'], alert=msg, extra={}, wns={})
+                elif token['device'] == DEVICE_TYPE_MPNS:
+                    if mpns is not None:
+                        mpns.process(token=token['token'], alert=msg, extra={}, mpns={})
+        except Exception, ex:
+            logging.error(ex)
+
+        # Now sending android notifications
+        try:
+            if gcm is not None:
+                data = dict({'alert': msg}.items())
+                response = gcm.send(regids, data=data, ttl=3600)
+                responsedata = response.json()
+        except Exception, ex:
+            logging.error('GCM problem: ' + str(ex))
 
     def __init__(self, services):
 
@@ -98,6 +155,7 @@ class AirNotifierApp(tornado.web.Application):
 
         self.masterdb = mongodb[options.masterdb]
         assert self.masterdb.connection == self.mongodb
+
     def main(self):
         logging.info("Starting AirNotifier server")
         http_server = tornado.httpserver.HTTPServer(self)
