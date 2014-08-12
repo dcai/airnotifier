@@ -54,7 +54,7 @@ class AppHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self, appname):
         if appname == "new":
-            self.render("app_new.html")
+            self.redirect(r"/create/app")
         else:
             app = self.masterdb.applications.find_one({'shortname': appname})
             if not app:

@@ -48,8 +48,9 @@ from pushservices.wns import WNSClient
 from pushservices.gcm import GCMClient
 import requests
 from controllers.base import *
+import logging
 
-@route(r"/applications/new")
+@route(r"/create/app")
 class AppCreateNewHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):

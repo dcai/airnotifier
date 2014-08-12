@@ -36,7 +36,7 @@
     <div class="control-group">
         <label class="control-label" for="appfullname">{{ _('Full name') }}</label>
         <div class="controls">
-            <input type="text" class="input-xlarge" id="appfullname" name="appfullname" value="{% if app.has_key('fullname') %}{{app['fullname']}}{% else %}{{app['shortname']}}{% end %}">
+            <input type="text" class="input-xlarge" id="appfullname" name="appfullname" value="{{ app.get('fullname', '') }}">
         </div>
     </div>
 
@@ -53,7 +53,7 @@
     <div class="control-group">
         <label class="control-label" for="keydesc">{{ _('Blocked IP list') }}</label>
         <div class="controls">
-            <textarea rows="10" class="input-xlarge" id="ipaddr" name="blockediplist">{{ app['blockediplist'] }}</textarea>
+            <textarea rows="10" class="input-xlarge" id="ipaddr" name="blockediplist">{{ app.get('blockediplist', '') }}</textarea>
         </div>
     </div>
 
@@ -61,7 +61,7 @@
     <div class="control-group">
         <label class="control-label" for="appdescription">Description</label>
         <div class="controls">
-            <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription">{{app['description']}}</textarea>
+            <textarea class="input-xlarge" id="appdescription" rows="6" name="appdescription">{{app.get('description', '')}}</textarea>
         </div>
     </div>
 
@@ -78,7 +78,7 @@
             <label class="control-label"> {{ _('APNs service') }}</label>
             <div class="controls">
                 <input type="hidden" name="appname" value="{{app['shortname']}}" />
-                {% if app.has_key('enableapns') and app['enableapns'] %}
+                {% if app.get('enableapns', False) %}
                 <input type="hidden" name="stopapns" value="true" />
                 <button type="submit" class="btn btn-danger">{{ _('Stop') }}</button>
                 {% else %}
@@ -173,7 +173,7 @@
     <div class="control-group">
         <label class="control-label" for="form-element-gcmapikey">{{ _('API key') }}</label>
         <div class="controls">
-            <input type="text" class="input-xlarge" id="form-element-gcmapikey" name="gcmapikey" value="{{app['gcmapikey']}}">
+            <input type="text" class="input-xlarge" id="form-element-gcmapikey" name="gcmapikey" value="{{app.get('gcmapikey', '')}}">
         </div>
     </div>
 
@@ -190,7 +190,7 @@
     <div class="control-group">
         <label class="control-label" for="form-element-gcmprojectnumber"> {{ _('Client ID') }}</label>
         <div class="controls">
-            <input type="text" class="input-xlarge" id="form-element-wnsclientid" name="wnsclientid" value="{{app['wnsclientid']}}">
+            <input type="text" class="input-xlarge" id="form-element-wnsclientid" name="wnsclientid" value="{{app.get('wnsclientid', '')}}">
             <p class="help-block">Client ID</p>
         </div>
     </div>
@@ -198,7 +198,7 @@
     <div class="control-group">
         <label class="control-label" for="form-element-gcmapikey">{{ _('Client secret') }}</label>
         <div class="controls">
-            <input type="text" class="input-xlarge" id="form-element-wnsclientsecret" name="wnsclientsecret" value="{{app['wnsclientsecret']}}">
+            <input type="text" class="input-xlarge" id="form-element-wnsclientsecret" name="wnsclientsecret" value="{{app.get('wnsclientsecret', '')}}">
         </div>
     </div>
 
