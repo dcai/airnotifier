@@ -5,12 +5,7 @@
 {% end %}
 
 {% block sidebaritems %}
-<ul class="nav nav-list">
-    <li class="nav-header">{{ _('Applications') }}</li>
-    {% for app in apps %}
-        <li><a href="#{{app['shortname']}}">{{app['fullname']}}</a></li>
-    {% end %}
-</ul>
+{{ modules.AppSideBar({}, 'stats') }}
 {% end %}
 
 {% block body %}
