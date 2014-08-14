@@ -123,7 +123,7 @@
         <div class="control-group">
             <label class="control-label" for="certfileinput">{{ _('Certification') }}</label>
             <div class="controls">
-                {% if app.has_key('certfile') and app['certfile'] %}
+                {% if app.get('certfile', False) %}
                 <div class="alert alert-success">
                     {{ _('Already uploaded') }}
                 {% else %}
@@ -138,7 +138,7 @@
         <div class="control-group">
             <label class="control-label" for="keyfileinput">{{ _('Key') }}</label>
             <div class="controls">
-                {% if app.has_key('keyfile') and app['keyfile'] %}
+                {% if app.get('keyfile', False) %}
                 <div class="alert alert-success">
                     {{ _('Already uploaded') }}
                 {% else %}
@@ -215,7 +215,7 @@
         <div class="control-group">
             <label class="control-label" for="id-mpnscertificatefile">{{ _('Certificate (this is optional)') }}</label>
             <div class="controls">
-                {% if 'mpnscertificatefile' in app %}
+                {% if app.get('mpnscertificatefile', False) %}
                 <div class="alert alert-success">
                     {{ _('Already uploaded') }}
                 {% else %}

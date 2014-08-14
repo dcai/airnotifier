@@ -40,7 +40,7 @@ import time
 import uuid
 from constants import DEVICE_TYPE_IOS, VERSION
 from pymongo import DESCENDING
-from util import filter_alphabetanum
+from util import *
 from pushservices.apns import APNClient, APNFeedback, PayLoad
 import sys
 from api import API_PERMISSIONS

@@ -39,7 +39,7 @@ import time
 import uuid
 from constants import DEVICE_TYPE_IOS, VERSION
 from pymongo import DESCENDING
-from util import filter_alphabetanum
+from util import *
 from pushservices.apns import APNClient, APNFeedback, PayLoad
 import sys
 from api import API_PERMISSIONS
@@ -57,7 +57,14 @@ class AppHandler(WebBaseHandler):
             self.redirect(r"/create/app")
         else:
             app = self.masterdb.applications.find_one({'shortname': appname})
+            if not file_exists(app.get('certfile', '')):
+                app['certfile'] = None
+            if not file_exists(app.get('keyfile', '')):
+                app['keyfile'] = None
+            if not file_exists(app.get('mpnscertificatefile', '')):
+                app['mpnscertificatefile'] = None
             if not app:
+
                 self.finish("Application doesn't exist")
                 # self.redirect(r"/applications/new")
                 # raise tornado.web.HTTPError(500)
@@ -84,22 +91,6 @@ class AppHandler(WebBaseHandler):
     def perform_feedback(self, app):
         apn = APNFeedback(app['environment'], app['certfile'], app['keyfile'], app['shortname'])
 
-    def save_file(self, req):
-        filename = sha1(req['body']).hexdigest()
-        filepath = options.pemdir + filename
-        thefile = open(filepath, "w")
-        thefile.write(req['body'])
-        thefile.close()
-        return filename
-
-    def rm_file(self, filename):
-        fullpath = options.pemdir + filename
-        if os.path.isfile(filename):
-            os.remove(filename)
-        elif os.path.isfile(fullpath):
-            os.remove(fullpath)
-
-
     @tornado.web.authenticated
     def post(self, appname):
         try:
@@ -114,16 +105,16 @@ class AppHandler(WebBaseHandler):
             # Update app details
             if self.request.files:
                 if self.request.files.has_key('appcertfile'):
-                    self.rm_file(app['certfile'])
-                    app['certfile'] = self.save_file(self.request.files['appcertfile'][0])
+                    rm_file(app['certfile'])
+                    app['certfile'] = save_file(self.request.files['appcertfile'][0])
 
                 if self.request.files.has_key('appkeyfile'):
-                    self.rm_file(app['keyfile'])
-                    app['keyfile'] = self.save_file(self.request.files['appkeyfile'][0])
+                    rm_file(app['keyfile'])
+                    app['keyfile'] = save_file(self.request.files['appkeyfile'][0])
 
                 if self.request.files.has_key('mpnscertificatefile'):
                     self.rm_file(app['mpnscertificatefile'])
-                    app['mpnscertificatefile'] = self.save_file(self.request.files['mpnscertificatefile'][0])
+                    app['mpnscertificatefile'] = save_file(self.request.files['mpnscertificatefile'][0])
                     ## Update connections
                     self.mpnsconnections[app['shortname']] = []
                     mpns = MPNSClient(self.masterdb, app, 0)

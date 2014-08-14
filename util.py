@@ -33,6 +33,8 @@ import htmlentitydefs
 import re
 import sys
 import unicodedata
+import os
+from tornado.options import options
 
 from bson.dbref import DBRef
 from bson.max_key import MaxKey
@@ -112,3 +114,31 @@ def filter_alphabetanum(string):
 
 def error_log(log):
     sys.stderr.write(log)
+
+def get_filepath(filename):
+    return os.path.join(os.path.abspath(options.pemdir), filename)
+
+def save_file(req):
+    filename = sha1(req['body']).hexdigest()
+    filepath = get_filepath(filename)
+    logging.info('saving .. ' + filepath)
+    thefile = open(filepath, "w")
+    thefile.write(req['body'])
+    thefile.close()
+    return filename
+
+def file_exists(filename):
+    if not filename:
+        return False
+    if os.path.exists(filename):
+        return True
+    if os.path.exists(get_filepath(filename)):
+        return True
+    return False
+
+def rm_file(filename):
+    fullpath = get_filepath(filename)
+    if os.path.isfile(filename):
+        os.remove(filename)
+    elif os.path.isfile(fullpath):
+        os.remove(fullpath)

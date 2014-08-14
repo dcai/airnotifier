@@ -41,7 +41,7 @@ from pushservices.gcm import GCMClient
 from pushservices.wns import WNSClient
 from pushservices.mpns import MPNSClient
 from uimodules import *
-from util import error_log
+from util import *
 from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
     DEVICE_TYPE_MPNS
 
@@ -191,7 +191,7 @@ def init_messaging_agents():
         if 'environment' not in app:
             app['environment'] = 'sandbox'
 
-        if 'certfile' in app and 'keyfile' in app and 'shortname' in app:
+        if file_exists(app.get('certfile', None)) and file_exists(app.get('keyfile', None)) and 'shortname' in app:
             if app.get('enableapns', False):
                 for instanceid in range(0, conns):
                     try:
