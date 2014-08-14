@@ -191,7 +191,7 @@ def init_messaging_agents():
         if 'environment' not in app:
             app['environment'] = 'sandbox'
 
-        if file_exists(app.get('certfile', None)) and file_exists(app.get('keyfile', None)) and 'shortname' in app:
+        if file_exists(app.get('certfile', False)) and file_exists(app.get('keyfile', False)) and 'shortname' in app:
             if app.get('enableapns', False):
                 for instanceid in range(0, conns):
                     try:

@@ -31,10 +31,9 @@ from hashlib import sha1
 from pymongo import *
 from bson import *
 from pymongo.errors import *
-from tornado.options import define, options
 from constants import *
 import tornado.options
-
+from tornado.options import define, options
 
 define("apns", default=(), help="APNs address and port")
 define("pemdir", default="pemdir", help="Directory to store pems")
@@ -77,13 +76,12 @@ if __name__ == "__main__":
                     token['device'] = DEVICE_TYPE_IOS
                     result = db['tokens'].update({'_id': tokenid}, token, safe=True, upsert=True)
 
-        version_object['value'] = 20140315
-        masterdb['option'].update({'name': 'version'}, version_object, safe=True, upsert=True)
+        r = masterdb['options'].update({'name': 'version'}, {'$set': {'value': 20140315}}, safe=True, upsert=True)
+        version_object = masterdb['options'].find_one({'name': 'version'})
 
     if version < 20140720:
         apps = masterdb.applications.find()
         for app in apps:
-            logging.info(app)
             appname = app['shortname']
             appid = ObjectId(app['_id'])
             ## Repair application setting collection
@@ -98,5 +96,23 @@ if __name__ == "__main__":
             if not 'wnstokenexpiry' in app:
                 app['wnstokenexpiry'] = ''
             masterdb.applications.update({'_id': appid}, app, safe=True, upsert=True)
-        version_object['value'] = 20140720
-        masterdb['option'].update({'name': 'version'}, version_object, safe=True, upsert=True)
+        masterdb['options'].update({'name': 'version'}, {'$set': {'value': 20140720}}, safe=True, upsert=True)
+    if version < 20140814:
+        ## Don't store fullpath in db, only filename
+        import os
+        apps = masterdb.applications.find()
+        for app in apps:
+            appname = app['shortname']
+            appid = ObjectId(app['_id'])
+            if app.has_key('certfile'):
+                app['certfile'] = os.path.basename(app.get('certfile'))
+            if app.has_key('keyfile'):
+                app['keyfile'] = os.path.basename(app.get('keyfile'))
+            if app.has_key('mpnscertificatefile'):
+                app['mpnscertificatefile'] = os.path.basename(app.get('mpnscertificatefile'))
+            masterdb.applications.update({'_id': appid}, app, safe=True, upsert=True)
+        masterdb['options'].update({'name': 'version'}, {'$set': {'value': 20140814}}, safe=True, upsert=True)
+
+    version_object = masterdb['options'].find_one({'name': 'version'})
+    version = version_object['value']
+    logging.info("You're using version: %d" % version)

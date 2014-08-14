@@ -32,6 +32,7 @@ import logging
 from tornado.options import options
 import os.path
 from tornado.httpclient import AsyncHTTPClient
+from util import *
 
 import xml.etree.ElementTree as ET
 from cStringIO import StringIO
@@ -46,9 +47,7 @@ class MPNSClient(PushService):
     def __init__(self, masterdb, app, instanceid=0):
         self.app = app
         self.masterdb = masterdb
-        self.cert = None
-        if 'mpnscertificatefile' in app:
-            self.cert = self.find_file(app['mpnscertificatefile'])
+        self.cert = get_filepath(app.get('mpnscertificatefile', None))
     def process(self, **kwargs):
         uri = kwargs['token']
         message = kwargs['alert']
@@ -199,6 +198,8 @@ class MPNSBase(object):
         backoff_seconds - optional recommended throttling delay (in seconds)
         drop_subscription - optional flag to indicate that subscription uri is invalid
         """
+        if not cert:
+            cert = None
 
         # reset per-message headers
         for k in (self.HEADER_MESSAGE_ID, self.HEADER_CALLBACK_URI):

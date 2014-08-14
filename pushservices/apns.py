@@ -35,6 +35,7 @@ import logging
 import os
 import struct
 import time
+from util import *
 
 from tornado import ioloop, iostream
 
@@ -94,8 +95,8 @@ class PayLoad(object):
 
 class APNFeedback(object):
     def __init__(self, env="sandbox", certfile="", keyfile="", appname=""):
-        certexists = os.path.exists(certfile)
-        keyexists = os.path.exists(keyfile)
+        certexists = file_exists(certfile)
+        keyexists = file_exists(keyfile)
         if not certexists:
             logging.error("Certificate file doesn't exist")
         if not keyexists:
@@ -103,8 +104,8 @@ class APNFeedback(object):
         if not certexists and not keyexists:
             raise Exception("Cert or Key not exist")
         self.host = feedbackhost[env]
-        self.certfile = self.find_file(certfile)
-        self.keyfile = self.find_file(keyfile)
+        self.certfile = get_filepath(certfile)
+        self.keyfile = get_filepath(keyfile)
         self.ioloop = ioloop.IOLoop.instance()
         self.appname = appname
         self.connect()
@@ -138,13 +139,13 @@ class APNClient(PushService):
         return self.connected
 
     def __init__(self, env='sandbox', certfile="", keyfile="", appname="", instanceid=0):
-        certexists = self.find_file(certfile)
-        keyexists = self.find_file(keyfile)
+        certexists = file_exists(certfile)
+        keyexists = file_exists(keyfile)
         if not certexists or not keyexists:
             raise Exception("APNs certificate or key files do not exist")
         self.apns = apns[env]
-        self.certfile = self.find_file(certfile)
-        self.keyfile = self.find_file(keyfile)
+        self.certfile = get_filepath(certfile)
+        self.keyfile = get_filepath(keyfile)
         self.messages = deque()
         self.reconnect = True
         self.ioloop = ioloop.IOLoop.instance()

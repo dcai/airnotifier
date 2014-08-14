@@ -35,6 +35,7 @@ import sys
 import unicodedata
 import os
 from tornado.options import options
+from hashlib import md5, sha1
 
 from bson.dbref import DBRef
 from bson.max_key import MaxKey
@@ -42,6 +43,7 @@ from bson.min_key import MinKey
 from bson.objectid import ObjectId
 from bson.son import RE_TYPE
 from bson.timestamp import Timestamp
+import logging
 
 try:
     import uuid
@@ -121,7 +123,6 @@ def get_filepath(filename):
 def save_file(req):
     filename = sha1(req['body']).hexdigest()
     filepath = get_filepath(filename)
-    logging.info('saving .. ' + filepath)
     thefile = open(filepath, "w")
     thefile.write(req['body'])
     thefile.close()
@@ -132,11 +133,14 @@ def file_exists(filename):
         return False
     if os.path.exists(filename):
         return True
-    if os.path.exists(get_filepath(filename)):
+    fullpath = get_filepath(filename)
+    if fullpath and os.path.exists(fullpath):
         return True
     return False
 
 def rm_file(filename):
+    if not filename:
+        return
     fullpath = get_filepath(filename)
     if os.path.isfile(filename):
         os.remove(filename)

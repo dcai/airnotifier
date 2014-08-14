@@ -46,7 +46,9 @@ from api import API_PERMISSIONS
 from pushservices.gcm import GCMException
 from pushservices.wns import WNSClient
 from pushservices.gcm import GCMClient
+from pushservices.mpns import MPNSClient
 import requests
+import traceback
 from controllers.base import *
 
 @route(r"/applications/([^/]+)/settings[\/]?")
@@ -74,11 +76,10 @@ class AppHandler(WebBaseHandler):
     def start_apns(self, app):
         self.apnsconnections[app['shortname']] = []
         count = app.get('connections', 1)
-        if not 'environment' in app:
-            app['environment'] = 'sandbox'
+        app.setdefault('environment', 'sandbox')
 
         for instanceid in range(0, count):
-            apn = APNClient(app['environment'], app.get('certfile', ''), app.get('keyfile', ''), app['shortname'], instanceid)
+            apn = APNClient(app.get('environment'), app.get('certfile', ''), app.get('keyfile', ''), app['shortname'], instanceid)
             self.apnsconnections[app['shortname']].append(apn)
 
     def stop_apns(self, app):
@@ -89,7 +90,7 @@ class AppHandler(WebBaseHandler):
             del self.apnsconnections[app['shortname']]
 
     def perform_feedback(self, app):
-        apn = APNFeedback(app['environment'], app['certfile'], app['keyfile'], app['shortname'])
+        apn = APNFeedback(app.get('environment'), app.get('certfile', ''), app.get('keyfile', ''), app['shortname'])
 
     @tornado.web.authenticated
     def post(self, appname):
@@ -99,21 +100,19 @@ class AppHandler(WebBaseHandler):
 
             if self.get_argument('appfullname', None):
                 app['fullname'] = self.get_argument('appfullname')
-            else:
-                app['fullname'] = self.appname
 
             # Update app details
             if self.request.files:
                 if self.request.files.has_key('appcertfile'):
-                    rm_file(app['certfile'])
+                    rm_file(app.get('certfile', None))
                     app['certfile'] = save_file(self.request.files['appcertfile'][0])
 
                 if self.request.files.has_key('appkeyfile'):
-                    rm_file(app['keyfile'])
+                    rm_file(app.get('keyfile', None))
                     app['keyfile'] = save_file(self.request.files['appkeyfile'][0])
 
                 if self.request.files.has_key('mpnscertificatefile'):
-                    self.rm_file(app['mpnscertificatefile'])
+                    rm_file(app.get('mpnscertificatefile', None))
                     app['mpnscertificatefile'] = save_file(self.request.files['mpnscertificatefile'][0])
                     ## Update connections
                     self.mpnsconnections[app['shortname']] = []
@@ -131,19 +130,19 @@ class AppHandler(WebBaseHandler):
 
             updategcm = False
             if self.get_argument('gcmprojectnumber', None):
-                if app['gcmprojectnumber'] != self.get_argument('gcmprojectnumber').strip():
+                if app.get('gcmprojectnumber', '') != self.get_argument('gcmprojectnumber').strip():
                     app['gcmprojectnumber'] = self.get_argument('gcmprojectnumber').strip()
                     updategcm = True
 
             if self.get_argument('gcmapikey', None):
-                if app['gcmapikey'] != self.get_argument('gcmapikey').strip():
+                if app.get('gcmapikey', '') != self.get_argument('gcmapikey').strip():
                     app['gcmapikey'] = self.get_argument('gcmapikey').strip()
                     updategcm = True
 
             if updategcm:
                 ## Update connections too
                 self.gcmconnections[app['shortname']] = []
-                gcm = GCMClient(app['gcmprojectnumber'], app['gcmapikey'], app['shortname'], 0)
+                gcm = GCMClient(app.get('gcmprojectnumber', ''), app.get('gcmapikey', ''), app['shortname'], 0)
                 self.gcmconnections[app['shortname']].append(gcm)
 
             if self.get_argument('connections', None):
@@ -151,7 +150,7 @@ class AppHandler(WebBaseHandler):
                 creating more
                 If less than current apns connections, kill extra instances
                 """
-                if app['connections'] != int(self.get_argument('connections')):
+                if app.get('connections', 0) != int(self.get_argument('connections')):
                     app['connections'] = int(self.get_argument('connections'))
                     self.stop_apns(app)
                     self.start_apns(app)
@@ -182,13 +181,13 @@ class AppHandler(WebBaseHandler):
             updatewnsaccesstoken = False
             if self.get_argument('wnsclientid', None):
                 wnsclientid = self.get_argument('wnsclientid').strip()
-                if not wnsclientid == app['wnsclientid']:
+                if not wnsclientid == app.get('wnsclientid', ''):
                     app['wnsclientid'] = wnsclientid
                     updatewnsaccesstoken = True
 
             if self.get_argument('wnsclientsecret', None):
                 wnsclientsecret = self.get_argument('wnsclientsecret').strip()
-                if not wnsclientsecret == app['wnsclientsecret']:
+                if not wnsclientsecret == app.get('wnsclientsecret', ''):
                     app['wnsclientsecret'] = wnsclientsecret
                     updatewnsaccesstoken = True
 
@@ -210,4 +209,5 @@ class AppHandler(WebBaseHandler):
             self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
             self.redirect(r"/applications/%s/settings" % self.appname)
         except Exception, ex:
+            logging.error(traceback.format_exc())
             self.render("app_settings.html", app=app, error=str(ex))
