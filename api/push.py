@@ -107,6 +107,8 @@ class PushHandler(APIBaseHandler):
 
             if device == DEVICE_TYPE_IOS:
                 data.setdefault('apns', {})
+                data['apns'].setdefault('badge', data.get('badge', None))
+                data['apns'].setdefault('sound', data.get('sound', None))
                 self.get_apns_conn().process(token=self.token, alert=alert, extra=extra, apns=data['apns'])
                 self.send_response(ACCEPTED)
             elif device == DEVICE_TYPE_ANDROID:
