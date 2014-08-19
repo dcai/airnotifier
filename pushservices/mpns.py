@@ -47,7 +47,6 @@ class MPNSClient(PushService):
     def __init__(self, masterdb, app, instanceid=0):
         self.app = app
         self.masterdb = masterdb
-        self.cert = get_filepath(app.get('mpnscertificatefile', None))
     def process(self, **kwargs):
         uri = kwargs['token']
         message = kwargs['alert']
@@ -61,7 +60,8 @@ class MPNSClient(PushService):
                 mpnsparams['text1'] = message
         elif mpnstype == 'tile':
             mpns = MPNSTile()
-        mpns.send(uri, mpnsparams, cert=self.cert)
+        cert = get_filepath(self.app.get('mpnscertificatefile', ''))
+        mpns.send(uri, mpnsparams, cert=cert)
 
 # https://github.com/max-arnold/python-mpns
 #
@@ -215,6 +215,9 @@ class MPNSBase(object):
         data = self.prepare_payload(payload)
 
         http = AsyncHTTPClient()
+        if not file_exists(cert):
+            cert = None
+
         http.fetch(uri, self.handle_response, method="POST", headers=self.headers, body=data, ca_certs=cert)
 
     def handle_response(self, response):
