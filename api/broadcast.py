@@ -53,7 +53,7 @@ class BroadcastHandler(APIBaseHandler):
         sound = data.get('sound', None)
         badge = data.get('badge', None)
         self.add_to_log('%s broadcast' % self.appname, alert, "important")
-        self.application.send_broadcast(self.appname, self.db, channel, alert)
+        self.application.send_broadcast(self.appname, self.db, channel=channel, alert=alert, sound=sound, badge=badge)
         delta_t = time.time() - self._time_start
         logging.info("Broadcast took time: %sms" % (delta_t * 1000))
         self.send_response(ACCEPTED)

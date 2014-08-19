@@ -73,9 +73,9 @@ class PayLoad(object):
             # remove sound field ,'sound':""
             alertlength = alertlength - 11 - len(self.sound)
             item['sound'] = self.sound
-        if self.badge is not None:
+        if self.badge:
             # remove sound field ,'badge':""
-            alertlength = alertlength - 11 - len(self.badge)
+            alertlength = alertlength - 11 - len(str(self.badge))
             item['badge'] = int(self.badge)
 
         if len(self.alert) > alertlength:

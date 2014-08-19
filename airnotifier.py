@@ -69,7 +69,7 @@ class AirNotifierApp(tornado.web.Application):
         from routes import RouteLoader
         return RouteLoader.load(dir)
 
-    def send_broadcast(self, appname, appdb, channel, msg):
+    def send_broadcast(self, appname, appdb, channel=None, alert='', sound=None, badge=None):
 
         try:
             apns = self.services['apns'][appname][0]
@@ -102,23 +102,24 @@ class AirNotifierApp(tornado.web.Application):
             for token in tokens:
                 if token['device'] == DEVICE_TYPE_IOS:
                     if apns is not None:
-                        pl = PayLoad(alert=alert)
+                        pl = PayLoad(alert=alert, badge=badge, sound=sound)
+                        logging.info(pl)
                         apns.send(token['token'], pl)
                 elif token['device'] == DEVICE_TYPE_ANDROID:
                     regids.append(token['token'])
                 elif token['device'] == DEVICE_TYPE_WNS:
                     if wns is not None:
-                        wns.process(token=token['token'], alert=msg, extra={}, wns={})
+                        wns.process(token=token['token'], alert=alert, extra={}, wns={})
                 elif token['device'] == DEVICE_TYPE_MPNS:
                     if mpns is not None:
-                        mpns.process(token=token['token'], alert=msg, extra={}, mpns={})
+                        mpns.process(token=token['token'], alert=alert, extra={}, mpns={})
         except Exception, ex:
             logging.error(ex)
 
         # Now sending android notifications
         try:
-            if (gcm is not None) and (not regids):
-                data = dict({'alert': msg}.items())
+            if (gcm is not None) and regids:
+                data = dict({'alert': alert}.items())
                 response = gcm.send(regids, data=data, ttl=3600)
                 responsedata = response.json()
         except Exception, ex:
