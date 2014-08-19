@@ -36,7 +36,7 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.options
 
-from pushservices.apns import APNClient
+from pushservices.apns import *
 from pushservices.gcm import GCMClient
 from pushservices.wns import WNSClient
 from pushservices.mpns import MPNSClient
@@ -117,7 +117,7 @@ class AirNotifierApp(tornado.web.Application):
 
         # Now sending android notifications
         try:
-            if gcm is not None:
+            if (gcm is not None) and (not regids):
                 data = dict({'alert': msg}.items())
                 response = gcm.send(regids, data=data, ttl=3600)
                 responsedata = response.json()
