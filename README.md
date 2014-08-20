@@ -1,8 +1,15 @@
 ## Introduction
-AirNotifier is an easy-to-use yet professional application server for sending real-time notifications to mobile and desktop applications. AirNotifier provides an unified web service interface to deliver messages to multi devices using multi protocols, it also features a friendly web based administrator UI to configure and manage services.
+AirNotifier is an user friendly yet powerful application server for sending real-time notifications to mobile and desktop applications. AirNotifier provides an unified web service interface to deliver messages to multi devices using multi protocols, it also features a web based administrator UI to configure and manage services.
+
+## Supported devices
+- iPhone/iPad devices ([APNS](https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/Chapters/ApplePushService.html) protocol)
+- Android devices ([GCM](http://developer.android.com/google/gcm/index.html) protocol)
+- Windows 7.1/8 phone (MPNS protocol)
+- Windows 8.1 phone (WNS protocol)
+- Windows 8.1 desktop (WNS protocol)
 
 ## Features
-- Multi devices: iOS(APNs), Android(GCM), Windows Phone(WNS/MPNS)
+- Open source application server, you can install on your own server, own your data
 - Subscribe to multi channels
 - Unlimited number of devices and channels
 - API access control
@@ -12,12 +19,11 @@ AirNotifier is an easy-to-use yet professional application server for sending re
 - Logging activities
 - Apple Feedback API
 - GCM broadcast API
-- Non-blocking API design allows master provider to handle large loads of request smoothly
 
 ## Push notification examples
 
 
-### Sending simple notification to iOS devices
+### Sending basic notification to iOS devices
 ```
 POST /api/v2/push HTTP/1.1
 X-AN-APP-NAME: moodlemobileapp
