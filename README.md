@@ -2,6 +2,7 @@
 AirNotifier is an user friendly yet powerful application server for sending real-time notifications to mobile and desktop applications. AirNotifier provides an unified web service interface to deliver messages to multi devices using multi protocols, it also features a web based administrator UI to configure and manage services.
 
 ## Supported devices
+- International SMS (uses [clickatell](https://www.clickatell.com/), credits required)
 - iPhone/iPad devices ([APNS](https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/Chapters/ApplePushService.html) protocol)
 - Android devices ([GCM](http://developer.android.com/google/gcm/index.html) protocol)
 - Windows 7.1/8 phone (MPNS protocol)
@@ -35,6 +36,19 @@ Content-Type: application/json
     "alert": "Hello from AirNotifier",
     "sound": "Submarine.aiff",
     "badge": 1
+}
+```
+
+### SMS
+```
+POST /api/v2/push HTTP/1.1
+X-AN-APP-NAME: moodlemobileapp
+X-AN-APP-KEY: b2b56dbb
+Content-Type: application/json
+{
+    "device": "sms",
+    "token": "61412345987 [phone no]",
+    "alert": "SMS message goes here"
 }
 ```
 
