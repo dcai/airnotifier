@@ -34,7 +34,7 @@ import random
 import time
 from importlib import import_module
 from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
-    DEVICE_TYPE_MPNS
+    DEVICE_TYPE_MPNS, DEVICE_TYPE_SMS
 from pushservices.gcm import GCMUpdateRegIDsException, \
     GCMInvalidRegistrationException, GCMNotRegisteredException, GCMException
 
@@ -105,7 +105,14 @@ class PushHandler(APIBaseHandler):
             logmessage = 'Message length: %s, Access key: %s' %(len(alert), self.appkey)
             self.add_to_log('%s notification' % self.appname, logmessage)
 
-            if device == DEVICE_TYPE_IOS:
+            if device == DEVICE_TYPE_SMS:
+                data.setdefault('sms', {})
+                data['sms'].setdefault('to', data.get('token', ''))
+                data['sms'].setdefault('message', data.get('message', ''))
+                sms = self.smsconnections[self.app['shortname']][0]
+                sms.process(token=data['token'], alert=data['alert'], extra=extra, sms=data['sms'])
+                self.send_response(ACCEPTED)
+            elif device == DEVICE_TYPE_IOS:
                 data.setdefault('apns', {})
                 data['apns'].setdefault('badge', data.get('badge', None))
                 data['apns'].setdefault('sound', data.get('sound', None))

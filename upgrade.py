@@ -113,6 +113,21 @@ if __name__ == "__main__":
             masterdb.applications.update({'_id': appid}, app, safe=True, upsert=True)
         masterdb['options'].update({'name': 'version'}, {'$set': {'value': 20140814}}, safe=True, upsert=True)
 
+    if version < 20140820:
+        apps = masterdb.applications.find()
+        for app in apps:
+            appname = app['shortname']
+            appid = ObjectId(app['_id'])
+            ## Repair application setting collection
+            if not 'clickatellusername' in app:
+                app['clickatellusername'] = ''
+            if not 'clickatellpassword' in app:
+                app['clickatellpassword'] = ''
+            if not 'clickatellappid' in app:
+                app['clickatellappid'] = ''
+            masterdb.applications.update({'_id': appid}, app, safe=True, upsert=True)
+        masterdb['options'].update({'name': 'version'}, {'$set': {'value': 20140820}}, safe=True, upsert=True)
+
     version_object = masterdb['options'].find_one({'name': 'version'})
     version = version_object['value']
     logging.info("You're using version: %d" % version)

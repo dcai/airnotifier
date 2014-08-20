@@ -206,6 +206,25 @@ class AppHandler(WebBaseHandler):
                     wns = WNSClient(self.masterdb, app, 0)
                     self.wnsconnections[app['shortname']].append(wns)
 
+            updateclickatell = False
+            if self.get_argument('clickatellusername', None):
+                if app.get('clickatellusername', '') != self.get_argument('clickatellusername').strip():
+                    app['clickatellusername'] = self.get_argument('clickatellusername').strip()
+                    updateclickatell = True
+
+            if self.get_argument('clickatellpassword', None):
+                if app.get('clickatellpassword', '') != self.get_argument('clickatellpassword').strip():
+                    app['clickatellpassword'] = self.get_argument('clickatellpassword').strip()
+                    updateclickatell = True
+
+            if self.get_argument('clickatellappid', None):
+                if app.get('clickatellappid', '') != self.get_argument('clickatellappid').strip():
+                    app['clickatellappid'] = self.get_argument('clickatellappid').strip()
+                    updateclickatell = True
+
+            if updateclickatell:
+                pass
+
             self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
             self.redirect(r"/applications/%s/settings" % self.appname)
         except Exception, ex:

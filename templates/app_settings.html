@@ -188,7 +188,7 @@
     <legend>{{ _('WNS settings') }}</legend>
 
     <div class="control-group">
-        <label class="control-label" for="form-element-gcmprojectnumber"> {{ _('Client ID') }}</label>
+        <label class="control-label" for="form-element-wnsclientid"> {{ _('Client ID') }}</label>
         <div class="controls">
             <input type="text" class="input-xlarge" id="form-element-wnsclientid" name="wnsclientid" value="{{app.get('wnsclientid', '')}}">
             <p class="help-block">Client ID</p>
@@ -196,7 +196,7 @@
     </div>
 
     <div class="control-group">
-        <label class="control-label" for="form-element-gcmapikey">{{ _('Client secret') }}</label>
+        <label class="control-label" for="form-element-wnsclientsecret">{{ _('Client secret') }}</label>
         <div class="controls">
             <input type="text" class="input-xlarge" id="form-element-wnsclientsecret" name="wnsclientsecret" value="{{app.get('wnsclientsecret', '')}}">
         </div>
@@ -233,4 +233,37 @@
 </fieldset>
 </form>
 
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+<fieldset>
+    <legend>{{ _('Clickatell(SMS) settings') }}</legend>
+
+    <div class="control-group">
+        <label class="control-label" for="form-element-clickatellusername"> {{ _('Username') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="form-element-clickatellusername" name="clickatellusername" value="{{app['clickatellusername']}}">
+            <p class="help-block"></p>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="form-element-clickatellpassword"> {{ _('Password') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="form-element-clickatellpassword" name="clickatellpassword" value="{{app['clickatellpassword']}}">
+            <p class="help-block"></p>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="form-element-clickatellappid"> {{ _('App ID') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="form-element-clickatellappid" name="clickatellappid" value="{{app['clickatellappid']}}">
+            <p class="help-block"></p>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+    </div>
+</fieldset>
+</form>
 {% end %}

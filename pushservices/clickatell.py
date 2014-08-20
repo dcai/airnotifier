@@ -26,10 +26,29 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-VERSION = 20140820
+from . import PushService
+import requests
+import logging
+from tornado.options import options
+import os.path
+from tornado.httpclient import AsyncHTTPClient
+from util import *
+from urllib import quote_plus
 
-DEVICE_TYPE_IOS = 'ios'
-DEVICE_TYPE_ANDROID = 'android'
-DEVICE_TYPE_MPNS = 'mpns'
-DEVICE_TYPE_WNS = 'wns'
-DEVICE_TYPE_SMS = 'sms'
+ENDPOINT='http://api.clickatell.com/http/sendmsg?user=%s&password=%s&api_id=%s&to=%s&text=%s'
+
+class ClickatellClient(PushService):
+    def __init__(self, masterdb, app, instanceid=0):
+        self.app = app
+        self.masterdb = masterdb
+
+    def handle_response(self, response):
+        #logging.info(response.body)
+        pass
+
+    def process(self, **kwargs):
+        to = quote_plus(str(kwargs['token']))
+        alert = quote_plus(str(kwargs['alert']))
+        uri = ENDPOINT % (self.app['clickatellusername'], self.app['clickatellpassword'], self.app['clickatellappid'], to, alert)
+        http = AsyncHTTPClient()
+        http.fetch(uri, self.handle_response, method="GET")

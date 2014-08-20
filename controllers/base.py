@@ -191,8 +191,12 @@ class AppHandler(WebBaseHandler): # @DuplicatedSignature
 class AppsListHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
+        version_object = self.masterdb['options'].find_one({'name': 'version'})
+        outdated = False
+        if int(version_object['value']) < int(VERSION):
+            outdated = True
         apps = self.masterdb.applications.find()
-        self.render('apps.html', apps=apps)
+        self.render('apps.html', apps=apps, outdated=outdated)
 
 @route(r"/stats/")
 class StatsHandler(WebBaseHandler):

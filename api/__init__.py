@@ -161,6 +161,11 @@ class APIBaseHandler(tornado.web.RequestHandler):
         """ WNS connections """
         return self.application.services['mpns']
 
+    @property
+    def smsconnections(self):
+        """ WNS connections """
+        return self.application.services['sms']
+
     def set_default_headers(self):
         self.set_header('Content-Type', 'application/json; charset=utf-8')
         self.set_header('X-Powered-By', 'AirNotifier/1.0')

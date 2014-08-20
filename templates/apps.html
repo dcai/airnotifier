@@ -9,6 +9,11 @@
 {% end %}
 
 {% block body %}
+  {% if outdated %}
+  <div class="alert">
+      <strong>Your AirNotifier is outdated, please run upgrade.py</strong>
+  </div>
+  {% end %}
   <div class="hero-unit">
     <h1>AirNotifier</h1>
     <p class="lead">iOS Push Notifications Server for Human Beings.</p>

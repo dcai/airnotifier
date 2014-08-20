@@ -40,6 +40,7 @@ from pushservices.apns import *
 from pushservices.gcm import GCMClient
 from pushservices.wns import WNSClient
 from pushservices.mpns import MPNSClient
+from pushservices.clickatell import *
 from uimodules import *
 from util import *
 from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
@@ -174,6 +175,7 @@ def init_messaging_agents():
             'wns': {},
             'apns': {},
             'mpns': {},
+            'sms': {},
             }
     mongodb = None
     while not mongodb:
@@ -228,6 +230,14 @@ def init_messaging_agents():
             logging.error(ex)
             continue
         services['mpns'][app['shortname']].append(mpns)
+        ''' clickatell '''
+        services['sms'][app['shortname']] = []
+        try:
+            sms = ClickatellClient(masterdb, app, 0)
+        except Exception as ex:
+            logging.error(ex)
+            continue
+        services['sms'][app['shortname']].append(sms)
     mongodb.close()
     return services
 
