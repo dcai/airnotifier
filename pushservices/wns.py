@@ -165,7 +165,6 @@ class WNSBase(object):
 
         return status
     def handle_response(self, response):
-        logging.info(response.headers)
         result = self.parse_response(response)
         #result['request'] = {'data': data, 'headers': dict(self.headers) }
         result['response'] = {'status': response.code, 'headers': dict(response.headers), 'text': response.body}

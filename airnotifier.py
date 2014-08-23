@@ -70,8 +70,13 @@ class AirNotifierApp(tornado.web.Application):
         from routes import RouteLoader
         return RouteLoader.load(dir)
 
-    def send_broadcast(self, appname, appdb, channel=None, alert='', sound=None, badge=None):
-
+    def send_broadcast(self, appname, appdb, **kwargs):
+        channel = kwargs.get('channel', 'default')
+        alert   = kwargs.get('alert', None)
+        sound   = kwargs.get('sound', None)
+        badge   = kwargs.get('badge', None)
+        device  = kwargs.get('device', '')
+        extra   = kwargs.get('extra', {})
         try:
             apns = self.services['apns'][appname][0]
         except IndexError:
@@ -101,27 +106,25 @@ class AirNotifierApp(tornado.web.Application):
         regids = []
         try:
             for token in tokens:
+                t = token.get('token')
                 if token['device'] == DEVICE_TYPE_IOS:
                     if apns is not None:
-                        pl = PayLoad(alert=alert, badge=badge, sound=sound)
-                        logging.info(pl)
-                        apns.send(token['token'], pl)
+                        apns.process(token=t, alert=alert, extra=extra, apns=kwargs.get('apns', {}))
                 elif token['device'] == DEVICE_TYPE_ANDROID:
-                    regids.append(token['token'])
+                    regids.append(t)
                 elif token['device'] == DEVICE_TYPE_WNS:
                     if wns is not None:
-                        wns.process(token=token['token'], alert=alert, extra={}, wns={})
+                        wns.process(token=t, alert=alert, extra=extra, wns=kwargs.get('wns', {}))
                 elif token['device'] == DEVICE_TYPE_MPNS:
                     if mpns is not None:
-                        mpns.process(token=token['token'], alert=alert, extra={}, mpns={})
+                        mpns.process(token=t, alert=alert, extra=extra, mpns=kwargs.get('mpns', {}))
         except Exception, ex:
             logging.error(ex)
 
         # Now sending android notifications
         try:
             if (gcm is not None) and regids:
-                data = dict({'alert': alert}.items())
-                response = gcm.send(regids, data=data, ttl=3600)
+                response = gcm.process(token=regids, alert=alert, extra=extra, gcm=kwargs['gcm'])
                 responsedata = response.json()
         except Exception, ex:
             logging.error('GCM problem: ' + str(ex))

@@ -37,7 +37,7 @@ from pushservices.apns import PayLoad
 from pushservices.gcm import GCMException
 import logging
 
-@route(r"/api/v2/broadcast/")
+@route(r"/api/v2/broadcast[\/]?")
 class BroadcastHandler(APIBaseHandler):
     def post(self):
         if not self.can('send_broadcast'):
@@ -47,13 +47,26 @@ class BroadcastHandler(APIBaseHandler):
         data = self.json_decode(self.request.body)
         # the cannel to be boradcasted
         channel = data.get('channel', 'default')
+        # device type
+        device = data.get('device', 'default')
         # iOS and Android shared params
         alert = ''.join(data.get('alert', '').splitlines())
         # iOS
         sound = data.get('sound', None)
         badge = data.get('badge', None)
         self.add_to_log('%s broadcast' % self.appname, alert, "important")
-        self.application.send_broadcast(self.appname, self.db, channel=channel, alert=alert, sound=sound, badge=badge)
+        self.application.send_broadcast(self.appname, self.db,
+                channel=channel,
+                alert=alert,
+                sound=sound,
+                badge=badge,
+                device=device,
+                gcm=data.get('gcm', {}),
+                mpns=data.get('mpns', {}),
+                wns=data.get('wns', {}),
+                sms=data.get('sms', {}),
+                apns=data.get('apns', {}),
+                )
         delta_t = time.time() - self._time_start
         logging.info("Broadcast took time: %sms" % (delta_t * 1000))
         self.send_response(ACCEPTED)
