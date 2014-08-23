@@ -48,7 +48,7 @@ class BroadcastHandler(APIBaseHandler):
         # the cannel to be boradcasted
         channel = data.get('channel', 'default')
         # device type
-        device = data.get('device', 'default')
+        device = data.get('device', None)
         # iOS and Android shared params
         alert = ''.join(data.get('alert', '').splitlines())
         # iOS
