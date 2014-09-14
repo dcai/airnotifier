@@ -240,7 +240,7 @@
     <div class="control-group">
         <label class="control-label" for="form-element-clickatellusername"> {{ _('Username') }}</label>
         <div class="controls">
-            <input type="text" class="input-xlarge" id="form-element-clickatellusername" name="clickatellusername" value="{{app['clickatellusername']}}">
+            <input type="text" class="input-xlarge" id="form-element-clickatellusername" name="clickatellusername" value="{{app.get('clickatellusername', '')}}">
             <p class="help-block"></p>
         </div>
     </div>
@@ -248,7 +248,7 @@
     <div class="control-group">
         <label class="control-label" for="form-element-clickatellpassword"> {{ _('Password') }}</label>
         <div class="controls">
-            <input type="text" class="input-xlarge" id="form-element-clickatellpassword" name="clickatellpassword" value="{{app['clickatellpassword']}}">
+            <input type="text" class="input-xlarge" id="form-element-clickatellpassword" name="clickatellpassword" value="{{app.get('clickatellpassword', '')}}">
             <p class="help-block"></p>
         </div>
     </div>
@@ -256,7 +256,7 @@
     <div class="control-group">
         <label class="control-label" for="form-element-clickatellappid"> {{ _('App ID') }}</label>
         <div class="controls">
-            <input type="text" class="input-xlarge" id="form-element-clickatellappid" name="clickatellappid" value="{{app['clickatellappid']}}">
+            <input type="text" class="input-xlarge" id="form-element-clickatellappid" name="clickatellappid" value="{{app.get('clickatellappid', '')}}">
             <p class="help-block"></p>
         </div>
     </div>

@@ -67,6 +67,9 @@ class AppCreateNewHandler(WebBaseHandler):
         app['blockediplist'] = ''
         app['gcmprojectnumber'] = ''
         app['gcmapikey'] = ''
+        app['clickatellusername'] = ''
+        app['clickatellpassport'] = ''
+        app['clickatellappid'] = ''
         if self.get_argument('appfullname', None):
             app['fullname'] = self.get_argument('appfullname')
         else:
