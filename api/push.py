@@ -81,9 +81,6 @@ class PushHandler(APIBaseHandler):
             if not self.token:
                 self.token = data.get('token', None)
 
-            # iOS and Android shared params (use sliptlines trick to remove line ending)
-            alert = ''.join(data['alert'].splitlines())
-
             # application specific data
             extra = data.get('extra', {})
 
@@ -113,6 +110,8 @@ class PushHandler(APIBaseHandler):
                 sms.process(token=data['token'], alert=data['alert'], extra=extra, sms=data['sms'])
                 self.send_response(ACCEPTED)
             elif device == DEVICE_TYPE_IOS:
+                # Use sliptlines trick to remove line ending (only for iOs).
+                alert = ''.join(data['alert'].splitlines())
                 data.setdefault('apns', {})
                 data['apns'].setdefault('badge', data.get('badge', None))
                 data['apns'].setdefault('sound', data.get('sound', None))
