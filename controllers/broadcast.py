@@ -65,5 +65,5 @@ class AppBroadcastHandler(WebBaseHandler):
         alert = self.get_argument('notification').strip()
         sound = 'default'
         channel = 'default'
-        self.application.send_broadcast(self.appname, self.db, channel, alert)
+        self.application.send_broadcast(self.appname, self.db, channel=channel, alert=alert, sound=sound)
         self.render("app_broadcast.html", app=app, sent=True)
