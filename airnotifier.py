@@ -128,7 +128,7 @@ class AirNotifierApp(tornado.web.Application):
         # Now sending android notifications
         try:
             if (gcm is not None) and regids:
-                response = gcm.process(token=regids, alert=alert, extra=extra, gcm=kwargs['gcm'])
+                response = gcm.process(token=regids, alert=alert, extra=extra, gcm=kwargs.get('gcm', {}))
                 responsedata = response.json()
         except Exception, ex:
             logging.error('GCM problem: ' + str(ex))
