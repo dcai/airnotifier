@@ -79,19 +79,19 @@ class AirNotifierApp(tornado.web.Application):
         extra   = kwargs.get('extra', {})
         try:
             apns = self.services['apns'][appname][0]
-        except IndexError:
+        except (IndexError, KeyError):
             apns = None
         try:
             wns = self.services['wns'][appname][0]
-        except IndexError:
+        except (IndexError, KeyError):
             wns = None
         try:
             mpns = self.services['mpns'][appname][0]
-        except IndexError:
+        except (IndexError, KeyError):
             mpns = None
         try:
             gcm = self.services['gcm'][appname][0]
-        except IndexError:
+        except (IndexError, KeyError):
             gcm = None
 
         conditions = []
