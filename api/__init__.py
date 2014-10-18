@@ -28,8 +28,7 @@
 
 from hashlib import md5
 from httplib import BAD_REQUEST, LOCKED, FORBIDDEN, NOT_FOUND, \
-    INTERNAL_SERVER_ERROR, OK, ACCEPTED
-from importlib import import_module
+    INTERNAL_SERVER_ERROR, OK
 import binascii
 import json
 import logging
@@ -169,6 +168,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
     def set_default_headers(self):
         self.set_header('Content-Type', 'application/json; charset=utf-8')
         self.set_header('X-Powered-By', 'AirNotifier/1.0')
+
     def set_headers(self, headers):
         for name in headers:
             self.set_header(name, headers[name])

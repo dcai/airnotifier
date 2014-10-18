@@ -28,8 +28,6 @@
 
 from . import PushService
 import json
-import logging
-from tornado.httpclient import AsyncHTTPClient
 import requests
 
 GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send'

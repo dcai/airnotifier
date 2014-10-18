@@ -1,6 +1,5 @@
-import os.path
-import logging
-from tornado.options import options
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 class PushService(object):
     pass

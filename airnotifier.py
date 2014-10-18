@@ -27,11 +27,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import logging.config
-import os
-import time
 
 from pymongo.connection import Connection
-from tornado.options import define, options
+from tornado.options import define
 import tornado.httpserver
 import tornado.ioloop
 import tornado.options

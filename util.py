@@ -35,7 +35,7 @@ import sys
 import unicodedata
 import os
 from tornado.options import options
-from hashlib import md5, sha1
+from hashlib import sha1
 
 from bson.dbref import DBRef
 from bson.max_key import MaxKey
@@ -43,7 +43,6 @@ from bson.min_key import MinKey
 from bson.objectid import ObjectId
 from bson.son import RE_TYPE
 from bson.timestamp import Timestamp
-import logging
 
 try:
     import uuid

@@ -1,4 +1,3 @@
-import logging
 import requests
 from api import API_PERMISSIONS
 
