@@ -26,28 +26,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# system
-from hashlib import md5, sha1
 from routes import route
-from tornado.options import options
-import logging
-import os
 import platform
-import random
 import tornado.web
-from bson.objectid import ObjectId
 import time
-import uuid
 from constants import DEVICE_TYPE_IOS, VERSION
 from pymongo import DESCENDING
 from util import *
-from pushservices.apns import APNClient, APNFeedback, PayLoad
 import sys
-from api import API_PERMISSIONS
-from pushservices.gcm import GCMException
-from pushservices.wns import WNSClient
-from pushservices.gcm import GCMClient
-import requests
 
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement

@@ -32,7 +32,6 @@ from socket import socket, AF_INET, SOCK_STREAM
 import binascii
 import json
 import logging
-import os
 import struct
 import time
 from util import *

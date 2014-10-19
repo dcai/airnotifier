@@ -30,11 +30,7 @@ from httplib import BAD_REQUEST, LOCKED, FORBIDDEN, NOT_FOUND, \
     INTERNAL_SERVER_ERROR, OK, ACCEPTED
 from routes import route
 from api import APIBaseHandler
-import random
 import time
-from constants import DEVICE_TYPE_IOS
-from pushservices.apns import PayLoad
-from pushservices.gcm import GCMException
 import logging
 
 @route(r"/api/v2/broadcast[\/]?")

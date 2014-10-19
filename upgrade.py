@@ -27,10 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import logging
-from hashlib import sha1
 from pymongo import *
 from bson import *
-from pymongo.errors import *
 from constants import *
 import tornado.options
 from tornado.options import define, options
