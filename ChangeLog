@@ -1,0 +1,724 @@
+2014-10-19  Dongsheng Cai  <d@tux.im>
+
+	Fixes 'alert' parameter in /api/push.py
+
+2014-10-19  Dongsheng Cai  <dongsheng@users.noreply.github.com>
+
+	Merge pull request #85 from frankdu/master
+	Remove unused imports. It's obvious in PyCharm IDE
+	
+	fixes #85
+
+2014-10-19  Frank Du  <qixing.du@gmail.com>
+
+	Remove unused imports. It's obvious in PyCharm IDE
+
+2014-10-08  Dongsheng Cai  <d@tux.im>
+
+	Cannot send broadcast in web UI
+	fixes #84, credit to @fabiociotoli
+
+2014-10-07  Dongsheng Cai  <d@tux.im>
+
+	KeyError when sending broadcast
+	Fixes #83
+
+2014-10-06  Dongsheng Cai  <dongsheng@users.noreply.github.com>
+
+	Merge pull request #82 from frankdu/fix_crash
+	Fix the crash caused by missing argument keys #82
+
+2014-10-06  Frank Du  <qixing.du@gmail.com>
+
+	Fix the crash caused by missing argument keys
+	Test Plan:
+	1. Send a broadcast in app -> broadcast
+	2. It doesn't crash with below error any more:
+	TypeError: send_broadcast() takes exactly 3 arguments (5 given)
+
+2014-09-15  Dongsheng Cai  <dongsheng@users.noreply.github.com>
+
+	Merge pull request #78 from jleyva/IOS_SPLITLINES
+	Remove line ending only for APNS(iOS devices)
+
+2014-09-15  Juan Leyva  <juanleyvadelgado@gmail.com>
+
+	Remove line ending only for iOs
+	Others system my accept that format (Android 4, WNS)
+
+2014-09-15  Dongsheng Cai  <d@tux.im>
+
+	Fix missing clickatell settings #77
+
+2014-08-24  Dongsheng Cai  <d@tux.im>
+
+	Travis Ci
+
+2014-08-23  Dongsheng Cai  <d@tux.im>
+
+	Fix up device filter #61
+
+	Broadcast API to accept protocol specific data #61
+
+2014-08-20  Dongsheng Cai  <d@tux.im>
+
+	Update README.md
+
+	Send SMS through AirNotifier #62
+
+	Update README.md
+
+2014-08-19  Dongsheng Cai  <d@tux.im>
+
+	Fix broadcast API #59
+
+	Fix send broadcast api #59
+
+	Fix mpns cert bug #60
+
+	APNS badge and sound parameters fix #58
+
+2014-08-14  Dongsheng Cai  <d@tux.im>
+
+	Harden file storage handling #57
+
+	Harden file management #57
+
+	Update support url
+
+2014-08-13  Dongsheng Cai  <d@tux.im>
+
+	cleanup top navbar
+
+	More sidebar clean up #56
+
+	Clean up sidebar code #56
+
+	Fix creating new app error #56
+
+2014-08-09  Dongsheng Cai  <d@tux.im>
+
+	Clean up gcm code
+
+	Remove "objects browser" for now
+
+	Fix broadcast code #55
+
+	Uses AsyncHTTPClient, means faster response from AN
+
+2014-08-08  Dongsheng Cai  <d@tux.im>
+
+	Improved logging.ini
+
+2014-08-06  Dongsheng Cai  <d@tux.im>
+
+	WNS protocol code cleanup #48
+
+	reset mpns connection #47
+
+	Move base class
+
+	Remove old cert files
+
+	Store MPNS certificate #47
+
+	Improved MPNS code #47
+
+	Update README.md
+
+	Add LICENSE file
+
+2014-08-04  Dongsheng Cai  <d@tux.im>
+
+	logging config
+
+	python logging config
+
+	Cleanup logging
+
+2014-08-01  Dongsheng Cai  <d@tux.im>
+
+	Formatting
+
+	set default protocol specific data
+
+	Fix push v2 api for android
+
+	Add hooks/__init__.py
+
+	Split api
+
+	Split site controller
+
+	Clean up code
+
+	rename api_controller.py to api.py
+
+	Issue #54 Implement json_decode()
+
+	Issue #53 Access key v2
+
+	Issue #48 exception handing
+
+	Issue #51 Token v2 API
+
+	Issue #52 reset connections when key/secret changed
+
+	Improve APNS code sytle
+
+	Issue #48 coding style fix
+
+	Issue #49 coding style fix
+
+	Issue #48 improve coding style
+
+	Issue #48 moodle hook
+
+2014-07-31  Dongsheng Cai  <d@tux.im>
+
+	Fix README.md
+
+	Issue #48 application hooks
+
+2014-07-26  Dongsheng Cai  <d@tux.im>
+
+	Issue #47 MPNS protocol
+
+2014-07-27  Dongsheng Cai  <d@tux.im>
+
+	Issue #49 improve wns protocol
+
+2014-07-26  Dongsheng Cai  <d@tux.im>
+
+	Issue #49 toast/tile/badge templates
+
+2014-07-23  Dongsheng Cai  <d@tux.im>
+
+	Handle ctrl-c when running in console
+
+	Issue #49 allow wns and mpns device types
+
+	Issue #47 MPNS protocol and harden other services
+
+2014-07-20  Dongsheng Cai  <d@tux.im>
+
+	Issue #49 complete v2 protocal
+
+2014-07-19  Dongsheng Cai  <d@tux.im>
+
+	Issue #49 More WNS protocol implementation
+
+2014-07-16  Dongsheng Cai  <d@tux.im>
+
+	Issue #49 PushService base class
+
+2014-07-15  Dongsheng Cai  <d@tux.im>
+
+	Issue #49 Improve init_message_agents()
+
+2014-07-13  Dongsheng Cai  <d@tux.im>
+
+	Issue #49 Implement WNS protocol
+
+2014-07-12  Dongsheng Cai  <d@tux.im>
+
+	Issue #48 notification api uses Json request body
+
+2014-07-10  Dongsheng Cai  <d@tux.im>
+
+	Issue #0 Remove test scripts
+
+2014-07-09  Dongsheng Cai  <d@tux.im>
+
+	Issue #49 Create v2 push notification api
+
+2014-07-06  Dongsheng Cai  <d@tux.im>
+
+	Issue #49 Register WNS connections
+
+2014-07-05  Dongsheng Cai  <d@tux.im>
+
+	Issue #49 Create WNS package
+
+2014-06-30  Dongsheng Cai  <d@tux.im>
+
+	Issue #49 Add device types
+
+	Organize file structure
+
+	Update URLs
+
+	Update README.md
+
+2014-05-12  Juan Leyva  <juanleyvadelgado@gmail.com>
+
+	Forced lower case to device types. Otherwise, devices like Android may raise and invalid device exception Conflicts: 	controllers/api_controller.py
+
+2014-05-11  Dongsheng Cai  <d@tux.im>
+
+	Issue #42 Remove line ending chars from alert msg
+
+2014-05-11  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Merge pull request #43 from jleyva/master
+	1. Parsing config file 
+	2. Fix request library version
+	3. Fix request parameter name
+
+2014-05-10  Juan Leyva  <juanleyvadelgado@gmail.com>
+
+	Making a message payload compatible with Phonegap PushPlugin
+
+	Moved settings loading code to correct place (so the messaging agents can be properly initializated)
+
+	Checking existing app overwrites new app document definition
+
+	App settings should be loaded on AirnotifierApp constructor
+	Otherwise the default values for settings are used and the airnotifier.conf file is ignored (so the database used is allways airnotifier instead the specified in airnotifier.con)
+
+2014-05-09  Juan Leyva  <juanleyvadelgado@gmail.com>
+
+	Fixed invalid requests library version
+
+2014-04-14  Dongsheng Cai  <d@tux.im>
+
+	Issue #41 Stop logging private user notifications
+
+2014-03-25  Dongsheng Cai  <d@tux.im>
+
+	Merge branch 'master' into moodle
+
+	Issue #0 Add http status code
+
+	Add http status code
+
+	Fix flawed verification logic
+
+2014-03-25  Dongsheng Cai  <d@tux.im>
+
+	Fix moodle specific hack
+	Merge branch 'master' into moodle
+
+	Conflicts:
+		controllers/api_controller.py
+
+2014-03-25  Dongsheng Cai  <d@tux.im>
+
+	Unfortunate conflicts
+	Conflicts:
+		airnotifier.py
+		apns.py
+		controllers/api_controller.py
+		controllers/site_controller.py
+		install.py
+		requirements.txt
+		templates/app_keys.html
+		templates/app_new.html
+		templates/app_settings.html
+		templates/apps.html
+		util.py
+
+2014-03-22  Dongsheng Cai  <d@tux.im>
+
+	Issue #40 Response should be more restful
+
+	Issue #40 handle canonical ids
+
+2014-03-19  Dongsheng Cai  <d@tux.im>
+
+	Issue #40 Fix web broadcast
+
+	Issue #38 Purge logs
+
+	Issue #29 disallow create duplicated app
+
+2014-03-18  Dongsheng Cai  <d@tux.im>
+
+	Issue #32 Remove app db
+
+	Issue #37 Strip log text
+
+2014-03-11  Dongsheng Cai  <d@tux.im>
+
+	Clean up initialization code
+
+2014-03-10  Dongsheng Cai  <d@tux.im>
+
+	Fix token page display
+
+2014-03-08  Dongsheng Cai  <d@tux.im>
+
+	Issue #8 Access control isn't hard-coded anymore!
+
+2014-03-09  Dongsheng Cai  <d@tux.im>
+
+	Issue #8 Access keys endpoing should check permission
+
+2014-03-07  Dongsheng Cai  <d@tux.im>
+
+	Checkin template file
+
+2014-03-06  Dongsheng Cai  <d@tux.im>
+
+	More clean up
+
+	Clean up
+
+	Issue #40 Improve GCM HTTP error handing
+
+2014-03-05  Dongsheng Cai  <d@tux.im>
+
+	Issue #8 Improved permission checking code
+
+2014-03-04  Dongsheng Cai  <d@tux.im>
+
+	Issue #40 Broadcast API
+
+2014-03-03  Dongsheng Cai  <d@tux.im>
+
+	Issue #40 Android notification working
+
+2014-03-02  Dongsheng Cai  <d@tux.im>
+
+	Issue #40: GCM HTTP API
+
+2014-02-28  Dongsheng Cai  <d@tux.im>
+
+	Issue #0 misc stuff
+
+2014-02-27  Dongsheng Cai  <d@tux.im>
+
+	Issue #0 Fixing import
+
+	Issue #0 Fixing import and exception handing
+
+	Issue #40 Initialise gcm connection
+
+2014-02-26  Dongsheng Cai  <d@tux.im>
+
+	Issue #13 Upgrade mongodb collection scheme
+
+	Issue #13 Upgrade token collection for each app setup
+
+2014-02-25  Dongsheng Cai  <d@tux.im>
+
+	Issue #40 token and notification api update
+
+2014-02-24  Dongsheng Cai  <d@tux.im>
+
+	Issue #40 REST API update for android
+
+2014-02-23  Dongsheng Cai  <d@tux.im>
+
+	Issue #13 Write version into mongodb
+
+2014-02-22  Dongsheng Cai  <d@tux.im>
+
+	Issue #40 GCM library
+
+	Issue #40 Start GCM work
+
+2014-02-21  Dongsheng Cai  <d@tux.im>
+
+	Issue #1 Fixed app link
+
+2014-02-20  Dongsheng Cai  <d@tux.im>
+
+	Issue #36 Fix a link
+
+	Issue #36 Fix a link
+
+	Issue #36 Adding android options to settings page
+
+	Issue #36 Adding android options to settings page
+
+2013-09-21  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Verify site from moodle.net
+
+2014-02-19  Dongsheng Cai  <d@tux.im>
+
+	Issue #35 Cleanup app action handler
+	1. Clean up action handler
+	2. Clean up setting page to leave room for android settings
+
+	Issue #35 Cleanup app action handler
+	1. Clean up action handler
+	2. Clean up setting page to leave room for android settings
+
+	Issue #34 Fixed editing key page
+	1. Create access key dialog
+	2. Fixed add manager and change password dialogs
+
+	Issue #34 Fixed editing key page
+	1. Create access key dialog
+	2. Fixed add manager and change password dialogs
+
+2014-02-13  Dongsheng Cai  <d@tux.im>
+
+	Issue #0 Get help button
+
+	Issue #0 Get help button
+
+	Issue #0 Page tweak
+
+	Issue #0 Page tweak
+
+	Issue #0 page tweak
+
+	Issue #0 page tweak
+
+	Issue #0 harden app creation process
+
+	Issue #0 harden app creation process
+
+	Issue #0 Grant more permissions by default
+
+	Issue #0 Grant more permissions by default
+
+	Issue #31 UI to change password
+
+	Issue #31 UI to change password
+
+	Issue #33 Update bootstrap
+
+	Issue #33 Update bootstrap
+
+	Issue #0 Update README.md
+
+	Issue #0 Update README.md
+
+2013-09-21  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #21 Create access key from API
+
+	Issue #21 Create access key from API
+
+2013-05-09  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #0 mostly just coding style clean up
+
+	Issue #0 mostly just coding style clean up
+
+2013-05-01  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #0 Template improvement
+
+	Issue #0 Template improvement
+
+	Issue #0 Raise tornado and pymongo requirements
+
+	Issue #0 Raise tornado and pymongo requirements
+
+	Issue #22 Feedback service implementation
+
+	Issue #22 Feedback service implementation
+
+	Issue #27 check cert and key files
+
+	Issue #27 check cert and key files
+
+2013-04-29  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #23 remove tornado.database
+
+	Issue #23 remove tornado.database
+
+2013-03-04  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #21: IP blocker
+
+	Issue #21: IP blocker
+
+2012-11-16  Jerome Mouneyrac  <jerome@moodle.com>
+
+	Merge pull request #18 from mouneyrac/jerome
+	#17 fix wrong permission checking
+
+	Merge pull request #18 from mouneyrac/jerome
+	#17 fix wrong permission checking
+
+	#17 fix wrong permission checking
+
+2012-11-16  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #16: Fixed empty access key issue
+
+	Issue #14: key and cert files check
+
+2012-11-03  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #11 Improved query
+
+2012-11-02  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #10, use @route decorator
+
+	Improved install script
+
+	Improved UI layout
+
+	Reconnect mongodb if failed
+
+2012-07-22  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #0: Added .gitignore & supervisord.conf
+
+	Issue #9: editing access key page template file
+
+	Issue #9: added editing access key page
+
+2012-07-21  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #4 & Issue #5
+	return after send error message
+
+2012-07-19  Frederic Massart  <fred@moodle.com>
+
+	Issue #3 Fix custom arguments send as list - co-author: Jerome Mouneyrac
+
+2012-07-18  Jerome Mouneyrac  <jerome@moodle.com>
+
+	Issue #3: Support custom parameters for notification and broadcast
+
+2012-07-13  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #2: Permssion setting
+
+2012-07-08  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #1: Updated README.md
+
+2012-07-02  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Issue #1: Added Installation and Config sections
+
+2012-04-24  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Fixed object query handler
+
+	Added channel support (needs more work)
+
+2012-04-15  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Updated README
+
+	Improved time counter
+
+	SideBar improvement
+
+	Tokens and logs pagination
+
+	Added port setting and blitz handler
+
+	Less logging info
+
+2012-04-12  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Change app shrot name in testing scripts
+
+2012-04-11  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Moving testing scripts to test/
+
+2012-04-10  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Managers managment page, UI improvements
+	- clean up config file
+	- Added admin page to create/update managers
+	- Hide certfile/keyfile, environment setting when APNs is up
+
+2012-04-09  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Fixed a bug to auto reconnect in APNs, validation to token
+
+2012-04-08  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Refactor APNs connection code and UI improvement
+	1. Refactor APNSClient to choose server address, improved payload
+	construction
+	2. New rest interface to send broadcast
+	3. Allow to delete tokens and keys
+	4. Remove bootstrap-responsive.css
+	5. Apply password salt
+	6. APNs environment can be set in app setting
+
+2012-04-05  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	MongoDB has to use `safe` flag
+
+2012-04-02  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Added logging ability
+
+	Objects stores in collections with prefix
+	1. Added more test cases
+	2. objects API improvments
+	3. Handle ObjectId automatically
+
+	Implemented broadcast from web interface
+	1. Implemented broadcast
+	2. Fixed update setting code
+
+2012-04-01  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Merge logout and login handlers, improved redirect
+
+	Added login authentication
+
+	Update favicon.ico
+
+	Adding more Rest APIs, Web UI improvements
+	1. Implemented Objects/Users/Tokens API
+	2. Drop oauth implementation plan
+	3. Update bootstrap css
+	4. Implemented server info page
+	5. Tweak stats page in table
+
+2012-03-29  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Switch backend to MongoDB
+	1. Switch to MongoDB
+	2. Stop/Start APNs from web interface
+
+2012-03-28  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Refactor request handlers, improved web interfaces
+
+2012-03-26  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Improved web config page
+
+2012-03-25  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Updated README file
+
+	Token handler and APNs connection pool
+	1. Implemented token handler
+	2. APNs connection pool
+	3. Update certfile and keyfile from web interface
+	4. Added a few testing scripts
+
+2012-03-20  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Started to work on UI, and multi-apps support
+
+2012-03-10  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Use tornado build-in configuration loading module
+
+2012-03-07  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Added oauth library
+
+	Added a few things I gonna finish
+
+	Implement notification REST API
+	- Notification REST API
+	- Enhanced notification format supported
+	- Handle server response
+
+2012-03-03  Dongsheng Cai  <imdongsheng@gmail.com>
+
+	Initial commit
+	Added README.md file
