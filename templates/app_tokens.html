@@ -26,7 +26,13 @@
         {% for token in tokens %}
             <tr>
                 <td>{{ token['device'] }}</td>
-                <td><code>{{ token['token'][:64] }}</code></td>
+                {% if token['device'] == 'android' %}
+                <td><code>{{ token['token'][:90] }}<br />{{ token['token'][90:] }}</code></td>
+                {% elif  token['device'] == 'ios' %}
+        		<td><code>{{ token['token'][:64] }}<br /></code></td>
+        		{% else %}
+        		<td><code>{{ token['token'][:128] }}<br />{{ token['token'][128:] }}</code></td>
+        		{% end %}
                 <td>
                     <a class="btn btn-danger" href="/applications/{{app['shortname']}}/tokens?delete={{token['_id']}}"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
                 </td>
