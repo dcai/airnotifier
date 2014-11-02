@@ -195,6 +195,7 @@ class AppHandler(WebBaseHandler):
                 url = 'https://login.live.com/accesstoken.srf'
                 payload = {'grant_type': 'client_credentials', 'client_id': app['wnsclientid'], 'client_secret': app['wnsclientsecret'], 'scope': 'notify.windows.com'}
                 response = requests.post(url, data=payload)
+                responsedata = response.json()
                 if response.status_code != 200:
                     raise Exception('Invalid WNS secret')
                 if 'access_token' in responsedata and 'token_type' in responsedata:
