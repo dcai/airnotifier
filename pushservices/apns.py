@@ -164,15 +164,6 @@ class APNClient(PushService):
         self.connected = False
         logging.warning('%s[%d] is offline %d' % (self.appname, self.instanceid, self.reconnect))
 
-        try:
-            self.remote_stream.close()
-            self.sock.close()
-            if self.reconnect:
-                self.connect()
-        except Exception, ex:
-            raise ex
-
-    def _on_remote_read_streaming(self, data):
         """ Something bad happened """
         status_table = {
                 0: "No erros",
@@ -215,6 +206,13 @@ class APNClient(PushService):
         (command, statuscode, identifier) = struct.unpack_from('!bbI', data, 0)
         logging.error('%s[%d] CMD: %s Status: %s ID: %s', self.appname, self.instanceid, command, status_table[statuscode], identifier)
 
+        try:
+            self.remote_stream.close()
+            self.sock.close()
+            if self.reconnect:
+                self.connect()
+        except Exception, ex:
+            raise ex
 
     def _on_remote_connected(self):
         self.connected = True
@@ -229,8 +227,8 @@ class APNClient(PushService):
         self.sock = socket(AF_INET, SOCK_STREAM)
         self.remote_stream = iostream.SSLIOStream(self.sock, ssl_options=dict(certfile=self.certfile, keyfile=self.keyfile))
         self.remote_stream.connect(self.apns, self._on_remote_connected)
-        self.remote_stream.read_until_close(self._on_remote_read_close,
-                                            self._on_remote_read_streaming)
+        self.remote_stream.read_until_close(self._on_remote_read_close)
+
     def shutdown(self):
         """Shutdown this connection"""
         self.reconnect = False
