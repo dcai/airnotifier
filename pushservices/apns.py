@@ -147,6 +147,7 @@ class APNClient(PushService):
         self.keyfile = get_filepath(keyfile)
         self.messages = deque()
         self.reconnect = True
+	self.errors = None
         self.ioloop = ioloop.IOLoop.instance()
 
         self.appname = appname
@@ -205,6 +206,7 @@ class APNClient(PushService):
 
         (command, statuscode, identifier) = struct.unpack_from('!bbI', data, 0)
         logging.error('%s[%d] CMD: %s Status: %s ID: %s', self.appname, self.instanceid, command, status_table[statuscode], identifier)
+	self.errors = "%s (ID: %s)" % (status_table[statuscode], identifier)
 
         try:
             self.remote_stream.close()
@@ -289,7 +291,15 @@ class APNClient(PushService):
         return True
 
     def getQueueLength(self):
-        len(self.messages)
+        return len(self.messages)
+
+    def hasError(self):
+	return self.errors is not None
+
+    def getError(self):
+	temp = self.errors
+	self.errors = None
+	return temp
 
     def _send_message(self):
         if len(self.messages) and not self.remote_stream.closed():
