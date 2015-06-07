@@ -48,3 +48,9 @@ class AppBroadcastHandler(WebBaseHandler):
         channel = 'default'
         self.application.send_broadcast(self.appname, self.db, channel=channel, alert=alert, sound=sound)
         self.render("app_broadcast.html", app=app, sent=True)
+
+@route(r"/applications/([^/]+)/broadcast/status")
+class AppBroadcastStatusHandler(WebBaseHandler):
+    @tornado.web.authenticated
+    def get(self, appname):
+        self.write(self.application.get_broadcast_status(appname))

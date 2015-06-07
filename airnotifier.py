@@ -68,6 +68,21 @@ class AirNotifierApp(tornado.web.Application):
         from routes import RouteLoader
         return RouteLoader.load(dir)
 
+    def get_broadcast_status(self, appname):
+	status = "Notification sent!"
+	error = False
+
+	try:
+	    apns = self.services['apns'][appname][0]
+	except (IndexError, KeyError):
+	    apns = None
+
+	if apns is not None and apns.hasError():
+	    status = apns.getError()
+	    error = True
+
+        return {'msg':status, 'error':error}
+
     def send_broadcast(self, appname, appdb, **kwargs):
         channel = kwargs.get('channel', 'default')
         alert   = kwargs.get('alert', None)

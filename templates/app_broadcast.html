@@ -14,8 +14,27 @@
 
 {% block body %}
 {% if sent %}
-<div class="alert alert-success">
-    Notification sent!
+
+<script type="text/javascript">
+$(document).ready(function() {
+    $.ajax({url: window.location.pathname + "/status", type: "GET",
+        success: function(response) {
+	    if(response.error) {
+		$("#status").addClass("alert alert-danger");
+	    } else {
+	        $("#status").addClass("alert alert-success");
+	    }
+            $("#status").text(response.msg);
+        },
+        error: function(response) {
+	    $("#status").addClass("alert-danger");
+            $("#status").text("Error retrieving notification status!");
+        }
+    });
+});
+</script>
+
+<div id="status">
 </div>
 {% end %}
 
