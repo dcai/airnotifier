@@ -198,23 +198,24 @@ class APNClient(PushService):
              6      | Invalid topic size
              7      | Invalid payload size
              8      | Invalid token
+            10      | Shutdown
             255     | None
         """
         self.connected = False
         if len(data) != 6:
             logging.error('response must be a 6-byte binary string.')
+        else:
+            (command, statuscode, identifier) = struct.unpack_from('!bbI', data, 0)
+            logging.error('%s[%d] CMD: %s Status: %s ID: %s', self.appname, self.instanceid, command, status_table[statuscode], identifier)
+            self.errors = "%s (ID: %s)" % (status_table[statuscode], identifier)
 
-        (command, statuscode, identifier) = struct.unpack_from('!bbI', data, 0)
-        logging.error('%s[%d] CMD: %s Status: %s ID: %s', self.appname, self.instanceid, command, status_table[statuscode], identifier)
-	self.errors = "%s (ID: %s)" % (status_table[statuscode], identifier)
-
-        try:
-            self.remote_stream.close()
-            self.sock.close()
-            if self.reconnect:
-                self.connect()
-        except Exception, ex:
-            raise ex
+            try:
+                self.remote_stream.close()
+                self.sock.close()
+                if self.reconnect:
+                    self.connect()
+            except Exception, ex:
+                raise ex
 
     def _on_remote_connected(self):
         self.connected = True
