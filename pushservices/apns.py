@@ -176,6 +176,7 @@ class APNClient(PushService):
                 6: "Invalid topic size",
                 7: "Invalid payload size",
                 8: "Invalid token",
+               10: "Shutdown",
               255: "None"}
         # The error response packet
         """
