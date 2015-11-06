@@ -37,6 +37,9 @@ from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
     DEVICE_TYPE_MPNS, DEVICE_TYPE_SMS
 from pushservices.gcm import GCMUpdateRegIDsException, \
     GCMInvalidRegistrationException, GCMNotRegisteredException, GCMException
+import logging
+
+_logger = logging.getLogger(__name__)
 
 @route(r"/api/v2/push[\/]?")
 class PushHandler(APIBaseHandler):
@@ -99,9 +102,6 @@ class PushHandler(APIBaseHandler):
                 except Exception as ex:
                     self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
 
-            logmessage = 'Message length: %s, Access key: %s' %(len(data['alert']), self.appkey)
-            self.add_to_log('%s notification' % self.appname, logmessage)
-
             if device == DEVICE_TYPE_SMS:
                 data.setdefault('sms', {})
                 data['sms'].setdefault('to', data.get('token', ''))
@@ -111,7 +111,10 @@ class PushHandler(APIBaseHandler):
                 self.send_response(ACCEPTED)
             elif device == DEVICE_TYPE_IOS:
                 # Use sliptlines trick to remove line ending (only for iOs).
-                alert = ''.join(data['alert'].splitlines())
+                if type(data['alert']) is not dict:
+                    alert = ''.join(data['alert'].splitlines())
+                else:
+                    alert = data['alert']
                 data.setdefault('apns', {})
                 data['apns'].setdefault('badge', data.get('badge', None))
                 data['apns'].setdefault('sound', data.get('sound', None))
@@ -146,6 +149,8 @@ class PushHandler(APIBaseHandler):
                 self.send_response(ACCEPTED)
             else:
                 self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
+            logmessage = 'Message length: %s, Access key: %s' %(len(data['alert']), self.appkey)
+            self.add_to_log('%s notification' % self.appname, logmessage)
         except Exception, ex:
             import traceback
             traceback.print_exc()

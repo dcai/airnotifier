@@ -2,7 +2,7 @@
 keys=root,python_requests,tornado_access,tornado_application,tornado_general,iospush
 
 [handlers]
-keys=console,silent,accesslog,general
+keys=console,silent,accesslog,general,pushlog
 
 [formatters]
 keys=default
@@ -38,7 +38,7 @@ qualname=requests.*
 [logger_iospush]
 ; apns logger
 propagate=0
-handlers=general
+handlers=pushlog
 qualname=pushservices.apns
 
 [handler_console]
@@ -58,6 +58,12 @@ class = logging.FileHandler
 level = DEBUG
 formatter = default
 args = ("/tmp/airnotifier.log", "w")
+
+[handler_pushlog]
+class = logging.FileHandler
+level = DEBUG
+formatter = default
+args = ("/tmp/pushlog.log", "w")
 
 [handler_silent]
 class=StreamHandler
