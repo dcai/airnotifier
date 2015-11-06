@@ -1,6 +1,97 @@
+2015-11-07  Dongsheng Cai  <d@tux.im>
+
+	Issue #122 Enhance APNs connection
+
+	Improve logging.ini
+
+2015-11-06  Dongsheng Cai  <d@tux.im>
+
+	Fix #120 Implement APIs over SSL
+
+	Fix dbprefix
+
+	Issue #123 Add indexes to collections
+
+2015-09-27  Dongsheng Cai  <dcai@users.noreply.github.com>
+
+	Merge pull request #116 from pathikb/apns_shutdown_fix
+	APNS Fix: Added status-code 10 to status_table dictionary, credit to @pathikb 
+
+2015-09-24  Pathik  <pbotadra@gmail.com>
+
+	Added status-code 10 to status_table dictionary
+	The status code for Shutdown (Status = 10) was only added to the comments and not to the actual status_table dictionary. The APNS module crashes the moment it encounters status 10. This commit is a fix for that.
+
+2015-08-12  Dongsheng Cai  <dcai@users.noreply.github.com>
+
+	Merge pull request #113 from University-of-Strathclyde-LTE-Team/wip-112
+	This is a "better" fix for the connection being dropped, credit to @mhughes2k #113
+
+2015-08-11  Michael Hughes  <michaelhughes@strath.ac.ul>
+
+	This is a "better" fix for the connection being dropped If reconnect is on it will re-attempt as per the APNS documentation
+
+2015-07-22  Dongsheng Cai  <d@tux.im>
+
+	Issue #112 non 6-byte response should be ignored
+
+2015-06-07  Dongsheng Cai  <dcai@users.noreply.github.com>
+
+	Merge pull request #107 from bkylerussell/tasks/broadcast-feedback
+	Provide broadcast feedback from APNs
+
+2015-06-03  Kyle Russell  <bkylerussell@gmail.com>
+
+	Poll for broadcast status
+	If a notification client fails to transmit the notification, this
+	should be reported back to the user instead of just saying "Notification
+	sent!"
+
+2015-05-31  Kyle Russell  <bkylerussell@gmail.com>
+
+	apns: Remove read_until_close streaming_callback
+	Provides missing error detection in the read_until_close callback.
+	Removes streaming_callback since the implementation doesn't actually
+	support handling chunked response data.
+
+	If all the result data can be read at once (which is likely for a small
+	APNs response), then the read_until_close callback is called, not the
+	read_until_close streaming_callback (which chunks the data).  Only the
+	streaming_callback was implemented to report an error, so that's not
+	helpful.
+
+2015-03-27  Dongsheng Cai  <dcai@users.noreply.github.com>
+
+	Update README.md
+
+	Merge pull request #102 from gitter-badger/gitter-badge
+	Add a Gitter chat badge to README.md
+
+2015-03-27  The Gitter Badger  <badger@gitter.im>
+
+	Added Gitter badge
+
+2015-03-09  Dongsheng Cai  <dcai@users.noreply.github.com>
+
+	Merge pull request #98 from thomasbiddle/allow_custom_ios_params
+	Ensure we can add iOS params. credit to @thomasbiddle 
+
+2015-03-09  TJ Biddle  <tjbiddle@inflection.com>
+
+	Ensure we can add iOS params.
+
+2014-11-03  Dongsheng Cai  <dongsheng@users.noreply.github.com>
+
+	Merge pull request #89 from SimoneCarnio/master
+	Fix responsedata by @SimoneCarnio
+
+2014-11-02  Simone Carnio  <Simone@Simones-MacBook-Pro.local>
+
+	fix responsedata assign
+
 2014-10-19  Dongsheng Cai  <d@tux.im>
 
-	Fixes 'alert' parameter in /api/push.py
+	Fixes undefined 'alert' parameter in /api/push.py
 
 2014-10-19  Dongsheng Cai  <dongsheng@users.noreply.github.com>
 

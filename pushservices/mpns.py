@@ -33,9 +33,11 @@ from tornado.options import options
 import os.path
 from tornado.httpclient import AsyncHTTPClient
 from util import *
-
 import xml.etree.ElementTree as ET
 from cStringIO import StringIO
+import logging
+
+_logger = logging.getLogger(__name__)
 
 try:
     register_namespace = ET.register_namespace
