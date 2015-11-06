@@ -131,9 +131,14 @@ class APIBaseHandler(tornado.web.RequestHandler):
         return True
 
     @property
+    def dbname(self):
+        """ DB name"""
+        return options.appprefix + self.appname
+
+    @property
     def db(self):
         """ App DB, store logs/objects/users etc """
-        return self.application.mongodb[self.appname]
+        return self.application.mongodb[self.dbname]
 
     @property
     def masterdb(self):
@@ -458,7 +463,7 @@ class ObjectHandler(APIBaseHandler):
 
     @property
     def collection(self):
-        collectionname = "%s%s" % (options.dbprefix, self.classname)
+        collectionname = "%s%s" % (options.collectionprefix, self.classname)
         return collectionname
 
 @route(r"/objects/([^/]+)")
@@ -477,7 +482,7 @@ class ClassHandler(APIBaseHandler):
             self.add_to_log('Register collection', self.classname)
             self.db.objects.insert(col, safe=True)
 
-        collectionname = "%s%s" % (options.dbprefix, self.classname)
+        collectionname = "%s%s" % (options.collectionprefix, self.classname)
         return collectionname
 
     def get(self, classname):

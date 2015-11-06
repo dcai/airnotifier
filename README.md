@@ -89,7 +89,7 @@ Please read [Installation guide](https://github.com/airnotifier/airnotifier/wiki
 - pemdir: The directory storing certificates
 - passwordsalt: passwordsalt
 - masterdb: MongoDB database name
-- dbprefix: MongoDB collection name prefix, this will be used to create object data collection
+- appprefix: Prefix added to app database name
 
 ## Web service documentation
 - [Web service interfaces](https://github.com/airnotifier/airnotifier/wiki/API)

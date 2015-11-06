@@ -33,6 +33,7 @@ import time
 from constants import DEVICE_TYPE_IOS, VERSION
 from pymongo import DESCENDING
 from util import *
+from tornado.options import options
 import sys
 
 def buildUpdateFields(params):
@@ -56,9 +57,14 @@ class WebBaseHandler(tornado.web.RequestHandler):
         pass
 
     @property
+    def dbname(self):
+        """ DB name"""
+        return options.appprefix + self.appname
+
+    @property
     def db(self):
         """ DB instance """
-        return self.application.mongodb[self.appname]
+        return self.application.mongodb[self.dbname]
 
     @property
     def mongodbconnection(self):
