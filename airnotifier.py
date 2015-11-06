@@ -56,7 +56,7 @@ define("mongohost", default="localhost", help="MongoDB host name")
 define("mongoport", default=27017, help="MongoDB port")
 
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
-define("dbprefix", default="obj_", help="Collection name prefix")
+define("dbprefix", default="app_", help="Collection name prefix")
 
 loggingconfigfile='logging.ini'
 if os.path.isfile(loggingconfigfile):

@@ -62,4 +62,7 @@ class AppCreateNewHandler(WebBaseHandler):
         current_app = self.masterdb.applications.find_one({'shortname': self.appname})
         if not current_app:
             self.masterdb.applications.insert(app)
+            indexes = [("created", DESCENDING)]
+            self.db['tokens'].create_index(indexes);
+            self.db['logs'].create_index(indexes);
         self.redirect(r"/applications/%s/settings" % self.appname)

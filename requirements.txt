@@ -1,4 +1,4 @@
-pymongo==2.5
-tornado==3.0
-netaddr==0.7.10
-requests==2.2.1
+pymongo==2.9
+tornado==4.2.1
+netaddr==0.7.18
+requests==2.8.1

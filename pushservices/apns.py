@@ -163,7 +163,7 @@ class APNClient(PushService):
     def _on_remote_read_close(self, data):
         """ Close socket and reconnect """
         self.connected = False
-        logging.warning('%s[%d] is offline %d' % (self.appname, self.instanceid, self.reconnect))
+        logging.warning('%s[%d] is offline. Reconnected?: %d' % (self.appname, self.instanceid, self.reconnect))
 
         """ Something bad happened """
         status_table = {
