@@ -52,6 +52,10 @@ define("passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make pas
 define("cookiesecret", default="airnotifiercookiesecret", help="Cookie secret")
 define("debug", default=False, help="Debug mode")
 
+define("https", default=False, help="Enable HTTPS")
+define("httpscertfile", default="", help="HTTPS cert file")
+define("httpskeyfile",  default="", help="HTTPS key file")
+
 define("mongohost", default="localhost", help="MongoDB host name")
 define("mongoport", default=27017, help="MongoDB port")
 
@@ -182,7 +186,17 @@ class AirNotifierApp(tornado.web.Application):
 
     def main(self):
         logging.info("Starting AirNotifier server")
-        http_server = tornado.httpserver.HTTPServer(self)
+        if options.https:
+            import ssl
+            try:
+                ssl_ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+                ssl_ctx.load_cert_chain(options.httpscertfile, options.httpskeyfile)
+            except IOError:
+                print("Invalid path to SSL certificate and private key")
+                raise
+            http_server = tornado.httpserver.HTTPServer(self, ssl_options=ssl_ctx)
+        else:
+            http_server = tornado.httpserver.HTTPServer(self)
         http_server.listen(options.port)
         logging.info("AirNotifier is running")
         try:
