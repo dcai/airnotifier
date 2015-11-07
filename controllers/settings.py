@@ -228,6 +228,6 @@ class AppHandler(WebBaseHandler):
 
             self.masterdb.applications.update({'shortname': self.appname}, app, safe=True)
             self.redirect(r"/applications/%s/settings" % self.appname)
-        except Exception, ex:
+        except Exception as ex:
             logging.error(traceback.format_exc())
             self.render("app_settings.html", app=app, error=str(ex))

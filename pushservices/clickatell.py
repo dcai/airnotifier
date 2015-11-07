@@ -33,7 +33,10 @@ from tornado.options import options
 import os.path
 from tornado.httpclient import AsyncHTTPClient
 from util import *
-from urllib import quote_plus
+try:
+    from urllib import quote_plus
+except:
+    from urllib.parse import quote_plus
 
 ENDPOINT='http://api.clickatell.com/http/sendmsg?user=%s&password=%s&api_id=%s&to=%s&text=%s'
 

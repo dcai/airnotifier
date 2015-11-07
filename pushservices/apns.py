@@ -172,7 +172,7 @@ class APNClient(PushService):
         self.keyfile = get_filepath(keyfile)
         self.messages = deque()
         self.reconnect = True
-	self.errors = None
+        self.errors = None
         self.ioloop = ioloop.IOLoop.instance()
 
         self.appname = appname
@@ -224,7 +224,7 @@ class APNClient(PushService):
                 self.sock.close()
                 _logger.error('Attempting re-connect...')
                 self.connect()
-            except Exception, ex:
+            except Exception as ex:
                 raise ex
             return
             """
@@ -253,7 +253,7 @@ class APNClient(PushService):
             self.sock.close()
             if self.reconnect:
                 self.connect()
-        except Exception, ex:
+        except Exception as ex:
             raise ex
 
     def _on_remote_connected(self):
@@ -369,12 +369,12 @@ class APNClient(PushService):
         return len(self.messages)
 
     def hasError(self):
-	return self.errors is not None
+        return self.errors is not None
 
     def getError(self):
-	temp = self.errors
-	self.errors = None
-	return temp
+        temp = self.errors
+        self.errors = None
+        return temp
 
     def _send_message(self):
         if len(self.messages) and not self.remote_stream.closed():

@@ -76,17 +76,17 @@ class AirNotifierApp(tornado.web.Application):
         return RouteLoader.load(dir)
 
     def get_broadcast_status(self, appname):
-	status = "Notification sent!"
-	error = False
+        status = "Notification sent!"
+        error = False
 
-	try:
-	    apns = self.services['apns'][appname][0]
-	except (IndexError, KeyError):
-	    apns = None
+        try:
+            apns = self.services['apns'][appname][0]
+        except (IndexError, KeyError):
+            apns = None
 
-	if apns is not None and apns.hasError():
-	    status = apns.getError()
-	    error = True
+        if apns is not None and apns.hasError():
+            status = apns.getError()
+            error = True
 
         return {'msg':status, 'error':error}
 
@@ -142,7 +142,7 @@ class AirNotifierApp(tornado.web.Application):
                 elif token['device'] == DEVICE_TYPE_MPNS:
                     if mpns is not None:
                         mpns.process(token=t, alert=alert, extra=extra, mpns=kwargs.get('mpns', {}))
-        except Exception, ex:
+        except Exception as ex:
             _logger.error(ex)
 
         # Now sending android notifications
@@ -150,7 +150,7 @@ class AirNotifierApp(tornado.web.Application):
             if (gcm is not None) and regids:
                 response = gcm.process(token=regids, alert=alert, extra=extra, gcm=kwargs.get('gcm', {}))
                 responsedata = response.json()
-        except Exception, ex:
+        except Exception as ex:
             _logger.error('GCM problem: ' + str(ex))
 
     def __init__(self, services):

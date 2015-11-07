@@ -26,9 +26,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from httplib import  FORBIDDEN, OK
+try:
+    from httplib import  FORBIDDEN, OK
+except:
+    from http.client import  FORBIDDEN, OK
 from importlib import import_module
-import md5
+try:
+    import md5
+except:
+    from hashlib import md5
 import time
 import uuid
 
@@ -57,7 +63,7 @@ class AccessKeysV2Handler(APIBaseHandler):
                 try:
                     proc = import_module('hooks.' + processor)
                     data = proc.process_accesskey_payload(data)
-                except Exception, ex:
+                except Exception as ex:
                     self.send_response(FORBIDDEN, dict(error=str(ex)))
                     return
 
@@ -69,5 +75,5 @@ class AccessKeysV2Handler(APIBaseHandler):
             key['key'] = md5(str(uuid.uuid4())).hexdigest()
             self.db.keys.insert(key)
             self.send_response(OK, dict(accesskey=key['key']))
-        except Exception, ex:
+        except Exception as ex:
             self.send_response(FORBIDDEN, dict(error=str(ex)))

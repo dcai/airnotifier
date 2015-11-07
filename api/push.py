@@ -26,8 +26,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from httplib import BAD_REQUEST, FORBIDDEN, \
-    INTERNAL_SERVER_ERROR, ACCEPTED
+try:
+    from httplib import BAD_REQUEST, FORBIDDEN, \
+        INTERNAL_SERVER_ERROR, ACCEPTED
+except:
+    from http.client import BAD_REQUEST, FORBIDDEN, \
+        INTERNAL_SERVER_ERROR, ACCEPTED
 from routes import route
 from api import APIBaseHandler, EntityBuilder
 import random
@@ -78,7 +82,7 @@ class PushHandler(APIBaseHandler):
                     try:
                         proc = import_module('hooks.' + data['extra']['processor'])
                         data = proc.process_pushnotification_payload(data)
-                    except Exception, ex:
+                    except Exception as ex:
                         self.send_response(BAD_REQUEST, dict(error=str(ex)))
 
             if not self.token:
@@ -151,7 +155,7 @@ class PushHandler(APIBaseHandler):
                 self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
             logmessage = 'Message length: %s, Access key: %s' %(len(data['alert']), self.appkey)
             self.add_to_log('%s notification' % self.appname, logmessage)
-        except Exception, ex:
+        except Exception as ex:
             import traceback
             traceback.print_exc()
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))

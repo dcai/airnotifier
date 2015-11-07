@@ -26,10 +26,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from HTMLParser import HTMLParser
+try:
+    from HTMLParser import HTMLParser
+except:
+    from html.parser import HTMLParser
+
 import calendar
 import datetime
-import htmlentitydefs
+try:
+    from htmlentitydefs import name2codepoint
+except:
+    from html.entities import name2codepoint
 import re
 import sys
 import unicodedata
@@ -63,7 +70,7 @@ class HTMLTextExtractor(HTMLParser):
         self.result.append(unichr(codepoint))
 
     def handle_entityref(self, name):
-        codepoint = htmlentitydefs.name2codepoint[name]
+        codepoint = name2codepoint[name]
         self.result.append(unichr(codepoint))
 
     def get_text(self):

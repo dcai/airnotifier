@@ -26,8 +26,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from httplib import BAD_REQUEST, FORBIDDEN, NOT_FOUND, \
-    INTERNAL_SERVER_ERROR, OK
+try:
+    from httplib import BAD_REQUEST, FORBIDDEN, NOT_FOUND, \
+        INTERNAL_SERVER_ERROR, OK
+except:
+    from http.client import BAD_REQUEST, FORBIDDEN, NOT_FOUND, \
+        INTERNAL_SERVER_ERROR, OK
 from routes import route
 from api import APIBaseHandler, EntityBuilder
 from constants import DEVICE_TYPE_IOS
@@ -49,7 +53,7 @@ class TokenV2HandlerGet(APIBaseHandler):
                 self.send_response(NOT_FOUND, dict(status='Token does\'t exist'))
             else:
                 self.send_response(OK, dict(status='deleted'))
-        except Exception, ex:
+        except Exception as ex:
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
 
 @route(r"/api/v2/tokens[\/]?")
@@ -72,7 +76,7 @@ class TokenV2Handler(APIBaseHandler):
                 return
             try:
                 binascii.unhexlify(devicetoken)
-            except Exception, ex:
+            except Exception as ex:
                 self.send_response(BAD_REQUEST, dict(error='Invalid token'))
 
         token = EntityBuilder.build_token(devicetoken, device, self.appname, channel)
@@ -86,6 +90,6 @@ class TokenV2Handler(APIBaseHandler):
             else:
                 self.send_response(OK)
                 self.add_to_log('Add token', devicetoken)
-        except Exception, ex:
+        except Exception as ex:
             self.add_to_log('Cannot add token', devicetoken, "warning")
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))

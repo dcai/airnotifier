@@ -27,8 +27,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from hashlib import md5
-from httplib import BAD_REQUEST, LOCKED, FORBIDDEN, NOT_FOUND, \
-    INTERNAL_SERVER_ERROR, OK
+try:
+    from httplib import BAD_REQUEST, LOCKED, FORBIDDEN, NOT_FOUND, \
+        INTERNAL_SERVER_ERROR, OK
+except:
+    from http.client import BAD_REQUEST, LOCKED, FORBIDDEN, NOT_FOUND, \
+        INTERNAL_SERVER_ERROR, OK
 import binascii
 import json
 import logging
@@ -92,7 +96,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
                 try:
                     # Validate token
                     binascii.unhexlify(self.token)
-                except Exception, ex:
+                except Exception as ex:
                     self.send_response(BAD_REQUEST, dict(error='Invalid token: %s' % ex))
         else:
             self.device = DEVICE_TYPE_ANDROID
@@ -236,7 +240,7 @@ class TokenV1Handler(APIBaseHandler):
                 self.send_response(NOT_FOUND, dict(status='Token does\'t exist'))
             else:
                 self.send_response(OK, dict(status='deleted'))
-        except Exception, ex:
+        except Exception as ex:
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
 
     def post(self, devicetoken):
@@ -253,7 +257,7 @@ class TokenV1Handler(APIBaseHandler):
                 return
             try:
                 binascii.unhexlify(devicetoken)
-            except Exception, ex:
+            except Exception as ex:
                 self.send_response(BAD_REQUEST, dict(error='Invalid token'))
 
         channel = self.get_argument('channel', 'default')
@@ -269,7 +273,7 @@ class TokenV1Handler(APIBaseHandler):
             else:
                 self.send_response(OK, dict(status='ok'))
                 self.add_to_log('Add token', devicetoken)
-        except Exception, ex:
+        except Exception as ex:
             self.add_to_log('Cannot add token', devicetoken, "warning")
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
 
@@ -333,7 +337,7 @@ class NotificationHandler(APIBaseHandler):
             try:
                 conn.send(self.token, pl)
                 self.send_response(OK)
-            except Exception, ex:
+            except Exception as ex:
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
         elif device == DEVICE_TYPE_ANDROID:
             try:
@@ -382,7 +386,7 @@ class UsersHandler(APIBaseHandler):
                 userid = self.db.users.insert(user, safe=True)
                 self.add_to_log('Add user', username)
                 self.send_response(OK, {'userid': str(userid)})
-        except Exception, ex:
+        except Exception as ex:
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
 
     def get(self):
@@ -395,7 +399,7 @@ class UsersHandler(APIBaseHandler):
             try:
                 # unpack query conditions
                 data = self.json_decode(where)
-            except Exception, ex:
+            except Exception as ex:
                 self.send_response(BAD_REQUEST, dict(error=str(ex)))
 
         cursor = self.db.users.find(data)
@@ -496,7 +500,7 @@ class ClassHandler(APIBaseHandler):
             try:
                 # unpack query conditions
                 data = self.json_decode(where)
-            except Exception, ex:
+            except Exception as ex:
                 self.send_response(BAD_REQUEST, dict(error=str(ex)))
 
         objects = self.db[self.collection].find(data)
@@ -511,7 +515,7 @@ class ClassHandler(APIBaseHandler):
         self.classname = classname
         try:
             data = self.json_decode(self.request.body)
-        except Exception, ex:
+        except Exception as ex:
             self.send_response(BAD_REQUEST, ex)
 
         self.add_to_log('Add object to %s' % self.classname, data)
