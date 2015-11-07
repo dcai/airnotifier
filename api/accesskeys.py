@@ -32,9 +32,9 @@ except:
     from http.client import  FORBIDDEN, OK
 from importlib import import_module
 try:
-    import md5
-except:
     from hashlib import md5
+except:
+    import md5
 import time
 import uuid
 

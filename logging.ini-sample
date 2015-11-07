@@ -2,32 +2,32 @@
 keys=root,python_requests,tornado_access,tornado_application,tornado_general,iospush
 
 [handlers]
-keys=console,silent,accesslog,general,pushlog
+keys=console,silent,accesslog,main,pushlog
 
 [formatters]
 keys=default
 
 [logger_root]
 ; default logger
-handlers=general
+handlers=main
 qualname=root
 
 [logger_tornado_access]
 ; tornado web access logger
 propagate=0
-handlers=general
+handlers=accesslog
 qualname=tornado.access
 
 [logger_tornado_application]
 ; tornado app logger
 propagate=0
-handlers=general
+handlers=main
 qualname=tornado.application
 
 [logger_tornado_general]
 ; tornado general logger
 propagate=0
-handlers=general
+handlers=main
 qualname=tornado.general
 
 [logger_python_requests]
@@ -53,7 +53,7 @@ level = NOTSET
 formatter = default
 args = ("/tmp/an_access.log", "w")
 
-[handler_general]
+[handler_main]
 class = logging.FileHandler
 level = DEBUG
 formatter = default

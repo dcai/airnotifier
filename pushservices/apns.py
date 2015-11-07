@@ -174,16 +174,19 @@ class APNClient(PushService):
         self.reconnect = True
         self.errors = None
         self.ioloop = ioloop.IOLoop.instance()
-
         self.appname = appname
         self.instanceid = instanceid
 
         self.connected = False
-
         self.connect()
 
-    def build_request(self):
-        pass
+    def _on_remote_connected(self):
+        self.connected = True
+        """ Callback when connected to APNs """
+        _logger.info('APNs connection: %s[%d] is online' % (self.appname, self.instanceid))
+        # Processing the messages queue
+        while self._write_to_remote_stream_from_queue():
+            continue
 
     def _on_remote_read_close(self, data):
         """ Close socket and reconnect """
@@ -256,14 +259,6 @@ class APNClient(PushService):
         except Exception as ex:
             raise ex
 
-    def _on_remote_connected(self):
-        self.connected = True
-        """ Callback when connected to APNs """
-        _logger.info('APNs connection: %s[%d] is online' % (self.appname, self.instanceid))
-        # Processing the messages queue
-        while self._send_message():
-            continue
-
     def connect(self):
         """ Setup socket """
         self.sock = socket(AF_INET, SOCK_STREAM)
@@ -289,7 +284,7 @@ class APNClient(PushService):
         badge = apnsparams.get('badge', None)
         customparams = apnsparams.get('custom', None)
         pl = PayLoad(alert=kwargs['alert'], sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
-        self.send(token, pl)
+        self._append_to_queue(token, pl)
 
     def sendbulk(self, deviceToken, payload):
         """ TODO """
@@ -311,7 +306,18 @@ class APNClient(PushService):
             'b'   # priority
         ) % (payload_length, notification_id)
 
-    def send(self, deviceToken, payload):
+    def getQueueLength(self):
+        return len(self.messages)
+
+    def hasError(self):
+        return self.errors is not None
+
+    def getError(self):
+        temp = self.errors
+        self.errors = None
+        return temp
+
+    def _append_to_queue(self, deviceToken, payload):
         """ Pack payload and append to message queue """
         # _logger.info("Notification through %s[%d]" % (self.appname, self.instanceid))
         json = payload.json()
@@ -359,24 +365,14 @@ class APNClient(PushService):
         # One day
         expiry = payload.expiry
         _logger.info("MSGID #%s => %s" % (identifier, deviceToken))
-        m = struct.pack(fmt, ENHANCED_NOTIFICATION_COMMAND, identifier, expiry,
+        frame = struct.pack(fmt, ENHANCED_NOTIFICATION_COMMAND, identifier, expiry,
                 TOKEN_LENGTH, unhexlify(deviceToken), json_len, json)
-        self.messages.append(m)
-        self.ioloop.add_callback(self._send_message)
+        self.messages.append(frame)
+        # Calls the given callback on the next I/O loop iteration.
+        self.ioloop.add_callback(self._write_to_remote_stream_from_queue)
         return True
 
-    def getQueueLength(self):
-        return len(self.messages)
-
-    def hasError(self):
-        return self.errors is not None
-
-    def getError(self):
-        temp = self.errors
-        self.errors = None
-        return temp
-
-    def _send_message(self):
+    def _write_to_remote_stream_from_queue(self):
         if len(self.messages) and not self.remote_stream.closed():
             # First in first out
             msg = self.messages.popleft()
