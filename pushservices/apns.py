@@ -62,7 +62,6 @@ def id_generator(size=4, chars=string.ascii_letters + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 class PayLoad(object):
-
     def __init__(self, alert=None, badge=None, sound=None, identifier=0, expiry=None, customparams=None):
         if expiry == None:
             self.expiry = long(time.time() + 60 * 60 * 24)
@@ -163,21 +162,26 @@ class APNClient(PushService):
         return self.connected
 
     def __init__(self, env='sandbox', certfile="", keyfile="", appname="", instanceid=0):
+        self.apnsendpoint = apns[env]
+
+        self.appname = appname
+        self.instanceid = instanceid
+        self.messages = deque()
+
         certexists = file_exists(certfile)
         keyexists = file_exists(keyfile)
         if not certexists or not keyexists:
             raise Exception("APNs certificate or key files do not exist")
-        self.apnsendpoint = apns[env]
+
         self.certfile = get_filepath(certfile)
         self.keyfile = get_filepath(keyfile)
-        self.messages = deque()
-        self.reconnect = True
-        self.errors = None
-        self.ioloop = ioloop.IOLoop.instance()
-        self.appname = appname
-        self.instanceid = instanceid
-
+        self.sock = None
+        self.remote_stream = None
         self.connected = False
+        self.reconnect = True
+        self.ioloop = ioloop.IOLoop.instance()
+        self.errors = None
+
         self.connect()
 
     def _on_remote_connected(self):
