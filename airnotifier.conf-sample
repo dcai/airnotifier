@@ -1,6 +1,6 @@
 https = True
-httpscert = "/path/to/ssl/certificate.cert"
-httpskey = "/path/to/ssl/server.key"
+httpscertfile = "/path/to/ssl/certificate.cert"
+httpskeyfile = "/path/to/ssl/server.key"
 
 port = 8801
 
