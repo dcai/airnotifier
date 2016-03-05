@@ -96,7 +96,7 @@ Please read [Installation guide](https://github.com/airnotifier/airnotifier/wiki
 
 ## Requirements
 
-- [Python 2.6+](http://www.python.org)
+- [Python 2.7.9+](http://www.python.org)
 - [MongoDB 2.0+](http://www.mongodb.org/)
 - [Tornado 3.0+](http://tornadoweb.org)
 
