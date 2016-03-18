@@ -47,6 +47,14 @@ def normalize_tokens(tokens):
             token['device'] = DEVICE_TYPE_IOS
     return tokens
 
+def add_to_log(db, action, info=None, level="info"):
+    log = {}
+    log['action'] = strip_tags(action)
+    log['info'] = strip_tags(info) if isinstance(info, (str, unicode)) else info
+    log['level'] = strip_tags(level)
+    log['created'] = int(time.time())
+    db.logs.insert(log, safe=True)
+
 class WebBaseHandler(tornado.web.RequestHandler):
     """WebBaseHandler class to precess Web traffic
     """

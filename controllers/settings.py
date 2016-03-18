@@ -90,7 +90,12 @@ class AppHandler(WebBaseHandler):
             del self.apnsconnections[app['shortname']]
 
     def perform_feedback(self, app):
-        apn = APNFeedback(app.get('environment'), app.get('certfile', ''), app.get('keyfile', ''), app['shortname'])
+        def _feedback(token, fail_time):
+            self.db.tokens.remove({'token':token}, safe=True)
+            add_to_log(self.db, 'feedback', {"token":token, "ftime":fail_time.strftime('%Y-%m-%d %H:%M:%S')})
+
+        apn = APNFeedback(app.get('environment'), app.get('certfile', ''), app.get('keyfile', ''), app['shortname'],
+                          feedback=_feedback)
 
     @tornado.web.authenticated
     def post(self, appname):

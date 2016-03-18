@@ -28,6 +28,7 @@
 
 from . import PushService
 from collections import deque
+from datetime import datetime as dt
 from socket import socket, AF_INET, SOCK_STREAM
 import json
 import logging
@@ -35,7 +36,7 @@ import struct
 import time
 import os
 from util import *
-from binascii import hexlify, unhexlify
+from binascii import hexlify, unhexlify, b2a_hex
 from tornado import ioloop, iostream
 import string
 import random
@@ -107,7 +108,7 @@ class PayLoad(object):
         return jsontext
 
 class APNFeedback(object):
-    def __init__(self, env="sandbox", certfile="", keyfile="", appname=""):
+    def __init__(self, env="sandbox", certfile="", keyfile="", appname="", feedback=None):
         certexists = file_exists(certfile)
         keyexists = file_exists(keyfile)
         if not certexists:
@@ -121,6 +122,7 @@ class APNFeedback(object):
         self.keyfile = get_filepath(keyfile)
         self.ioloop = ioloop.IOLoop.instance()
         self.appname = appname
+        self.feedback = feedback
         self.connect()
 
     def connect(self):
@@ -130,30 +132,63 @@ class APNFeedback(object):
         self.remote_stream.connect(self.host, self._on_feedback_service_connected)
         self.remote_stream.read_until_close(self._on_feedback_service_read_close,
                                             self._on_feedback_service_read_streaming)
+        self.buff = ''
 
-    def shutdown(self):
+    def shutdown(self, reason=''):
         """Shutdown this connection"""
+        _logger.info("APNFeedback shutdown:%s", reason)
         self.remote_stream.close()
         self.sock.close()
+        self.feedback = None
+        self.buff = ''
 
     def _on_feedback_service_connected(self):
-        _logger.info("APNs connected")
+        _logger.info("APNFeedback connected")
 
     def _on_feedback_service_read_close(self, data):
-        self.shutdown()
+        self.shutdown('_on_feedback_service_read_close')
 
     def _on_feedback_service_read_streaming(self, data):
         """ Feedback """
+        head_len = 6
         fmt = (
             '!'
             'I'   # expiry
             'H'   # token length
-            '32s' # token
+            # '32s' # token
         )
         if len(data):
-            _logger.info(data)
+            pass#_logger.info(data)
         else:
             _logger.info("no data")
+
+        self.buff += data
+        # Sanity check: after a socket read we should always have at least
+        # 6 bytes in the buffer
+        if len(self.buff) < head_len:
+            self.shutdown('no data')
+            return
+
+        while len(self.buff) > head_len:
+            expiry, token_length = struct.unpack(fmt, self.buff[:head_len])
+            bytes_to_read = head_len + token_length
+            if len(self.buff) >= bytes_to_read:
+                fail_time = dt.utcfromtimestamp(expiry)
+                token = b2a_hex(self.buff[head_len:bytes_to_read])
+                # Remove data for current token from buffer
+                self.buff = self.buff[bytes_to_read:]
+
+                # yield (token, fail_time)
+                logging.info( "feedback deleting token: %s expired at %s" %(token, fail_time))
+                if self.feedback is not None:
+                    try:
+                        self.feedback(token, fail_time)
+                    except Exception as ex:
+                        logging.exception(ex)
+            else:
+                # break out of inner while loop - i.e. go and fetch
+                # some more data and append to buffer
+                break
 
 
 class APNClient(PushService):
@@ -187,7 +222,7 @@ class APNClient(PushService):
     def _on_remote_connected(self):
         self.connected = True
         """ Callback when connected to APNs """
-        _logger.info('APNs connection: %s[%d] is online' % (self.appname, self.instanceid))
+        _logger.info('APNs connection: %s[%d](%s) is online' % (self.appname, self.instanceid, self.apnsendpoint))
         # Processing the messages queue
         while self._write_to_remote_stream_from_queue():
             continue
@@ -381,6 +416,7 @@ class APNClient(PushService):
             # First in first out
             msg = self.messages.popleft()
             try:
+                # _logger.info("write:%s" % msg)
                 self.remote_stream.write(msg)
             except Exception as ex:
                 _logger.exception(ex)
