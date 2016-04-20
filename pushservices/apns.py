@@ -281,6 +281,9 @@ class APNClient(PushService):
         self.remote_stream.close()
         self.sock.close()
 
+    def send(self, token, pl):
+        self._append_to_queue(token, pl)
+
     def process(self, **kwargs):
         token = kwargs['token']
         apnsparams = kwargs['apns']
