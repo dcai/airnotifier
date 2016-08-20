@@ -1,0 +1,25 @@
+#After staring container, don't forget to install db :
+# docker exec -it airnotifier python /airnotifier/install.py
+
+airnotifier:
+    image: anthodingo/airnotifier:latest
+    container_name: airnotifier
+    volumes:
+       - ./config:/config
+       - ./certs:/var/airnotifier/pemdir
+       - ./logs:/var/log/airnotifier
+    ports:
+       - 8801:8801
+       - 27017:27017
+    links:
+       - mongodb
+    #optionnal
+    environement:
+        - MONGO_SERVER=mongodb
+        - MONGO_PORT=27017
+
+mongodb:
+    image: mongo:2.6
+    container_name: mongodb
+    volumes:
+       - ./db:/data/db
