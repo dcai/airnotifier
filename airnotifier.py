@@ -154,11 +154,14 @@ class AirNotifierApp(tornado.web.Application):
             _logger.error('GCM problem: ' + str(ex))
 
     def __init__(self, services):
+        import datetime
+        now = datetime.datetime.now()
 
         app_settings = dict(
             debug=True,
             # debug=options.debug,
             app_title=u'AirNotifier',
+            current_year=str(now.year),
             ui_modules={"AppSideBar": AppSideBar, "NavBar": NavBar, "TabBar": TabBar},
             template_path=os.path.join(os.path.dirname(__file__), 'templates'),
             static_path=os.path.join(os.path.dirname(__file__), 'static'),

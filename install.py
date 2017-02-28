@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from hashlib import sha1
-
+from os import path
 from pymongo.connection import Connection
 from pymongo.errors import CollectionInvalid
 from tornado.options import define, options
@@ -47,6 +47,9 @@ define("masterdb", default="airnotifier", help="MongoDB DB to store information"
 
 
 if __name__ == "__main__":
+    if not path.exists("airnotifier.conf"):
+        raise Exception('Please create airnotiier.conf before running install.py')
+
     tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
     mongodb = Connection(options.mongohost, options.mongoport)
