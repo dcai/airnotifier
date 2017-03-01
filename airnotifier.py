@@ -41,7 +41,7 @@ from pushservices.mpns import MPNSClient
 from pushservices.clickatell import *
 from uimodules import *
 from util import *
-from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
+from constants import RELEASE, VERSION, DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
     DEVICE_TYPE_MPNS
 
 define("port", default=8801, help="Application server listen port", type=int)
@@ -162,6 +162,7 @@ class AirNotifierApp(tornado.web.Application):
             # debug=options.debug,
             app_title=u'AirNotifier',
             current_year=str(now.year),
+            version='{}-{}'.format(RELEASE, VERSION),
             ui_modules={"AppSideBar": AppSideBar, "NavBar": NavBar, "TabBar": TabBar},
             template_path=os.path.join(os.path.dirname(__file__), 'templates'),
             static_path=os.path.join(os.path.dirname(__file__), 'static'),
