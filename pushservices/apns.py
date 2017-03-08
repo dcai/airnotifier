@@ -62,7 +62,7 @@ def id_generator(size=4, chars=string.ascii_letters + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 class PayLoad(object):
-    def __init__(self, alert=None, badge=None, sound=None, identifier=0, expiry=None, customparams=None):
+    def __init__(self, alert=None, badge=None, sound=None, content=None, identifier=0, expiry=None, customparams=None):
         if expiry == None:
             self.expiry = long(time.time() + 60 * 60 * 24)
         else:
@@ -72,6 +72,7 @@ class PayLoad(object):
         self.alert = alert
         self.badge = badge
         self.sound = sound
+        self.content = content
         self.customparams = customparams
 
     def build_payload(self):
@@ -87,6 +88,14 @@ class PayLoad(object):
             # remove sound field ,'badge':""
             alertlength = alertlength - 11 - len(str(self.badge))
             item['badge'] = int(self.badge)
+        if self.content:
+            # Add support for 'content-available' key. - M.D.
+            try:
+                content = int(self.content)
+                content = 1 if content == 1 else 0
+                item['content-available'] = content
+            except ValueError as err:
+                _logger.warn('Bad value for content flag ("content-available"): %s', err)
 
         if type(self.alert) is dict:
             item['alert'] = self.alert
@@ -104,6 +113,7 @@ class PayLoad(object):
 
     def json(self):
         jsontext = json.dumps(self.build_payload(), separators=(',', ':'))
+        _logger.debug('## ' + jsontext)
         return jsontext
 
 class APNFeedback(object):
@@ -289,8 +299,9 @@ class APNClient(PushService):
         apnsparams = kwargs['apns']
         sound = apnsparams.get('sound', None)
         badge = apnsparams.get('badge', None)
+        content = apnsparams.get('content', None)
         customparams = apnsparams.get('custom', None)
-        pl = PayLoad(alert=kwargs['alert'], sound=sound, badge=badge, identifier=0, expiry=None, customparams=customparams)
+        pl = PayLoad(alert=kwargs['alert'], sound=sound, badge=badge, content=content, identifier=0, expiry=None, customparams=customparams)
         self._append_to_queue(token, pl)
 
     def sendbulk(self, deviceToken, payload):

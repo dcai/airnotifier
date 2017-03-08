@@ -2,3 +2,7 @@ airnotifier.conf
 logging.ini
 *.pyc
 .idea
+nohup.out
+airnotifier.err
+airnotifier.log
+

@@ -122,6 +122,7 @@ class PushHandler(APIBaseHandler):
                 data.setdefault('apns', {})
                 data['apns'].setdefault('badge', data.get('badge', None))
                 data['apns'].setdefault('sound', data.get('sound', None))
+                data['apns'].setdefault('content', data.get('content', None))
                 data['apns'].setdefault('custom', data.get('custom', None))
                 self.get_apns_conn().process(token=self.token, alert=alert, extra=extra, apns=data['apns'])
                 self.send_response(ACCEPTED)
