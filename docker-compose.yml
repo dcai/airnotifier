@@ -14,7 +14,7 @@ airnotifier:
     links:
        - mongodb
     #optionnal
-    environement:
+    environment:
         - MONGO_SERVER=mongodb
         - MONGO_PORT=27017
 
