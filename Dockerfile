@@ -17,4 +17,5 @@ RUN pip install -r requirements.txt
 RUN sed -i 's/https = True/https = False/g' airnotifier.conf-sample
 
 ADD start.sh /airnotifier
+RUN chown root:root /airnotifier/start.sh && chmod 750 /airnotifier/start.sh
 ENTRYPOINT /airnotifier/start.sh

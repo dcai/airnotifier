@@ -10,7 +10,6 @@ airnotifier:
        - ./logs:/var/log/airnotifier
     ports:
        - 8801:8801
-       - 27017:27017
     links:
        - mongodb
     #optionnal
