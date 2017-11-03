@@ -186,7 +186,8 @@ class PushHandler(APIBaseHandler):
                 except FCMException as ex:
                     self.send_response(INTERNAL_SERVER_ERROR, dict(error=ex.error))
             elif device == DEVICE_TYPE_ANDROID:
-                requestPayload.setdefault("gcm", {})
+                if "gcm" not in requestPayload:
+                    requestPayload.setdefault("gcm", {})
                 try:
                     gcm = self.gcmconnections[self.app["shortname"]][0]
                     response = gcm.process(

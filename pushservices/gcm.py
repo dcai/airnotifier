@@ -27,10 +27,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from . import PushService
+from util import strip_tags
 import json
+import logging
 import requests
 import time
-from util import strip_tags
+
+_logger = logging.getLogger(__name__)
 
 GCM_ENDPOINT = "https://fcm.googleapis.com/fcm/send"
 
