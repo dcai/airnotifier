@@ -30,6 +30,11 @@ from . import PushService
 import json
 import requests
 
+# jwk - 2017-10-31
+import logging
+_logger = logging.getLogger(__name__)
+
+
 GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send'
 
 class GCMException(Exception): pass
@@ -92,6 +97,10 @@ class GCMClient(PushService):
         data = gcmparam.get('data', {})
         if 'message' not in data:
             data['message'] = kwargs.get('alert', '')
+
+        _logger.error('GCMClient: process: gcm: ' + json.dumps(gcmparam))
+        _logger.error('GCMClient: process: data: ' + json.dumps(data))
+
         return self.send(kwargs['token'], data=data, collapse_key=collapse_key, ttl=ttl)
 
     def send(self, regids, data=None, collapse_key=None, ttl=None, retries=5):

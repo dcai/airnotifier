@@ -42,6 +42,7 @@ from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
 from pushservices.gcm import GCMUpdateRegIDsException, \
     GCMInvalidRegistrationException, GCMNotRegisteredException, GCMException
 import logging
+import json
 
 _logger = logging.getLogger(__name__)
 
@@ -91,6 +92,11 @@ class PushHandler(APIBaseHandler):
             # application specific data
             extra = data.get('extra', {})
 
+            # jwk - 2017-10-31
+            _logger.error('notification: extra: ' + json.dumps(extra))
+            _logger.error('notification: data: ' + json.dumps(data))
+
+
             device = data.get('device', DEVICE_TYPE_IOS).lower()
             channel = data.get('channel', 'default')
             token = self.db.tokens.find_one({'token': self.token})
@@ -127,7 +133,9 @@ class PushHandler(APIBaseHandler):
                 self.get_apns_conn().process(token=self.token, alert=alert, extra=extra, apns=data['apns'])
                 self.send_response(ACCEPTED)
             elif device == DEVICE_TYPE_ANDROID:
-                data.setdefault('gcm', {})
+                # jwk- 2017-10-31
+                if ('gcm' not in data):
+                    data.setdefault('gcm', {})
                 try:
                     gcm = self.gcmconnections[self.app['shortname']][0]
                     response = gcm.process(token=[self.token], alert=data['alert'], extra=data['extra'], gcm=data['gcm'])
