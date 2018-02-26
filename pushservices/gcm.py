@@ -29,6 +29,7 @@
 from . import PushService
 import json
 import requests
+from util import strip_tags
 
 GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send'
 
@@ -92,9 +93,10 @@ class GCMClient(PushService):
         data = gcmparam.get('data', {})
         if 'message' not in data:
             data['message'] = kwargs.get('alert', '')
-        return self.send(kwargs['token'], data=data, collapse_key=collapse_key, ttl=ttl)
+        appdb = kwargs.get('appdb', None)
+        return self.send(kwargs['token'], data=data, collapse_key=collapse_key, ttl=ttl, appdb=appdb)
 
-    def send(self, regids, data=None, collapse_key=None, ttl=None, retries=5):
+    def send(self, regids, data=None, collapse_key=None, ttl=None, retries=5, appdb=appdb):
         '''
         Send message to google gcm endpoint
         :param regids: list
@@ -132,11 +134,19 @@ class GCMClient(PushService):
                     # Should remove the registration ID from your server database
                     # because the application was uninstalled from the device or
                     # it does not have a broadcast receiver configured to receive
-                    raise GCMNotRegisteredException(packed_rregisteration_ids)
+                    if appdb is not None:
+                        appdb.tokens.delete_many({'token': {'$in': packed_rregisteration_ids}})
+                        self.add_to_log(appdb, 'GCM', 'Cleaned unregistered tokens: ' + ', '.join(packed_rregisteration_ids))
+                    else:
+                        raise GCMNotRegisteredException(packed_rregisteration_ids)
                 elif errorkey == 'InvalidRegistration':
                     # You should remove the registration ID from your server
                     # database because the application was uninstalled from the device or it does not have a broadcast receiver configured to receive
-                    raise GCMInvalidRegistrationException(packed_rregisteration_ids)
+                    if appdb is not None:
+                        appdb.tokens.delete_many({'token': {'$in': packed_rregisteration_ids}})
+                        self.add_to_log(appdb, 'GCM', 'Cleaned invalid tokens: ' + ', '.join(packed_rregisteration_ids))
+                    else:
+                        raise GCMInvalidRegistrationException(packed_rregisteration_ids)
                 elif errorkey == 'MismatchSenderId':
                     '''
                     A registration ID is tied to a certain group of senders. When an application registers for GCMClient usage,
@@ -163,3 +173,11 @@ class GCMClient(PushService):
 
         return response
 
+    def add_to_log(self, appdb, action, info=None, level="info"):
+        log = {}
+        log['action'] = strip_tags(action)
+        log['info'] = strip_tags(info)
+        log['level'] = strip_tags(level)
+        log['created'] = int(time.time())
+        if appdb is not None:
+            appdb.logs.insert(log, safe=True)
