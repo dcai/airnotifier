@@ -97,7 +97,7 @@ class GCMClient(PushService):
         appdb = kwargs.get('appdb', None)
         return self.send(kwargs['token'], data=data, collapse_key=collapse_key, ttl=ttl, appdb=appdb)
 
-    def send(self, regids, data=None, collapse_key=None, ttl=None, retries=5, appdb=appdb):
+    def send(self, regids, data=None, collapse_key=None, ttl=None, retries=5, appdb=None):
         '''
         Send message to google gcm endpoint
         :param regids: list
@@ -105,6 +105,7 @@ class GCMClient(PushService):
         :param collapse_key: string
         :param ttl: int
         :param retries: int
+        :param appdb: Database
         '''
         if not regids:
             raise GCMException("Registration IDs cannot be empty")
