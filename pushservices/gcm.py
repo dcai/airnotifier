@@ -32,7 +32,7 @@ import requests
 import time
 from util import strip_tags
 
-GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send'
+GCM_ENDPOINT = 'https://fcm.googleapis.com/fcm/send'
 
 class GCMException(Exception): pass
 
