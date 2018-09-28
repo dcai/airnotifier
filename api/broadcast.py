@@ -56,11 +56,6 @@ class BroadcastHandler(APIBaseHandler):
         else:
             alert = data['alert']
         # iOS
-        data.setdefault('apns', {})
-        data['apns'].setdefault('badge', data.get('badge', None))
-        data['apns'].setdefault('sound', data.get('sound', None))
-        data['apns'].setdefault('content', data.get('content', None))
-        data['apns'].setdefault('custom', data.get('custom', None))
         sound = data.get('sound', None)
         badge = data.get('badge', None)
         if type(data['alert']) is not dict:
@@ -77,7 +72,7 @@ class BroadcastHandler(APIBaseHandler):
                 mpns=data.get('mpns', {}),
                 wns=data.get('wns', {}),
                 sms=data.get('sms', {}),
-                apns=data['apns'],
+                apns=data.get('apns', {}),
                 )
         delta_t = time.time() - self._time_start
         logging.info("Broadcast took time: %sms" % (delta_t * 1000))
