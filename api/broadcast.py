@@ -37,6 +37,7 @@ from routes import route
 from api import APIBaseHandler
 import time
 import logging
+import random
 
 @route(r"/api/v2/broadcast[\/]?")
 class BroadcastHandler(APIBaseHandler):
@@ -46,27 +47,42 @@ class BroadcastHandler(APIBaseHandler):
             return
         # if request body is json entity
         data = self.json_decode(self.request.body)
-        # the cannel to be boradcasted
+        # the cannel to be broadcasted
         channel = data.get('channel', 'default')
         # device type
         device = data.get('device', None)
         # iOS and Android shared params
-        alert = ''.join(data.get('alert', '').splitlines())
+        if type(data['alert']) is not dict:
+            alert = ''.join(data.get('alert', '').splitlines())
+        else:
+            alert = data['alert']
         # iOS
+        data.setdefault('apns', {})
+        data['apns'].setdefault('badge', data.get('badge', None))
+        data['apns'].setdefault('sound', data.get('sound', None))
+        data['apns'].setdefault('content', data.get('content', None))
+        data['apns'].setdefault('custom', data.get('custom', None))
         sound = data.get('sound', None)
         badge = data.get('badge', None)
-        self.add_to_log('%s broadcast' % self.appname, alert, "important")
+        random.seed()
+        notId = random.getrandbits(12)
+        data.setdefault('gcm', {})
+        data['gcm'].setdefault('data', {"notId": notId})
+        if type(data['alert']) is not dict:
+            self.add_to_log('%s broadcast' % self.appname, alert, "important")
+        else:
+            self.add_to_log('%s broadcast' % self.appname, alert["title"] + ": " +  alert["body"], "important")
         self.application.send_broadcast(self.appname, self.db,
                 channel=channel,
                 alert=alert,
                 sound=sound,
                 badge=badge,
                 device=device,
-                gcm=data.get('gcm', {}),
+                gcm=data['gcm'],
                 mpns=data.get('mpns', {}),
                 wns=data.get('wns', {}),
                 sms=data.get('sms', {}),
-                apns=data.get('apns', {}),
+                apns=data['apns'],
                 )
         delta_t = time.time() - self._time_start
         logging.info("Broadcast took time: %sms" % (delta_t * 1000))
