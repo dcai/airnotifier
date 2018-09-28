@@ -64,10 +64,12 @@ class BroadcastHandler(APIBaseHandler):
         data['apns'].setdefault('custom', data.get('custom', None))
         sound = data.get('sound', None)
         badge = data.get('badge', None)
+        # generate unique ID to use as gcm notId if no notId provided
         random.seed()
         notId = random.getrandbits(12)
         data.setdefault('gcm', {})
-        data['gcm'].setdefault('data', {"notId": notId})
+        data['gcm'].setdefault('data', {})
+        data['gcm']['data'].setdefault('notId', notId)
         if type(data['alert']) is not dict:
             self.add_to_log('%s broadcast' % self.appname, alert, "important")
         else:
