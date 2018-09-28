@@ -47,7 +47,7 @@ class BroadcastHandler(APIBaseHandler):
             return
         # if request body is json entity
         data = self.json_decode(self.request.body)
-        # the cannel to be broadcasted
+        # the channel to be broadcasted
         channel = data.get('channel', 'default')
         # device type
         device = data.get('device', None)

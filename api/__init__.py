@@ -567,7 +567,7 @@ class BroadcastV1Handler(APIBaseHandler):
         if not self.can('send_broadcast'):
             self.send_response(FORBIDDEN, dict(error="No permission to send broadcast"))
             return
-        # the cannel to be boradcasted
+        # the channel to be broadcasted
         channel = self.get_argument('channel', 'default')
         # iOS and Android shared params
         alert = ''.join(self.get_argument('alert').splitlines())
