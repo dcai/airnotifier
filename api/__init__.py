@@ -76,7 +76,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
         self.appname = None
         if self.request.headers.has_key('X-An-App-Name'):
             """ App name """
-            self.appname = self.request.headers['X-An-App-Name'];
+            self.appname = self.request.headers['X-An-App-Name']
 
         if not self.appname:
             self.appname = filter_alphabetanum(self.get_argument('appname'))

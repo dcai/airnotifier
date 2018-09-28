@@ -37,7 +37,6 @@ from routes import route
 from api import APIBaseHandler
 import time
 import logging
-import random
 
 @route(r"/api/v2/broadcast[\/]?")
 class BroadcastHandler(APIBaseHandler):
@@ -64,12 +63,6 @@ class BroadcastHandler(APIBaseHandler):
         data['apns'].setdefault('custom', data.get('custom', None))
         sound = data.get('sound', None)
         badge = data.get('badge', None)
-        # generate unique ID to use as gcm notId if no notId provided
-        random.seed()
-        notId = random.getrandbits(12)
-        data.setdefault('gcm', {})
-        data['gcm'].setdefault('data', {})
-        data['gcm']['data'].setdefault('notId', notId)
         if type(data['alert']) is not dict:
             self.add_to_log('%s broadcast' % self.appname, alert, "important")
         else:
@@ -80,7 +73,7 @@ class BroadcastHandler(APIBaseHandler):
                 sound=sound,
                 badge=badge,
                 device=device,
-                gcm=data['gcm'],
+                gcm=data.get('gcm', {}),
                 mpns=data.get('mpns', {}),
                 wns=data.get('wns', {}),
                 sms=data.get('sms', {}),
