@@ -36,6 +36,7 @@ import tornado.options
 
 from pushservices.apns import *
 from pushservices.gcm import GCMClient
+from pushservices.fcm import FCMClient
 from pushservices.wns import WNSClient
 from pushservices.mpns import MPNSClient
 from pushservices.clickatell import *
@@ -212,6 +213,7 @@ class AirNotifierApp(tornado.web.Application):
 
 def init_messaging_agents():
     services = {
+            'fcm': {},
             'gcm': {},
             'wns': {},
             'apns': {},
@@ -253,6 +255,17 @@ def init_messaging_agents():
                 _logger.error(ex)
                 continue
             services['gcm'][app['shortname']].append(http)
+
+        ''' FCMClient setup '''
+        services['fcm'][app['shortname']] = []
+        if 'fcm-project-id' in app and 'fcm-jsonkey' in app and 'shortname' in app:
+            try:
+                fcminstance = FCMClient(app['fcm-project-id'], app['fcm-jsonkey'], app['shortname'], 0)
+            except Exception as ex:
+                _logger.error(ex)
+                continue
+            services['fcm'][app['shortname']].append(fcminstance)
+
         ''' WNS setup '''
         services['wns'][app['shortname']] = []
         if 'wnsclientid' in app and 'wnsclientsecret' in app and 'shortname' in app:
@@ -271,6 +284,7 @@ def init_messaging_agents():
             _logger.error(ex)
             continue
         services['mpns'][app['shortname']].append(mpns)
+
         ''' clickatell '''
         services['sms'][app['shortname']] = []
         try:

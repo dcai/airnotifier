@@ -128,6 +128,14 @@ class AppHandler(WebBaseHandler):
             else:
                 app['blockediplist'] = ''
 
+            if self.get_argument('fcm-project-id', None):
+                if app.get('fcm-project-id', '') != self.get_argument('fcm-project-id').strip():
+                    app['fcm-project-id'] = self.get_argument('fcm-project-id').strip()
+
+            if self.get_argument('fcm-jsonkey', None):
+                if app.get('fcm-jsonkey', '') != self.get_argument('fcm-jsonkey').strip():
+                    app['fcm-jsonkey'] = self.get_argument('fcm-jsonkey').strip()
+
             updategcm = False
             if self.get_argument('gcmprojectnumber', None):
                 if app.get('gcmprojectnumber', '') != self.get_argument('gcmprojectnumber').strip():

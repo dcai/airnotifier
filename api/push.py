@@ -38,7 +38,7 @@ import random
 import time
 from importlib import import_module
 from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, \
-    DEVICE_TYPE_MPNS, DEVICE_TYPE_SMS
+    DEVICE_TYPE_MPNS, DEVICE_TYPE_SMS, DEVICE_TYPE_FCM
 from pushservices.gcm import GCMUpdateRegIDsException, \
     GCMInvalidRegistrationException, GCMNotRegisteredException, GCMException
 import logging
@@ -151,6 +151,21 @@ class PushHandler(APIBaseHandler):
                 data.setdefault('mpns', {})
                 mpns = self.mpnsconnections[self.app['shortname']][0]
                 mpns.process(token=data['token'], alert=data['alert'], extra=extra, mpns=data['mpns'])
+                self.send_response(ACCEPTED)
+            elif device == DEVICE_TYPE_FCM:
+                data.setdefault('fcm', {})
+                try:
+                    fcm = self.fcmconnections[self.app['shortname']][0]
+                    response = fcm.process(token=[self.token], alert=data['alert'], extra=data['extra'], fcm=data['fcm'])
+                    print response
+                except GCMUpdateRegIDsException as ex:
+                    self.send_response(ACCEPTED)
+                except GCMInvalidRegistrationException as ex:
+                    self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
+                except GCMNotRegisteredException as ex:
+                    self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
+                except GCMException as ex:
+                    self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
                 self.send_response(ACCEPTED)
             else:
                 self.send_response(BAD_REQUEST, dict(error='Invalid device type'))
