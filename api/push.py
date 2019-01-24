@@ -136,9 +136,10 @@ class PushHandler(APIBaseHandler):
                 )
                 self.send_response(ACCEPTED)
             elif device == DEVICE_TYPE_IOS:
-                # Use sliptlines trick to remove line ending (only for iOs).
-                if type(data["alert"]) is not dict:
-                    alert = "".join(data["alert"].splitlines())
+
+                # Use splitlines trick to remove line ending (only for iOS).
+                if type(data['alert']) is not dict:
+                    alert = ''.join(data['alert'].splitlines())
                 else:
                     alert = data["alert"]
                 data.setdefault("apns", {})
