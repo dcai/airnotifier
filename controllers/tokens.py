@@ -30,31 +30,38 @@ import tornado.web
 
 from controllers.base import *
 
+
 @route(r"/applications/([^/]+)/tokens")
 class AppTokensHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self, appname):
         self.appname = appname
-        app = self.masterdb.applications.find_one({'shortname':appname})
-        if not app: raise tornado.web.HTTPError(500)
-        page = self.get_argument('page', None)
+        app = self.masterdb.applications.find_one({"shortname": appname})
+        if not app:
+            raise tornado.web.HTTPError(500)
+        page = self.get_argument("page", None)
         perpage = 50
 
-        token_id = self.get_argument('delete', None)
+        token_id = self.get_argument("delete", None)
         if token_id:
-            self.db.tokens.remove({'_id':ObjectId(token_id)})
+            self.db.tokens.remove({"_id": ObjectId(token_id)})
             self.redirect("/applications/%s/tokens" % appname)
             return
         if page:
-            tokens = self.db.tokens.find().sort('created', DESCENDING).skip(int(page) * perpage).limit(perpage)
+            tokens = (
+                self.db.tokens.find()
+                .sort("created", DESCENDING)
+                .skip(int(page) * perpage)
+                .limit(perpage)
+            )
         else:
             page = 0
-            tokens = self.db.tokens.find().sort('created', DESCENDING).limit(perpage)
+            tokens = self.db.tokens.find().sort("created", DESCENDING).limit(perpage)
         self.render("app_tokens.html", app=app, tokens=tokens, page=int(page))
 
     @tornado.web.authenticated
     def post(self, appname):
         self.appname = appname
-        app = self.masterdb.applications.find_one({'shortname':appname})
-        if not app: raise tornado.web.HTTPError(500)
-
+        app = self.masterdb.applications.find_one({"shortname": appname})
+        if not app:
+            raise tornado.web.HTTPError(500)

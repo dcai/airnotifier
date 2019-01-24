@@ -33,6 +33,7 @@ except:
 
 import calendar
 import datetime
+
 try:
     from htmlentitydefs import name2codepoint
 except:
@@ -53,20 +54,22 @@ from bson.timestamp import Timestamp
 
 try:
     import uuid
+
     _use_uuid = True
 except ImportError:
     _use_uuid = False
 
+
 class HTMLTextExtractor(HTMLParser):
     def __init__(self):
         HTMLParser.__init__(self)
-        self.result = [ ]
+        self.result = []
 
     def handle_data(self, d):
         self.result.append(d)
 
     def handle_charref(self, number):
-        codepoint = int(number[1:], 16) if number[0] in (u'x', u'X') else int(number)
+        codepoint = int(number[1:], 16) if number[0] in (u"x", u"X") else int(number)
         self.result.append(unichr(codepoint))
 
     def handle_entityref(self, name):
@@ -74,12 +77,14 @@ class HTMLTextExtractor(HTMLParser):
         self.result.append(unichr(codepoint))
 
     def get_text(self):
-        return u''.join(self.result)
+        return u"".join(self.result)
+
 
 def strip_tags(html):
     s = HTMLTextExtractor()
     s.feed(html)
     return s.get_text()
+
 
 def json_default(obj):
     """ adapted from bson.json_util.default """
@@ -92,8 +97,7 @@ def json_default(obj):
         # TODO share this code w/ bson.py?
         if obj.utcoffset() is not None:
             obj = obj - obj.utcoffset()
-        millis = int(calendar.timegm(obj.timetuple()) * 1000 +
-                     obj.microsecond / 1000)
+        millis = int(calendar.timegm(obj.timetuple()) * 1000 + obj.microsecond / 1000)
         return {"$date": millis}
     if isinstance(obj, RE_TYPE):
         flags = ""
@@ -101,8 +105,7 @@ def json_default(obj):
             flags += "i"
         if obj.flags & re.MULTILINE:
             flags += "m"
-        return {"$regex": obj.pattern,
-                "$options": flags}
+        return {"$regex": obj.pattern, "$options": flags}
     if isinstance(obj, MinKey):
         return {"$minKey": 1}
     if isinstance(obj, MaxKey):
@@ -113,6 +116,7 @@ def json_default(obj):
         return {"$uuid": obj.hex}
     raise TypeError("%r is not JSON serializable" % obj)
 
+
 def filter_alphabetanum(string):
     # absolutely alphabeta and number only
     string = unicodedata.normalize("NFKD", string).encode("ascii", "ignore")
@@ -120,19 +124,23 @@ def filter_alphabetanum(string):
     string = "".join(string.lower().strip().split())
     return string
 
+
 def error_log(log):
     sys.stderr.write(log)
+
 
 def get_filepath(filename):
     return os.path.join(os.path.abspath(options.pemdir), filename)
 
+
 def save_file(req):
-    filename = sha1(req['body']).hexdigest()
+    filename = sha1(req["body"]).hexdigest()
     filepath = get_filepath(filename)
     thefile = open(filepath, "w")
-    thefile.write(req['body'])
+    thefile.write(req["body"])
     thefile.close()
     return filename
+
 
 def file_exists(filename):
     if not filename:
@@ -143,6 +151,7 @@ def file_exists(filename):
     if fullpath and os.path.exists(fullpath):
         return True
     return False
+
 
 def rm_file(filename):
     if not filename:

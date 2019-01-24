@@ -33,12 +33,16 @@ from tornado.options import options
 import os.path
 from tornado.httpclient import AsyncHTTPClient
 from util import *
+
 try:
     from urllib import quote_plus
 except:
     from urllib.parse import quote_plus
 
-ENDPOINT='http://api.clickatell.com/http/sendmsg?user=%s&password=%s&api_id=%s&to=%s&text=%s'
+ENDPOINT = (
+    "http://api.clickatell.com/http/sendmsg?user=%s&password=%s&api_id=%s&to=%s&text=%s"
+)
+
 
 class ClickatellClient(PushService):
     def __init__(self, masterdb, app, instanceid=0):
@@ -46,12 +50,18 @@ class ClickatellClient(PushService):
         self.masterdb = masterdb
 
     def handle_response(self, response):
-        #logging.info(response.body)
+        # logging.info(response.body)
         pass
 
     def process(self, **kwargs):
-        to = quote_plus(str(kwargs['token']))
-        alert = quote_plus(str(kwargs['alert']))
-        uri = ENDPOINT % (self.app['clickatellusername'], self.app['clickatellpassword'], self.app['clickatellappid'], to, alert)
+        to = quote_plus(str(kwargs["token"]))
+        alert = quote_plus(str(kwargs["alert"]))
+        uri = ENDPOINT % (
+            self.app["clickatellusername"],
+            self.app["clickatellpassword"],
+            self.app["clickatellappid"],
+            to,
+            alert,
+        )
         http = AsyncHTTPClient()
         http.fetch(uri, self.handle_response, method="GET")

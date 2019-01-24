@@ -33,6 +33,7 @@ class route(object):
 
     my_routes = route.get_routes()
     """
+
     _routes = []
 
     def __init__(self, uri):
@@ -48,9 +49,8 @@ class route(object):
         return self._routes
 
 
-
 class RouteLoader(object):
-    ''' taken from https://github.com/trendrr/whirlwind/blob/master/whirlwind/core/routes.py '''
+    """ taken from https://github.com/trendrr/whirlwind/blob/master/whirlwind/core/routes.py """
 
     @staticmethod
     def load(package_name, include_routes_file=True):
@@ -65,7 +65,9 @@ class RouteLoader(object):
 
         prefix = controllers_module.__name__ + "."
 
-        for importer, modname, ispkg in pkgutil.iter_modules(controllers_module.__path__, prefix):
+        for importer, modname, ispkg in pkgutil.iter_modules(
+            controllers_module.__path__, prefix
+        ):
             module = __import__(modname)
 
         # grab the routes defined via the route decorator

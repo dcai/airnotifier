@@ -71,6 +71,35 @@
 </fieldset>
 </form>
 
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+<fieldset>
+    <legend>{{ _('Firebase Cloud Messaging settings') }}</legend>
+
+    <div class="control-group">
+        <label class="control-label" for="form-element-fcm"> {{ _('Project ID') }}</label>
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="form-element-fcm" name="fcm-project-id" value="{{app.get('fcm-project-id', '')}}">
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="form-element-jsonkey">{{ _('JSON key') }}</label>
+        <div class="controls">
+            <textarea rows="10" class="input-xlarge" id="form-element-jsonkey" name="fcm-jsonkey">{{ app.get('fcm-jsonkey', '') }}</textarea>
+            <p class="help-block">
+            <a href="https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk">Get json key</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+    </div>
+</fieldset>
+</form>
+
+
+
 <form class="form-horizontal" id="form-ios-settings" method="post">
 <fieldset>
     <legend>{{ _('Apple push notification settings') }}</legend>

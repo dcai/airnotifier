@@ -27,15 +27,14 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 try:
-    from httplib import BAD_REQUEST, FORBIDDEN, NOT_FOUND, \
-        INTERNAL_SERVER_ERROR, OK
+    from httplib import BAD_REQUEST, FORBIDDEN, NOT_FOUND, INTERNAL_SERVER_ERROR, OK
 except:
-    from http.client import BAD_REQUEST, FORBIDDEN, NOT_FOUND, \
-        INTERNAL_SERVER_ERROR, OK
+    from http.client import BAD_REQUEST, FORBIDDEN, NOT_FOUND, INTERNAL_SERVER_ERROR, OK
 from routes import route
 from api import APIBaseHandler, EntityBuilder
 from constants import DEVICE_TYPE_IOS
 import binascii
+
 
 @route(r"/api/v2/tokens/([^/]+)")
 class TokenV2HandlerGet(APIBaseHandler):
@@ -48,13 +47,14 @@ class TokenV2HandlerGet(APIBaseHandler):
             return
 
         try:
-            result = self.db.tokens.remove({'token':token}, safe=True)
-            if result['n'] == 0:
-                self.send_response(NOT_FOUND, dict(status='Token does\'t exist'))
+            result = self.db.tokens.remove({"token": token}, safe=True)
+            if result["n"] == 0:
+                self.send_response(NOT_FOUND, dict(status="Token does't exist"))
             else:
-                self.send_response(OK, dict(status='deleted'))
+                self.send_response(OK, dict(status="deleted"))
         except Exception as ex:
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+
 
 @route(r"/api/v2/tokens[\/]?")
 class TokenV2Handler(APIBaseHandler):
@@ -66,30 +66,35 @@ class TokenV2Handler(APIBaseHandler):
             return
         data = self.json_decode(self.request.body)
 
-        device = data.get('device', DEVICE_TYPE_IOS).lower()
-        channel = data.get('channel', 'default')
-        devicetoken = data.get('token', '')
+        device = data.get("device", DEVICE_TYPE_IOS).lower()
+        channel = data.get("channel", "default")
+        devicetoken = data.get("token", "")
 
         if device == DEVICE_TYPE_IOS:
             if len(devicetoken) != 64:
-                self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+                self.send_response(BAD_REQUEST, dict(error="Invalid token"))
                 return
             try:
                 binascii.unhexlify(devicetoken)
             except Exception as ex:
-                self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+                self.send_response(BAD_REQUEST, dict(error="Invalid token"))
 
         token = EntityBuilder.build_token(devicetoken, device, self.appname, channel)
         try:
-            result = self.db.tokens.update({'device': device, 'token': devicetoken, 'appname': self.appname}, token, safe=True, upsert=True)
+            result = self.db.tokens.update(
+                {"device": device, "token": devicetoken, "appname": self.appname},
+                token,
+                safe=True,
+                upsert=True,
+            )
             # result
             # {u'updatedExisting': True, u'connectionId': 47, u'ok': 1.0, u'err': None, u'n': 1}
-            if result['updatedExisting']:
-                self.add_to_log('Token exists', devicetoken)
+            if result["updatedExisting"]:
+                self.add_to_log("Token exists", devicetoken)
                 self.send_response(OK)
             else:
                 self.send_response(OK)
-                self.add_to_log('Add token', devicetoken)
+                self.add_to_log("Add token", devicetoken)
         except Exception as ex:
-            self.add_to_log('Cannot add token', devicetoken, "warning")
+            self.add_to_log("Cannot add token", devicetoken, "warning")
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
