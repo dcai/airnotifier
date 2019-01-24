@@ -46,16 +46,22 @@ class BroadcastHandler(APIBaseHandler):
             return
         # if request body is json entity
         data = self.json_decode(self.request.body)
-        # the cannel to be boradcasted
+        # the channel to be broadcasted
         channel = data.get('channel', 'default')
         # device type
         device = data.get('device', None)
         # iOS and Android shared params
-        alert = ''.join(data.get('alert', '').splitlines())
+        if type(data['alert']) is not dict:
+            alert = ''.join(data.get('alert', '').splitlines())
+        else:
+            alert = data['alert']
         # iOS
         sound = data.get('sound', None)
         badge = data.get('badge', None)
-        self.add_to_log('%s broadcast' % self.appname, alert, "important")
+        if type(data['alert']) is not dict:
+            self.add_to_log('%s broadcast' % self.appname, alert, "important")
+        else:
+            self.add_to_log('%s broadcast' % self.appname, alert["title"] + ": " +  alert["body"], "important")
         self.application.send_broadcast(self.appname, self.db,
                 channel=channel,
                 alert=alert,
