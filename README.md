@@ -43,6 +43,54 @@ Content-Type: application/json
 }
 ```
 
+### Sending notification via FCM
+```
+POST /api/v2/push HTTP/1.1
+X-AN-APP-NAME: moodlemobileapp
+X-AN-APP-KEY: b2b56dbb
+Content-Type: application/json
+{
+    "device": "fcm",
+    "token": "FE66489F304DC75B8D6E8200DFF8A456E8DAEACEC428B427E9518741C92C6660",
+    "alert": {
+        "title": "hello",
+        "body": "Hello from AirNotifier"
+    },
+    "fcm": {
+        "data": {
+            "story_id": "xxxxx"
+        },
+        "android": {
+            "collapse_key": "KKKKKKKKKK",
+            "priority": "NORMAL",
+            "ttl": "100",
+            "restricted_package_name": "package name",
+            "data": {
+                "android-data-key": "data-value",
+            },
+            "notification": {
+                "title": "android notification title",
+                "body": "android notification body",
+                "icon": "icon",
+                "color": "black",
+                "sound": "ring",
+                "tag": "app",
+                "click_action": "action name",
+                "body_loc_key": "loc key",
+                "body_loc_args": [
+                    "abc"
+                ],
+                "title_loc_key": "title key",
+                "title_loc_args": [
+                    "title"
+                ],
+                "channel_id": "new channel"
+            }
+        }
+    }
+}
+```
+
 ### SMS
 ```
 POST /api/v2/push HTTP/1.1
@@ -98,7 +146,7 @@ Please read [Installation guide](https://github.com/airnotifier/airnotifier/wiki
 
 - [Python 2.7.9+](http://www.python.org)
 - [MongoDB 2.0+](http://www.mongodb.org/)
-- [Tornado 3.0+](http://tornadoweb.org)
+- [Tornado 4.5+](http://tornadoweb.org)
 
 ## Copyright
 Copyright (c) Dongsheng Cai and individual contributors
