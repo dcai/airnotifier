@@ -27,10 +27,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 try:
-    from httplib import  FORBIDDEN, OK
+    from httplib import FORBIDDEN, OK
 except:
-    from http.client import  FORBIDDEN, OK
+    from http.client import FORBIDDEN, OK
 from importlib import import_module
+
 try:
     from hashlib import md5
 except:
@@ -40,6 +41,8 @@ import uuid
 
 from api import APIBaseHandler
 from routes import route
+
+
 @route(r"/api/v2/accesskeys[\/]?")
 class AccessKeysV2Handler(APIBaseHandler):
     def initialize(self):
@@ -52,28 +55,28 @@ class AccessKeysV2Handler(APIBaseHandler):
         try:
             data = self.json_decode(self.request.body)
 
-            #if not self.can('create_accesskey'):
-                #self.send_response(FORBIDDEN, dict(error="No permission to create accesskey"))
-                #return
+            # if not self.can('create_accesskey'):
+            # self.send_response(FORBIDDEN, dict(error="No permission to create accesskey"))
+            # return
 
-            processor = data.get('processor', None)
+            processor = data.get("processor", None)
             if not processor:
-                data['permission'] = 0
+                data["permission"] = 0
             else:
                 try:
-                    proc = import_module('hooks.' + processor)
+                    proc = import_module("hooks." + processor)
                     data = proc.process_accesskey_payload(data)
                 except Exception as ex:
                     self.send_response(FORBIDDEN, dict(error=str(ex)))
                     return
 
             key = {}
-            key['contact'] = data.get('contact', '')
-            key['description'] = data.get('description', '')
-            key['created'] = int(time.time())
-            key['permission'] = data['permission']
-            key['key'] = md5(str(uuid.uuid4())).hexdigest()
+            key["contact"] = data.get("contact", "")
+            key["description"] = data.get("description", "")
+            key["created"] = int(time.time())
+            key["permission"] = data["permission"]
+            key["key"] = md5(str(uuid.uuid4())).hexdigest()
             self.db.keys.insert(key)
-            self.send_response(OK, dict(accesskey=key['key']))
+            self.send_response(OK, dict(accesskey=key["key"]))
         except Exception as ex:
             self.send_response(FORBIDDEN, dict(error=str(ex)))

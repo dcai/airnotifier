@@ -30,24 +30,31 @@ import tornado.web
 
 from controllers.base import *
 
+
 @route(r"/applications/([^/]+)/broadcast")
 class AppBroadcastHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self, appname):
         self.appname = appname
-        app = self.masterdb.applications.find_one({'shortname':appname})
-        if not app: raise tornado.web.HTTPError(500)
+        app = self.masterdb.applications.find_one({"shortname": appname})
+        if not app:
+            raise tornado.web.HTTPError(500)
         self.render("app_broadcast.html", app=app, sent=False)
+
     @tornado.web.authenticated
     def post(self, appname):
         self.appname = appname
-        app = self.masterdb.applications.find_one({'shortname':appname})
-        if not app: raise tornado.web.HTTPError(500)
-        alert = self.get_argument('notification').strip()
-        sound = 'default'
-        channel = 'default'
-        self.application.send_broadcast(self.appname, self.db, channel=channel, alert=alert, sound=sound)
+        app = self.masterdb.applications.find_one({"shortname": appname})
+        if not app:
+            raise tornado.web.HTTPError(500)
+        alert = self.get_argument("notification").strip()
+        sound = "default"
+        channel = "default"
+        self.application.send_broadcast(
+            self.appname, self.db, channel=channel, alert=alert, sound=sound
+        )
         self.render("app_broadcast.html", app=app, sent=True)
+
 
 @route(r"/applications/([^/]+)/broadcast/status")
 class AppBroadcastStatusHandler(WebBaseHandler):
