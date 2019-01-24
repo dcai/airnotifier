@@ -29,7 +29,7 @@
 import logging
 import tornado
 import os
-from pymongo import *
+import pymongo
 from bson import *
 from constants import *
 from tornado.options import define, options
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     tornado.options.parse_config_file("%s/airnotifier.conf" % curpath)
     tornado.options.parse_command_line()
-    mongodb = Connection(options.mongohost, options.mongoport)
+    mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]
     # Authenticate if credentials are supplied.
     if options.dbuser is not None and options.dbpass is not None:
@@ -84,7 +84,7 @@ if __name__ == "__main__":
                 app["gcmprojectnumber"] = ""
             if not "gcmapikey" in app:
                 app["gcmapikey"] = ""
-            masterdb.applications.update({"_id": appid}, app, safe=True, upsert=True)
+            masterdb.applications.update({"_id": appid}, app, upsert=True)
 
             ## Adding device to token collections
             db = mongodb[appprefix + appname]
@@ -93,12 +93,10 @@ if __name__ == "__main__":
                 tokenid = ObjectId(token["_id"])
                 if not "device" in token:
                     token["device"] = DEVICE_TYPE_IOS
-                    result = db["tokens"].update(
-                        {"_id": tokenid}, token, safe=True, upsert=True
-                    )
+                    result = db["tokens"].update({"_id": tokenid}, token, upsert=True)
 
         r = masterdb["options"].update(
-            {"name": "version"}, {"$set": {"value": 20140315}}, safe=True, upsert=True
+            {"name": "version"}, {"$set": {"value": 20140315}}, upsert=True
         )
         version_object = masterdb["options"].find_one({"name": "version"})
 
@@ -118,9 +116,9 @@ if __name__ == "__main__":
                 app["wnstokentype"] = ""
             if not "wnstokenexpiry" in app:
                 app["wnstokenexpiry"] = ""
-            masterdb.applications.update({"_id": appid}, app, safe=True, upsert=True)
+            masterdb.applications.update({"_id": appid}, app, upsert=True)
         masterdb["options"].update(
-            {"name": "version"}, {"$set": {"value": 20140720}}, safe=True, upsert=True
+            {"name": "version"}, {"$set": {"value": 20140720}}, upsert=True
         )
 
     if version < 20140814:
@@ -139,9 +137,9 @@ if __name__ == "__main__":
                 app["mpnscertificatefile"] = os.path.basename(
                     app.get("mpnscertificatefile")
                 )
-            masterdb.applications.update({"_id": appid}, app, safe=True, upsert=True)
+            masterdb.applications.update({"_id": appid}, app, upsert=True)
         masterdb["options"].update(
-            {"name": "version"}, {"$set": {"value": 20140814}}, safe=True, upsert=True
+            {"name": "version"}, {"$set": {"value": 20140814}}, upsert=True
         )
 
     if version < 20140820:
@@ -156,9 +154,9 @@ if __name__ == "__main__":
                 app["clickatellpassword"] = ""
             if not "clickatellappid" in app:
                 app["clickatellappid"] = ""
-            masterdb.applications.update({"_id": appid}, app, safe=True, upsert=True)
+            masterdb.applications.update({"_id": appid}, app, upsert=True)
         masterdb["options"].update(
-            {"name": "version"}, {"$set": {"value": 20140820}}, safe=True, upsert=True
+            {"name": "version"}, {"$set": {"value": 20140820}}, upsert=True
         )
 
     if version < 20151101:
@@ -173,12 +171,12 @@ if __name__ == "__main__":
             db["logs"].create_index(indexes)
 
         masterdb["options"].update(
-            {"name": "version"}, {"$set": {"value": 20151101}}, safe=True, upsert=True
+            {"name": "version"}, {"$set": {"value": 20151101}}, upsert=True
         )
 
     if version < 20190124:
         masterdb["options"].update(
-            {"name": "version"}, {"$set": {"value": 20190124}}, safe=True, upsert=True
+            {"name": "version"}, {"$set": {"value": 20190124}}, upsert=True
         )
 
     version_object = masterdb["options"].find_one({"name": "version"})

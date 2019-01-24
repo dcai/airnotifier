@@ -239,7 +239,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
         log["info"] = strip_tags(info)
         log["level"] = strip_tags(level)
         log["created"] = int(time.time())
-        self.db.logs.insert(log, safe=True)
+        self.db.logs.insert(log)
 
     def json_decode(self, text):
         try:
@@ -273,7 +273,7 @@ class TokenV1Handler(APIBaseHandler):
             return
 
         try:
-            result = self.db.tokens.remove({"token": token}, safe=True)
+            result = self.db.tokens.remove({"token": token})
             if result["n"] == 0:
                 self.send_response(NOT_FOUND, dict(status="Token does't exist"))
             else:
@@ -305,7 +305,6 @@ class TokenV1Handler(APIBaseHandler):
             result = self.db.tokens.update(
                 {"device": device, "token": devicetoken, "appname": self.appname},
                 token,
-                safe=True,
                 upsert=True,
             )
             # result
@@ -358,7 +357,7 @@ class NotificationHandler(APIBaseHandler):
                 return
             try:
                 # TODO check permission to insert
-                self.db.tokens.insert(token, safe=True)
+                self.db.tokens.insert(token)
             except Exception as ex:
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
         knownparams = ["alert", "sound", "badge", "token", "device", "collapse_key"]
@@ -443,7 +442,7 @@ class UsersHandler(APIBaseHandler):
             if cursor:
                 self.send_response(BAD_REQUEST, dict(error="Username already exists"))
             else:
-                userid = self.db.users.insert(user, safe=True)
+                userid = self.db.users.insert(user)
                 self.add_to_log("Add user", username)
                 self.send_response(OK, {"userid": str(userid)})
         except Exception as ex:
@@ -516,7 +515,7 @@ class ObjectHandler(APIBaseHandler):
         """
         self.classname = classname
         self.objectid = ObjectId(objectId)
-        result = self.db[self.collection].remove({"_id": self.objectid}, safe=True)
+        result = self.db[self.collection].remove({"_id": self.objectid})
         self.send_response(OK, dict(result=result))
 
     def put(self, classname, objectId):
@@ -525,9 +524,7 @@ class ObjectHandler(APIBaseHandler):
         self.classname = classname
         data = self.json_decode(self.request.body)
         self.objectid = ObjectId(objectId)
-        result = self.db[self.collection].update(
-            {"_id": self.objectid}, data, safe=True
-        )
+        result = self.db[self.collection].update({"_id": self.objectid}, data)
 
     @property
     def collection(self):
@@ -550,7 +547,7 @@ class ClassHandler(APIBaseHandler):
             col["collection"] = self.classname
             col["created"] = int(time.time())
             self.add_to_log("Register collection", self.classname)
-            self.db.objects.insert(col, safe=True)
+            self.db.objects.insert(col)
 
         collectionname = "%s%s" % (options.collectionprefix, self.classname)
         return collectionname
@@ -585,7 +582,7 @@ class ClassHandler(APIBaseHandler):
             self.send_response(BAD_REQUEST, ex)
 
         self.add_to_log("Add object to %s" % self.classname, data)
-        objectId = self.db[self.collection].insert(data, safe=True)
+        objectId = self.db[self.collection].insert(data)
         self.send_response(OK, dict(objectId=objectId))
 
 

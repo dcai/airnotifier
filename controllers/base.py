@@ -149,7 +149,7 @@ class AppDeletionHandler(WebBaseHandler):
         app = self.masterdb.applications.find_one({"shortname": appname})
         if not app:
             raise tornado.web.HTTPError(500)
-        self.masterdb.applications.remove({"shortname": appname}, safe=True)
+        self.masterdb.applications.remove({"shortname": appname})
         self.mongodbconnection.drop_database(appname)
         self.redirect(r"/applications")
 
@@ -285,7 +285,7 @@ class AdminHandler(WebBaseHandler):
             user["password"] = passwordhash
             user["level"] = "manager"
             result = self.masterdb.managers.update(
-                {"username": user["username"]}, user, safe=True, upsert=True
+                {"username": user["username"]}, user, upsert=True
             )
             managers = self.masterdb.managers.find()
             if result["updatedExisting"]:

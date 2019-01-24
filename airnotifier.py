@@ -28,7 +28,7 @@
 
 import logging.config
 
-from pymongo.connection import Connection
+import pymongo
 from tornado.options import define
 import tornado.httpserver
 import tornado.ioloop
@@ -218,12 +218,11 @@ class AirNotifierApp(tornado.web.Application):
         mongodb = None
         while not mongodb:
             try:
-                mongodb = Connection(options.mongohost, options.mongoport)
+                mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
             except:
                 error_log("Cannot not connect to MongoDB")
 
         self.mongodb = mongodb
-
         self.masterdb = mongodb[options.masterdb]
         # Authenticate if credentials are supplied.
         if options.dbuser is not None and options.dbpass is not None:
@@ -260,7 +259,7 @@ def init_messaging_agents():
     mongodb = None
     while not mongodb:
         try:
-            mongodb = Connection(options.mongohost, options.mongoport)
+            mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
         except Exception as ex:
             _logger.error(ex)
     masterdb = mongodb[options.masterdb]

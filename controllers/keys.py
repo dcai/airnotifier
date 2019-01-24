@@ -90,5 +90,5 @@ class AppAccessKeysHandler(WebBaseHandler):
             self.redirect("/applications/%s/keys" % appname)
         else:
             key["key"] = self.get_argument("accesskey").strip()
-            self.db.keys.update({"key": key["key"]}, key, safe=True)
+            self.db.keys.update({"key": key["key"]}, key)
             self.redirect("/applications/%s/keys" % appname)
