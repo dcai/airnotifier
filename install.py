@@ -28,7 +28,7 @@
 
 from hashlib import sha1
 from os import path
-from pymongo.connection import Connection
+import pymongo
 from pymongo.errors import CollectionInvalid
 from tornado.options import define, options
 import tornado.options
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
-    mongodb = Connection(options.mongohost, options.mongoport)
+    mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]
     # Authenticate if credentials are supplied.
     if options.dbuser is not None and options.dbpass is not None:
@@ -89,8 +89,8 @@ if __name__ == "__main__":
         manager["password"] = sha1("%sadmin" % options.passwordsalt).hexdigest()
         masterdb["managers"].insert(manager)
         print("Admin user created, username: admin, password: admin")
-    except Exception:
-        print("Failed to create admin user")
+    except Exception as ex:
+        print("Failed to create admin user", ex)
 
     try:
         if not "options" in collection_names:
