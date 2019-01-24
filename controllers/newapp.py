@@ -29,40 +29,44 @@
 import tornado.web
 from controllers.base import *
 
+
 @route(r"/create/app")
 class AppCreateNewHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
         self.render("app_new.html")
+
     @tornado.web.authenticated
     def post(self):
         # Create a new app
         app = {}
-        self.appname = filter_alphabetanum(self.get_argument('appshortname').strip().lower())
-        app['shortname'] = self.appname
-        app['environment'] = 'sandbox'
-        app['enableapns'] = 0
-        app['connections'] = 1
-        app['blockediplist'] = ''
-        app['gcmprojectnumber'] = ''
-        app['gcmapikey'] = ''
-        app['clickatellusername'] = ''
-        app['clickatellpassport'] = ''
-        app['clickatellappid'] = ''
-        if self.get_argument('appfullname', None):
-            app['fullname'] = self.get_argument('appfullname')
+        self.appname = filter_alphabetanum(
+            self.get_argument("appshortname").strip().lower()
+        )
+        app["shortname"] = self.appname
+        app["environment"] = "sandbox"
+        app["enableapns"] = 0
+        app["connections"] = 1
+        app["blockediplist"] = ""
+        app["gcmprojectnumber"] = ""
+        app["gcmapikey"] = ""
+        app["clickatellusername"] = ""
+        app["clickatellpassport"] = ""
+        app["clickatellappid"] = ""
+        if self.get_argument("appfullname", None):
+            app["fullname"] = self.get_argument("appfullname")
         else:
-            app['fullname'] = self.appname
+            app["fullname"] = self.appname
 
-        if self.get_argument('appdescription', None):
-            app['description'] = self.get_argument('appdescription')
+        if self.get_argument("appdescription", None):
+            app["description"] = self.get_argument("appdescription")
         else:
-            app['description'] = ""
+            app["description"] = ""
 
-        current_app = self.masterdb.applications.find_one({'shortname': self.appname})
+        current_app = self.masterdb.applications.find_one({"shortname": self.appname})
         if not current_app:
             self.masterdb.applications.insert(app)
             indexes = [("created", DESCENDING)]
-            self.db['tokens'].create_index(indexes);
-            self.db['logs'].create_index(indexes);
+            self.db["tokens"].create_index(indexes)
+            self.db["logs"].create_index(indexes)
         self.redirect(r"/applications/%s/settings" % self.appname)
