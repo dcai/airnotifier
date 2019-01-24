@@ -46,10 +46,13 @@ from api import API_PERMISSIONS
 from pushservices.gcm import GCMException
 from pushservices.wns import WNSClient
 from pushservices.gcm import GCMClient
+from pushservices.fcm import FCMClient
 from pushservices.mpns import MPNSClient
 import requests
 import traceback
 from controllers.base import *
+
+_logger = logging.getLogger("settings")
 
 
 @route(r"/applications/([^/]+)/settings[\/]?")
@@ -142,12 +145,14 @@ class AppHandler(WebBaseHandler):
             else:
                 app["blockediplist"] = ""
 
+            update_fcm = False
             if self.get_argument("fcm-project-id", None):
                 if (
                     app.get("fcm-project-id", "")
                     != self.get_argument("fcm-project-id").strip()
                 ):
                     app["fcm-project-id"] = self.get_argument("fcm-project-id").strip()
+                    update_fcm = True
 
             if self.get_argument("fcm-jsonkey", None):
                 if (
@@ -155,6 +160,15 @@ class AppHandler(WebBaseHandler):
                     != self.get_argument("fcm-jsonkey").strip()
                 ):
                     app["fcm-jsonkey"] = self.get_argument("fcm-jsonkey").strip()
+                    update_fcm = True
+
+            if update_fcm:
+                # reset fcm connections
+                fcm = FCMClient(
+                    app["fcm-project-id"], app["fcm-jsonkey"], app["shortname"], 0
+                )
+                self.fcmconnections[app["shortname"]] = [fcm]
+                _logger.info(fcm)
 
             updategcm = False
             if self.get_argument("gcmprojectnumber", None):
@@ -173,15 +187,14 @@ class AppHandler(WebBaseHandler):
                     updategcm = True
 
             if updategcm:
-                ## Update connections too
-                self.gcmconnections[app["shortname"]] = []
+                # reset gcm connections
                 gcm = GCMClient(
                     app.get("gcmprojectnumber", ""),
                     app.get("gcmapikey", ""),
                     app["shortname"],
                     0,
                 )
-                self.gcmconnections[app["shortname"]].append(gcm)
+                self.gcmconnections[app["shortname"]] = [gcm]
 
             if self.get_argument("connections", None):
                 """If this value is greater than current apns connections,
