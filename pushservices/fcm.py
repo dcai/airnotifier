@@ -21,6 +21,9 @@ class FCMException(Exception):
 
 
 class FCMClient(PushService):
+    def __str__(self):
+        return "endpoint: %s" % (self.endpoint)
+
     def __init__(self, project_id, jsonkey, appname, instanceid=0):
         self.project_id = project_id
         self.jsonkey = jsonkey
