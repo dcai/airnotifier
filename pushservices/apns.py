@@ -199,7 +199,7 @@ class APNFeedback(object):
         log["info"] = strip_tags(info)
         log["level"] = strip_tags(level)
         log["created"] = int(time.time())
-        self.appdb.logs.insert(log, safe=True)
+        self.appdb.logs.insert(log)
 
 
 class APNClient(PushService):

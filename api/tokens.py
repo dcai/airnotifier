@@ -47,7 +47,7 @@ class TokenV2HandlerGet(APIBaseHandler):
             return
 
         try:
-            result = self.db.tokens.remove({"token": token}, safe=True)
+            result = self.db.tokens.remove({"token": token})
             if result["n"] == 0:
                 self.send_response(NOT_FOUND, dict(status="Token does't exist"))
             else:
@@ -84,7 +84,6 @@ class TokenV2Handler(APIBaseHandler):
             result = self.db.tokens.update(
                 {"device": device, "token": devicetoken, "appname": self.appname},
                 token,
-                safe=True,
                 upsert=True,
             )
             # result

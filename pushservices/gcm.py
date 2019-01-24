@@ -216,4 +216,4 @@ class GCMClient(PushService):
         log["level"] = strip_tags(level)
         log["created"] = int(time.time())
         if appdb is not None:
-            appdb.logs.insert(log, safe=True)
+            appdb.logs.insert(log)
