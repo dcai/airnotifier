@@ -468,32 +468,6 @@ class UsersHandler(APIBaseHandler):
         self.send_response(OK, users)
 
 
-@route(r"/users/([^/]+)")
-@route(r"/api/v2/users/([^/]+)")
-class UserHandler(APIBaseHandler):
-    def delete(self, userId):
-        """ Delete user """
-        pass
-
-    def put(self, userId):
-        """ Update """
-        pass
-
-    def get(self, userId):
-        """Get user details by ID
-        """
-        username = self.get_argument("username", None)
-        email = self.get_argument("email", None)
-        userid = self.get_argument("userid", None)
-        conditions = {}
-        if username:
-            conditions["username"] = username
-        if email:
-            conditions["email"] = email
-        if userid:
-            conditions["id"] = userid
-
-
 @route(r"/objects/([^/]+)/([^/]+)")
 @route(r"/api/v2/objects/([^/]+)/([^/]+)")
 class ObjectHandler(APIBaseHandler):
