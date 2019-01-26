@@ -105,8 +105,8 @@ if __name__ == "__main__":
                 app["wnstokentype"] = ""
             if not "wnstokenexpiry" in app:
                 app["wnstokenexpiry"] = ""
-            masterdb.applications.update({"_id": appid}, app, upsert=True)
-        masterdb["options"].update(
+            masterdb.applications.update_one({"_id": appid}, app, upsert=True)
+        masterdb["options"].update_one(
             {"name": "version"}, {"$set": {"value": 20140720}}, upsert=True
         )
 
@@ -126,8 +126,8 @@ if __name__ == "__main__":
                 app["mpnscertificatefile"] = os.path.basename(
                     app.get("mpnscertificatefile")
                 )
-            masterdb.applications.update({"_id": appid}, app, upsert=True)
-        masterdb["options"].update(
+            masterdb.applications.update_one({"_id": appid}, app, upsert=True)
+        masterdb["options"].update_one(
             {"name": "version"}, {"$set": {"value": 20140814}}, upsert=True
         )
 
@@ -143,8 +143,8 @@ if __name__ == "__main__":
                 app["clickatellpassword"] = ""
             if not "clickatellappid" in app:
                 app["clickatellappid"] = ""
-            masterdb.applications.update({"_id": appid}, app, upsert=True)
-        masterdb["options"].update(
+            masterdb.applications.update_one({"_id": appid}, app, upsert=True)
+        masterdb["options"].update_one(
             {"name": "version"}, {"$set": {"value": 20140820}}, upsert=True
         )
 
@@ -159,13 +159,13 @@ if __name__ == "__main__":
             print("Adding index to %s%s['logs'].%s" % (appprefix, appname, "created"))
             db["logs"].create_index(indexes)
 
-        masterdb["options"].update(
+        masterdb["options"].update_one(
             {"name": "version"}, {"$set": {"value": 20151101}}, upsert=True
         )
 
-    if version < 20190124:
-        masterdb["options"].update(
-            {"name": "version"}, {"$set": {"value": 20190124}}, upsert=True
+    if version < 20190125:
+        masterdb["options"].update_one(
+            {"name": "version"}, {"$set": {"value": 20190125}}, upsert=True
         )
 
     version_object = masterdb["options"].find_one({"name": "version"})

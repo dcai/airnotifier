@@ -79,6 +79,12 @@ if os.path.isfile(loggingconfigfile):
 _logger = logging.getLogger("AirNotifierApp")
 
 
+class NotFoundHandler(tornado.web.RequestHandler):
+    def prepare(self):  # for all methods
+        self.set_status(404, None)
+        self.finish()
+
+
 class AirNotifierApp(tornado.web.Application):
     def init_routes(self, dir):
         from routes import RouteLoader
@@ -198,6 +204,7 @@ class AirNotifierApp(tornado.web.Application):
             cookie_secret=options.cookiesecret,
             login_url=r"/auth/login",
             autoescape=None,
+            default_handler_class=NotFoundHandler,
         )
         self.services = services
 
