@@ -22,6 +22,9 @@ def process_pushnotification_payload(data):
             "text": [data["alert"]],
         }
 
+    if not "fcm" in extra:
+        data["extra"]["fcm"] = {"fcm-message": "this is fcm hook"}
+
     if not "mpns" in extra:
         data["extra"]["mpns"] = {"type": "toast", "text1": [data["alert"]]}
 
