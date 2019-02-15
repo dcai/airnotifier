@@ -59,7 +59,7 @@ _logger = logging.getLogger(__name__)
 class PushHandler(APIBaseHandler):
     def validate_payload(self, payload):
         payload.setdefault("channel", "default")
-        payload.setdefault("sound", None)
+        payload.setdefault("sound", "default")
         payload.setdefault("badge", None)
         payload.setdefault("extra", {})
         return payload
