@@ -113,22 +113,24 @@ class APIBaseHandler(tornado.web.RequestHandler):
 
         self.token = self.get_argument("token", None)
         self.device = self.get_argument("device", DEVICE_TYPE_IOS).lower()
-        if self.device == DEVICE_TYPE_IOS:
-            if self.token:
-                # If token provided, it must be 64 chars
-                if len(self.token) != 64:
-                    self.send_response(BAD_REQUEST, dict(error="Invalid token"))
+        if self.device == DEVICE_TYPE_IOS and self.token:
+            if len(self.token) != 64:
+                # hack until we resolve some bugs at the moodle side
+                if len(self.token) > 64:
+                    self.device = DEVICE_TYPE_ANDROID
+                else:
+                    self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+                    return
+            else:
                 try:
-                    # Validate token
                     binascii.unhexlify(self.token)
-                except Exception as ex:
-                    self.send_response(
-                        BAD_REQUEST, dict(error="Invalid token: %s" % ex)
-                    )
+                except Exception, ex:
+                    self.send_response(BAD_REQUEST, dict(error='Invalid token'))
         else:
+            # if it's not ios then we force android type device here
             self.device = DEVICE_TYPE_ANDROID
 
-        self.app = self.masterdb.applications.find_one({"shortname": self.appname})
+        self.app = self.masterdb.applications.find_one({'shortname': self.appname})
 
         if not self.app:
             self.send_response(BAD_REQUEST, dict(error="Invalid application name"))
@@ -289,14 +291,23 @@ class TokenV1Handler(APIBaseHandler):
             return
 
         device = self.get_argument("device", DEVICE_TYPE_IOS).lower()
-        if device == DEVICE_TYPE_IOS:
+        if device == DEVICE_TYPE_IOS and devicetoken:
             if len(devicetoken) != 64:
-                self.send_response(BAD_REQUEST, dict(error="Invalid token"))
-                return
-            try:
-                binascii.unhexlify(devicetoken)
-            except Exception as ex:
-                self.send_response(BAD_REQUEST, dict(error="Invalid token"))
+                # hack until we resolve some bugs at the moodle side
+                if len(devicetoken) > 64:
+                    device = DEVICE_TYPE_ANDROID
+                else:
+                    self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+                    return
+            else:
+                try:
+                    binascii.unhexlify(devicetoken)
+                except Exception, ex:
+                    self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+        else:
+            # if it's not ios then we force android type device here
+            device = DEVICE_TYPE_ANDROID
+
 
         channel = self.get_argument("channel", "default")
 
@@ -575,11 +586,6 @@ class AccessKeysV1Handler(APIBaseHandler):
                 FORBIDDEN, dict(error="Site not registered on moodle.net")
             )
             return
-        if not self.can("create_accesskey"):
-            self.send_response(
-                FORBIDDEN, dict(error="No permission to create accesskey")
-            )
-            return
         key = {}
         key["contact"] = self.get_argument("contact", "")
         key["description"] = self.get_argument("description", "")
@@ -596,7 +602,7 @@ class AccessKeysV1Handler(APIBaseHandler):
         self.send_response(OK, dict(accesskey=key["key"]))
 
     def verify_request(self):
-        huburl = "http://moodle.net/local/sitecheck/check.php"
+        huburl = "https://moodle.net/local/sitecheck/check.php"
         mdlurl = self.get_argument("url", "")
         mdlsiteid = self.get_argument("siteid", "")
         params = {"siteid": mdlsiteid, "url": mdlurl}
