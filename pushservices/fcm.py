@@ -35,25 +35,53 @@ class FCMClient(PushService):
         )
         self.endpoint = "%s/v1/projects/%s/messages:send" % (BASE_URL, self.project_id)
 
+    def format_values(self, data=None):
+        if not isinstance(data, dict):
+            return data
+
+        # Try to convert all fields to string.
+        formatted = {}
+
+        for (k, v) in data.iteritems():
+            if isinstance(v, bool):
+                formatted[k] = "1" if v else "0"
+
+            elif isinstance(v, dict):
+                try:
+                    formatted[k] = json.dumps(self.format_values(v))
+                except:
+                    _logger.error("Error treating field " + k)
+
+            elif v is not None:
+                formatted[k] = str(v)
+
+        return formatted
+
     def build_request(self, token, alert, android=None, data=None, extra=None):
-        isDict = isinstance(alert, dict)
-        body = alert
-        title = alert
-        if isDict:
-            body = alert["body"]
-            title = alert["title"]
+        if alert is not None and not isinstance(alert, dict):
+            alert = {
+                "body": alert,
+                "title": alert
+            }
 
         data["extra"] = extra
 
-        # data strcuture: https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages
+        # data structure: https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages
         payload = {
             "message": {
                 "token": token,
-                "notification": {"body": body, "title": title},
-                "android": android,
-                "data": data,
             }
         }
+
+        if alert:
+            payload["message"]["notification"] = self.format_values(alert)
+
+        if data:
+            payload["message"]["data"] = self.format_values(data)
+
+        if android:
+            payload["message"]["android"] = self.format_values(android)
+
         return json.dumps(payload)
 
     def process(self, **kwargs):
