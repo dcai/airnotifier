@@ -119,18 +119,18 @@ class APIBaseHandler(tornado.web.RequestHandler):
                 if len(self.token) > 64:
                     self.device = DEVICE_TYPE_ANDROID
                 else:
-                    self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+                    self.send_response(BAD_REQUEST, dict(error="Invalid token"))
                     return
             else:
                 try:
                     binascii.unhexlify(self.token)
-                except Exception, ex:
-                    self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+                except Exception as ex:
+                    self.send_response(BAD_REQUEST, dict(error="Invalid token"))
         else:
             # if it's not ios then we force android type device here
             self.device = DEVICE_TYPE_ANDROID
 
-        self.app = self.masterdb.applications.find_one({'shortname': self.appname})
+        self.app = self.masterdb.applications.find_one({"shortname": self.appname})
 
         if not self.app:
             self.send_response(BAD_REQUEST, dict(error="Invalid application name"))
@@ -297,17 +297,16 @@ class TokenV1Handler(APIBaseHandler):
                 if len(devicetoken) > 64:
                     device = DEVICE_TYPE_ANDROID
                 else:
-                    self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+                    self.send_response(BAD_REQUEST, dict(error="Invalid token"))
                     return
             else:
                 try:
                     binascii.unhexlify(devicetoken)
-                except Exception, ex:
-                    self.send_response(BAD_REQUEST, dict(error='Invalid token'))
+                except Exception as ex:
+                    self.send_response(BAD_REQUEST, dict(error="Invalid token"))
         else:
             # if it's not ios then we force android type device here
             device = DEVICE_TYPE_ANDROID
-
 
         channel = self.get_argument("channel", "default")
 
