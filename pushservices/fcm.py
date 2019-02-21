@@ -57,7 +57,7 @@ class FCMClient(PushService):
 
         return formatted
 
-    def build_request(self, token, alert, android=None, data=None, extra=None):
+    def build_request(self, token, alert, android=None, data=None, extra=None, apns=None):
         if alert is not None and not isinstance(alert, dict):
             alert = {
                 "body": alert,
@@ -80,7 +80,10 @@ class FCMClient(PushService):
             payload["message"]["data"] = self.format_values(data)
 
         if android:
-            payload["message"]["android"] = self.format_values(android)
+            payload["message"]["android"] = android
+
+        if apns:
+            payload["message"]["apns"] = apns
 
         return json.dumps(payload)
 
@@ -89,6 +92,7 @@ class FCMClient(PushService):
         extra = kwargs.get("extra", {})
         alert = kwargs.get("alert", None)
         android = fcm_param.get("android", {})
+        apns = fcm_param.get("apns", {})
         data = fcm_param.get("data", {})
         appdb = kwargs.get("appdb", None)
         return self.send(
@@ -98,9 +102,10 @@ class FCMClient(PushService):
             android=android,
             extra=extra,
             data=data,
+            apns=apns
         )
 
-    def send(self, token, alert=None, data=None, appdb=None, android=None, extra=None):
+    def send(self, token, alert=None, data=None, appdb=None, android=None, extra=None, apns=None):
         """
         Send message to google gcm endpoint
         :param token: device token
@@ -116,7 +121,7 @@ class FCMClient(PushService):
             "Content-Type": "application/json; UTF-8",
         }
 
-        payload = self.build_request(token, alert, android, data, extra)
+        payload = self.build_request(token, alert, android, data, extra, apns)
         response = requests.post(self.endpoint, data=payload, headers=headers)
 
         if response.status_code >= 400:
