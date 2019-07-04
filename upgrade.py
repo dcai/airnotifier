@@ -45,6 +45,11 @@ define("masterdb", default="airnotifier", help="MongoDB DB to store information"
 define("collectionprefix", default="obj_", help="Collection name prefix")
 define("appprefix", default="", help="DB name prefix")
 
+# Database Authentication parameters
+define("dbuser", help="MongoDB admin user")
+define("dbpass", help="MongoDB admin password")
+define("dbauthsource", default="admin", help="MongoDB authentication source database")
+
 if __name__ == "__main__":
     curpath = os.path.dirname(os.path.realpath(__file__))
 
@@ -52,6 +57,10 @@ if __name__ == "__main__":
     tornado.options.parse_command_line()
     mongodb = Connection(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]
+    # Authenticate if credentials are supplied.
+    if options.dbuser is not None and options.dbpass is not None:
+        masterdb.authenticate(options.dbuser, options.dbpass, source=options.dbauthsource)
+
     version_object = masterdb['options'].find_one({'name': 'version'})
     appprefix = options.appprefix
 
