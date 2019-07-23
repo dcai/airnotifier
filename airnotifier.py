@@ -267,7 +267,8 @@ def init_messaging_agents():
     # Add authentication if present.
     if options.dbuser is not None and options.dbpass is not None:
         masterdb.authenticate(options.dbuser, options.dbpass, source=options.dbauthsource)
-        apps = masterdb.applications.find()
+
+    apps = masterdb.applications.find()
     for app in apps:
         """ APNs setup """
         services["apns"][app["shortname"]] = []
