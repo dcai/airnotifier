@@ -17,3 +17,11 @@ masterdb = "airnotifier"
 collectionprefix = "obj_"
 dbprefix = ""
 appprefix = "app_"
+
+# If your MongoDB requires authentication, create a user with full permissions
+# to the masterdb and enter credentials here. For details, see:
+# https://docs.mongodb.com/manual/tutorial/enable-authentication/#procedure
+#
+# dbuser = "<your DB admin username>"
+# dbpass = "<your password>"
+# dbauthsource = "admin"

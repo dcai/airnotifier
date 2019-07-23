@@ -72,6 +72,11 @@ define("collectionprefix", default="obj_", help="Collection name prefix")
 define("dbprefix", default="app_", help="DB name prefix")
 define("appprefix", default="", help="DB name prefix")
 
+define("dbuser", help="Airnotifier admin user")
+define("dbpass", help="Airnotifier admin password")
+define("dbauthsource", default="admin", help="Airnotifier authentication source database")
+
+
 loggingconfigfile = "logging.ini"
 if os.path.isfile(loggingconfigfile):
     logging.config.fileConfig(loggingconfigfile)
@@ -224,6 +229,9 @@ class AirNotifierApp(tornado.web.Application):
 
         self.mongodb = mongodb
         self.masterdb = mongodb[options.masterdb]
+        # Add authentication if present.
+        if options.dbuser is not None and options.dbpass is not None:
+            self.masterdb.authenticate(options.dbuser, options.dbpass, source=options.dbauthsource)
 
     def main(self):
         if options.https:
@@ -256,7 +264,10 @@ def init_messaging_agents():
         except Exception as ex:
             _logger.error(ex)
     masterdb = mongodb[options.masterdb]
-    apps = masterdb.applications.find()
+    # Add authentication if present.
+    if options.dbuser is not None and options.dbpass is not None:
+        masterdb.authenticate(options.dbuser, options.dbpass, source=options.dbauthsource)
+        apps = masterdb.applications.find()
     for app in apps:
         """ APNs setup """
         services["apns"][app["shortname"]] = []

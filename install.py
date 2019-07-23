@@ -47,6 +47,10 @@ define("mongoport", default=27017, help="MongoDB port")
 define("mongodbname", default="airnotifier", help="MongoDB database name")
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
 
+define("dbuser", help="Airnotifier admin user")
+define("dbpass", help="Airnotifier admin password")
+define("dbauthsource", default="admin", help="Airnotifier authentication source database")
+
 
 if __name__ == "__main__":
     if not path.exists("airnotifier.conf"):
@@ -56,6 +60,8 @@ if __name__ == "__main__":
     tornado.options.parse_command_line()
     mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]
+    if options.dbuser is not None and options.dbpass is not None:
+        masterdb.authenticate(options.dbuser, options.dbpass, source=options.dbauthsource)
     collection_names = masterdb.collection_names()
     try:
         if not "applications" in collection_names:
