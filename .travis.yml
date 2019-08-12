@@ -1,7 +1,9 @@
+dist: xenial
 language: python
 python:
-  - '2.7'
+  - "3.6"
 install:
-  - 'pip install .'
-  - 'pip install -r requirements.txt'
-script: make test
+  - "pip install pipenv"
+  - "pipenv install --dev"
+script:
+  - make test

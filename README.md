@@ -132,7 +132,7 @@ Content-Type: application/json
 Please read [Installation guide](https://github.com/airnotifier/airnotifier/wiki/Installation)
 
 ## Configuration
-`airnotifier.conf` is the config file, options:
+`config.py` is the config file, options:
 
 - pemdir: The directory storing certificates
 - passwordsalt: passwordsalt

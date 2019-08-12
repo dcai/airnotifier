@@ -55,7 +55,7 @@ define("dbauthsource", default="admin", help="MongoDB authentication source data
 if __name__ == "__main__":
     curpath = os.path.dirname(os.path.realpath(__file__))
 
-    tornado.options.parse_config_file("%s/airnotifier.conf" % curpath)
+    tornado.options.parse_config_file("%s/config.py" % curpath)
     tornado.options.parse_command_line()
     mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]

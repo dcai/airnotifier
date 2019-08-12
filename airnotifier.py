@@ -362,7 +362,7 @@ def init_messaging_agents():
 
 
 if __name__ == "__main__":
-    tornado.options.parse_config_file("airnotifier.conf")
+    tornado.options.parse_config_file("config.py")
     tornado.options.parse_command_line()
     services = init_messaging_agents()
     AirNotifierApp(services=services).main()

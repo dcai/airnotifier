@@ -54,16 +54,18 @@ define("dbauthsource", default="admin", help="MongoDB authentication source data
 
 
 if __name__ == "__main__":
-    if not path.exists("airnotifier.conf"):
-        raise Exception("Please create airnotiier.conf before running install.py")
+    if not path.exists("config.py"):
+        raise Exception("Please create config.py before running install.py")
 
-    tornado.options.parse_config_file("airnotifier.conf")
+    tornado.options.parse_config_file("config.py")
     tornado.options.parse_command_line()
     mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]
     # Authenticate if credentials are supplied.
     if options.dbuser is not None and options.dbpass is not None:
-        masterdb.authenticate(options.dbuser, options.dbpass, source=options.dbauthsource)
+        masterdb.authenticate(
+            options.dbuser, options.dbpass, source=options.dbauthsource
+        )
 
     collection_names = masterdb.collection_names()
     try:
