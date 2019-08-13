@@ -237,8 +237,6 @@ class AirNotifierApp(tornado.web.Application):
                 options.dbuser, options.dbpass, source=options.dbauthsource
             )
 
-        assert self.masterdb.connection == self.mongodb
-
     def main(self):
         if options.https:
             import ssl
