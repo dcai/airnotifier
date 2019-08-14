@@ -1,8 +1,11 @@
 
-all: install
+all: start
 
-install:
-	python ./install.py
+install-db:
+	pipenv run ./install.py
+
+start:
+	pipenv run ./app.py
 
 test:
 	pipenv run pytest

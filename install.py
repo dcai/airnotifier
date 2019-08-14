@@ -32,6 +32,7 @@ import pymongo
 from pymongo.errors import CollectionInvalid
 from tornado.options import define, options
 import tornado.options
+from util import *
 
 from constants import VERSION
 
@@ -88,7 +89,7 @@ if __name__ == "__main__":
     try:
         manager = {}
         manager["username"] = "admin"
-        manager["password"] = sha1("%sadmin" % options.passwordsalt).hexdigest()
+        manager["password"] = get_password("admin", options.passwordsalt)
         masterdb["managers"].insert(manager)
         print("Admin user created, username: admin, password: admin")
     except Exception as ex:

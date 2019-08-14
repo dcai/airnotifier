@@ -42,8 +42,9 @@ import re
 import sys
 import unicodedata
 import os
+import base64
 from tornado.options import options
-from hashlib import sha1
+from hashlib import sha1, sha512
 
 from bson.dbref import DBRef
 from bson.max_key import MaxKey
@@ -119,7 +120,9 @@ def json_default(obj):
 
 def filter_alphabetanum(string):
     # absolutely alphabeta and number only
-    string = unicodedata.normalize("NFKD", string).encode("ascii", "ignore")
+    string = (
+        unicodedata.normalize("NFKD", string).encode("ascii", "ignore").decode("ascii")
+    )
     string = re.sub(r"[^\w]+", " ", string)
     string = "".join(string.lower().strip().split())
     return string
@@ -133,13 +136,11 @@ def get_filepath(filename):
     return os.path.join(os.path.abspath(options.pemdir), filename)
 
 
-def save_file(req):
-    filename = sha1(req["body"]).hexdigest()
-    filepath = get_filepath(filename)
-    thefile = open(filepath, "w")
-    thefile.write(req["body"])
-    thefile.close()
-    return filename
+def encode_file(file):
+    content = file["body"]
+    filename = file["filename"]
+    content_type = file["content_type"]
+    return base64.b64encode(content).decode("utf-8")
 
 
 def file_exists(filename):
@@ -161,3 +162,9 @@ def rm_file(filename):
         os.remove(filename)
     elif os.path.isfile(fullpath):
         os.remove(fullpath)
+
+
+def get_password(password, salt):
+    hash = sha512()
+    hash.update(("%s%s" % (salt, password)).encode("utf-8"))
+    return hash.hexdigest()

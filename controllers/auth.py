@@ -25,7 +25,7 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+import hashlib, os
 from controllers.base import *
 
 
@@ -46,7 +46,7 @@ class AuthHandler(WebBaseHandler):
         else:
             username = self.get_argument("username", None)
             password = self.get_argument("password", None)
-            passwordhash = sha1("%s%s" % (options.passwordsalt, password)).hexdigest()
+            passwordhash = get_password(password, options.passwordsalt)
             user = self.masterdb.managers.find_one(
                 {"username": username, "password": passwordhash}
             )

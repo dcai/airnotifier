@@ -124,7 +124,7 @@
             <label class="control-label"> {{ _('Set mode') }}</label>
             <div class="controls">
                 <input type="hidden" name="appname" value="{{app['shortname']}}" />
-                {% if not app.has_key('environment') or (app.has_key('environment') and app['environment'] == 'sandbox') %}
+                {% if not 'environment' in app or ('environment' in app and app['environment'] == 'sandbox') %}
                 <input type="hidden" name="turnonproduction" value="true">
                 <button type="submit" class="btn btn-info">{{ _('Enter production mode') }}</button>
                 {% else %}

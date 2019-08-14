@@ -114,7 +114,7 @@ class WebBaseHandler(tornado.web.RequestHandler):
         userid = self.get_secure_cookie("user")
         if not userid:
             return None
-        userId = ObjectId(userid)
+        userId = ObjectId(userid.decode("utf-8"))
         user = self.masterdb.managers.find_one({"_id": userId})
         return user
 
@@ -234,7 +234,7 @@ class InfoHandler(WebBaseHandler):
         airnotifierinfo = {}
         airnotifierinfo["version"] = VERSION
         mongodbinfo = self.application.mongodb.server_info()
-        if mongodbinfo.has_key("versionArray"):
+        if "versionArray" in mongodbinfo:
             del mongodbinfo["versionArray"]
         pythoninfo = {}
         pythoninfo["version"] = sys.version
