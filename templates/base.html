@@ -1,72 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>{{ escape(handler.settings["app_title"]) }}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ static_url("css/bootstrap.min.css") }}" type="text/css"/>
-    <link rel="stylesheet" href="{{ static_url("css/custom.css") }}" type="text/css"/>
-    <link rel="stylesheet" href="{{ static_url("css/dashboard.css") }}" type="text/css"/>
-    <link rel="shortcut icon" href="{{ static_url("favicon.ico") }}" type="image/x-icon">
-    <script src="{{ static_url("js/jquery-1.11.0.min.js") }}"></script>
-    <script src="{{ static_url("js/bootstrap.min.js") }}"></script>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <link rel="stylesheet" href="{{ static_url("css/bootstrap.min.css") }}"
+    type="text/css"/> <link rel="stylesheet" href="{{
+    static_url("css/custom.css") }}" type="text/css"/> <link rel="stylesheet"
+    href="{{ static_url("css/dashboard.css") }}" type="text/css"/> <link
+    rel="shortcut icon" href="{{ static_url("favicon.ico") }}"
+    type="image/x-icon">
     <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <meta name="engine" content="AirNotifier {{ escape(handler.settings["version"]) }}" />
-    <meta name="author" content="Dongsheng Cai">
+    <meta name="engine" content="AirNotifier {{
+    escape(handler.settings["version"]) }}" />
+    <meta name="author" content="Dongsheng Cai" />
     {% block head %}{% end %}
-    </head>
-    <body>
-    <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container-fluid">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </a>
-          <span class="brand">AirNotifier</span>
-          <div class="nav-collapse">
-            {% block navbar %}{% end %}
-            <p class="navbar-text pull-right">
-            {% if current_user %}
-                <a href="/auth/logout?next={{ url_escape(request.uri) }}">{{ _("Sign out") }}</a>
-            {% else %}
-                {{ _('<a href="%(url)s">Sign in</a>') % {"url": "/auth/login?next=" + url_escape(request.uri)} }}
-            {% end %}
-
-          </div><!--/.nav-collapse -->
+  </head>
+  <body>
+    <nav class="navbar navbar-expand navbar-dark bg-dark">
+      <a class="navbar-brand mr-0 mr-md-2" href="#">AirNotifier</a>
+      <div class="navbar-nav-scroll">
+        {% block navbar %}{% end %}
+      </div>
+      <ul class="navbar-nav flex-row ml-md-auto d-none d-md-flex">
+        <li class="nav-item dropdown">
+          {% if current_user %}
+          <a href="/auth/logout?next={{ url_escape(request.uri) }}"
+            >{{ _("Sign out") }}</a
+          >
+          {% else %} {{ _('<a href="%(url)s">Sign in</a>') % {"url":
+          "/auth/login?next=" + url_escape(request.uri)} }} {% end %}
+        </li>
+      </ul>
+    </nav>
+    <div class="container-fluid">
+      <div class="row">
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+          {% block sidebaritems %}{% end %}
+        </nav>
+        <!--/sidebar -->
+        <div class="col-md-9 ml-sm-auto col-lg-10 px-4">
+          {% block tabbaritems %}{% end %} {% block body %}{% end %}
         </div>
       </div>
-    </div><!-- end of header -->
+      <!--row-fluid-->
 
-    <div class="container-fluid">
-      <div class="row-fluid">
-        <div class="span3">
-          <div class="well sidebar-nav">
-          {% block sidebaritems %}{% end %}
-          </div><!--/.well -->
-        </div><!--/span-->
-        <div class="span9">
-        {% block tabbaritems %}{% end %}
-        {% block body %}{% end %}
-        </div>
-      </div> <!--row-fluid-->
-
-      <hr>
+      <hr />
       {% block bottom %}{% end %}
       <footer>
-        <p>Copyright (c) 2012-{{ escape(handler.settings["current_year"]) }}, Dongsheng Cai All Rights Reserved</p>
         <p>
-            <a target="_blank" href="http://airnotifier.github.io">AirNotifier</a>
-            <span> | </span>
-            <a target="_blank" href="https://github.com/airnotifier/airnotifier">Development</a>
-            <span> | </span>
-            <a target="_blank" href="https://github.com/airnotifier/airnotifier/issues">Get support</a>
+          Copyright (c) 2012-{{ escape(handler.settings["current_year"]) }},
+          Dongsheng Cai All Rights Reserved
+        </p>
+        <p>
+          <a target="_blank" href="http://airnotifier.github.io">AirNotifier</a>
+          <span> | </span>
+          <a target="_blank" href="https://github.com/airnotifier/airnotifier"
+            >Development</a
+          >
+          <span> | </span>
+          <a
+            target="_blank"
+            href="https://github.com/airnotifier/airnotifier/issues"
+            >Get support</a
+          >
         </p>
       </footer>
-    </div><!--/.fluid-container-->
-    </body>
+    </div>
+    <!--/.fluid-container-->
+    <script src="{{ static_url('js/jquery-3.3.1.slim.min.js') }}"></script>
+    <script src="{{ static_url('js/bootstrap.bundle.min.js') }}"></script>
+  </body>
 </html>

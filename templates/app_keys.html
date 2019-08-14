@@ -1,105 +1,154 @@
-{% extends "base.html" %}
-
-{% block navbar %}
-{{ modules.NavBar('applications') }}
-{% end %}
-
-{% block tabbaritems %}
-{{ modules.TabBar(app, 'keys') }}
-{% end %}
-
-{% block sidebaritems %}
-{{ modules.AppSideBar(app, 'keys') }}
-{% end %}
-
-{% block body %}
-{% if newkey %}
+{% extends "base.html" %} {% block navbar %} {{ modules.NavBar('applications')
+}} {% end %} {% block tabbaritems %} {{ modules.TabBar(app, 'keys') }} {% end %}
+{% block sidebaritems %} {{ modules.AppSideBar(app, 'keys') }} {% end %} {%
+block body %} {% if newkey %}
 <div class="alert alert-success">
-    New key created: {{ newkey['key'] }}
+  New key created: {{ newkey['key'] }}
 </div>
 {% end %}
 
 <p>
-    <a href="#addAccessKey" role="button" class="btn btn-primary" data-toggle="modal"> {{ _('Create access key') }}</a>
+  <a
+    href="#addAccessKey"
+    role="button"
+    class="btn btn-primary"
+    data-toggle="modal"
+  >
+    {{ _('Create access key') }}</a
+  >
 </p>
 
 <div class="row-fluid">
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>{{ _('Key') }}</th>
-                <th>{{ _('Description') }}</th>
-                <th>{{ _('Permission') }}</th>
-                <th>{{ _('Action') }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% from datetime import datetime %}
-            {% for key in keys %}
-            <tr>
-                <td><code>{{key['key']}}</code></td>
-                <td>
-                    {% if key.has_key('description') %}
-                    <span class="label label-success">{{ key['description'] }}</span>
-                    {% end %}
-                </td>
-                <td>
-				{% if key.has_key('permission') %}
-					<ul class="unstyled">
-					{% for k, value in map %}
-						<li>{% if value[0] & key['permission'] %}<i class="icon-ok"></i>{% else %}<i class="icon-remove"></i>{% end %}<span>{{ value[1] }}</span></li>
-					{% end %}
-					</ul>
-				{% end %}
-                </td>
-                <td>
-                    <a class="btn btn-primary" href="/applications/{{app['shortname']}}/keys?edit={{key['key']}}"><i class="icon-pencil icon-white"></i> {{ _('Edit') }}</a>
-                    <a class="btn btn-danger" href="/applications/{{app['shortname']}}/keys?delete={{key['key']}}"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
-                </td>
-            </tr>
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>{{ _('Key') }}</th>
+        <th>{{ _('Description') }}</th>
+        <th>{{ _('Permission') }}</th>
+        <th>{{ _('Action') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% from datetime import datetime %} {% for key in keys %}
+      <tr>
+        <td><code>{{key['key']}}</code></td>
+        <td>
+          {% if 'description' in key %}
+          <span class="label label-success">{{ key['description'] }}</span>
+          {% end %}
+        </td>
+        <td>
+          {% if 'permission' in key %}
+          <ul class="unstyled-list">
+            {% for k, value in map %}
+            <li>
+              {% if value[0] & key['permission'] %}<span>&#10003;</span>{% else
+              %}<span>&#10005;</span>{% end %}<span> {{ value[1] }}</span>
+            </li>
             {% end %}
-        </tbody>
-    </table>
-</div><!--/row-->
+          </ul>
+          {% end %}
+        </td>
+        <td>
+          <a
+            class="btn btn-primary"
+            href="/applications/{{app['shortname']}}/keys?edit={{key['key']}}"
+            ><i class="icon-pencil icon-white"></i> {{ _('Edit') }}</a
+          >
+          <a
+            class="btn btn-danger"
+            href="/applications/{{app['shortname']}}/keys?delete={{key['key']}}"
+            ><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a
+          >
+        </td>
+      </tr>
+      {% end %}
+    </tbody>
+  </table>
+</div>
+<!--/row-->
 
-<form class="form-horizontal" method="post"
-	enctype="multipart/form-data">
-	<input type="hidden" name="appname" value="{{app['shortname']}}">
-	<input type="hidden" name="action" value="create">
-	<div id="addAccessKey" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="addAccessKey" aria-hidden="true">
-		<div class="modal-header">
-			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-			<h3 id="myModalLabel">{{ _('Create access key') }}</h3>
-		</div>
-		<div class='modal-body'>
-			<fieldset>
-				<div class="control-group">
-					<label class="control-label" for="keydesc">{{ _('Description') }}</label>
-					<div class="controls">
-						<input type="text" class="input-xlarge" id="keydesc"
-							name="keydesc">
-					</div>
-				</div>
-				<div class="control-group">
-					<label class="control-label" for="keycontact">{{ _('Contact Email') }}</label>
-					<div class="controls">
-						<input type="text" class="input-xlarge" id="keycontact"
-							name="keycontact">
-					</div>
-				</div>
-				<div class="control-group">
-					<label class="control-label">{{ _('Permissions') }}</label>
-					<div class="controls">
-						{% for k, value in map %} <label class="checkbox"><input type="checkbox" name="permissions[]" value="{{ int(value[0]) }}"><span>{{ value[1] }}</span></label> {% end %}
-					</div>
-				</div>
-			</fieldset>
-		</div>
-		<!-- modal-body -->
-		<div class="modal-footer">
-			<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-			<button type="submit" class="btn btn-primary">{{ _('Generate') }}</button>
-		</div>
-	</div>
+<form class="form-horizontal" method="post" enctype="multipart/form-data">
+  <input type="hidden" name="appname" value="{{app['shortname']}}" />
+  <input type="hidden" name="action" value="create" />
+  <div
+    id="addAccessKey"
+    class="modal hide fade"
+    tabindex="-1"
+    role="dialog"
+    aria-labelledby="addAccessKey"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 id="myModalLabel" class="modal-title" id="exampleModalLabel">
+            {{ _('Create access key') }}
+          </h5>
+          <button
+            type="button"
+            class="close"
+            data-dismiss="modal"
+            aria-hidden="true"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <fieldset>
+            <div class="control-group">
+              <label class="control-label" for="keydesc"
+                >{{ _('Description') }}</label
+              >
+              <div class="controls">
+                <input
+                  type="text"
+                  class="input-xlarge"
+                  id="keydesc"
+                  name="keydesc"
+                />
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="keycontact"
+                >{{ _('Contact Email') }}</label
+              >
+              <div class="controls">
+                <input
+                  type="text"
+                  class="input-xlarge"
+                  id="keycontact"
+                  name="keycontact"
+                />
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">{{ _('Permissions') }}</label>
+              <div class="controls">
+                {% for k, value in map %}
+                <label class="checkbox"
+                  ><input
+                    type="checkbox"
+                    name="permissions[]"
+                    value="{{ int(value[0]) }}"
+                  /><span>{{ value[1] }}</span></label
+                >
+                {% end %}
+              </div>
+            </div>
+          </fieldset>
+        </div>
+        <!-- modal-body -->
+        <div class="modal-footer">
+          <button class="btn" data-dismiss="modal" aria-hidden="true">
+            Close
+          </button>
+          <button type="submit" class="btn btn-primary">
+            {{ _('Generate') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </form>
 {% end %}

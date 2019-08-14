@@ -1,59 +1,49 @@
-{% extends "base.html" %}
-
-{% block navbar %}
-{{ modules.NavBar('applications') }}
-{% end %}
-
-{% block tabbaritems %}
-{{ modules.TabBar(app, 'broadcast') }}
-{% end %}
-
-{% block sidebaritems %}
-{{ modules.AppSideBar(app, 'broadcast') }}
-{% end %}
-
-{% block body %}
-{% if sent %}
+{% extends "base.html" %} {% block navbar %} {{ modules.NavBar('applications')
+}} {% end %} {% block tabbaritems %} {{ modules.TabBar(app, 'broadcast') }} {%
+end %} {% block sidebaritems %} {{ modules.AppSideBar(app, 'broadcast') }} {%
+end %} {% block body %} {% if sent %}
 
 <script type="text/javascript">
-$(document).ready(function() {
-    $.ajax({url: window.location.pathname + "/status", type: "GET",
-        success: function(response) {
-	    if(response.error) {
-		$("#status").addClass("alert alert-danger");
-	    } else {
-	        $("#status").addClass("alert alert-success");
-	    }
-            $("#status").text(response.msg);
-        },
-        error: function(response) {
-	    $("#status").addClass("alert-danger");
-            $("#status").text("Error retrieving notification status!");
+  $(document).ready(function() {
+    $.ajax({
+      url: window.location.pathname + "/status",
+      type: "GET",
+      success: function(response) {
+        if (response.error) {
+          $("#status").addClass("alert alert-danger");
+        } else {
+          $("#status").addClass("alert alert-success");
         }
+        $("#status").text(response.msg);
+      },
+      error: function(response) {
+        $("#status").addClass("alert-danger");
+        $("#status").text("Error retrieving notification status!");
+      }
     });
-});
+  });
 </script>
 
-<div id="status">
-</div>
+<div id="status"></div>
 {% end %}
 
 <form class="form-horizontal" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="appname" value="{{app['shortname']}}" />
-    <fieldset>
-        <legend>{{ _('Broadcast') }}</legend>
+  <input type="hidden" name="appname" value="{{app['shortname']}}" />
+  <fieldset>
+    <legend>{{ _('Broadcast') }}</legend>
 
-        <div class="control-group">
-            <label class="control-label" for="notification">{{ _('Message') }}</label>
-            <div class="controls">
-                <textarea class="input-xxlarge" rows="6" id="notification" name="notification"></textarea>
-            </div>
-        </div>
+    <div class="form-group">
+      <label for="notification">{{ _('Message') }}</label>
+      <textarea
+        class="form-control"
+        rows="6"
+        id="notification"
+        name="notification"
+      ></textarea>
+    </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">{{ _('Send') }}</button>
-        </div>
-    </fieldset>
+    <button type="submit" class="btn btn-primary">{{ _('Send') }}</button>
+  </fieldset>
 </form>
 
 {% end %}

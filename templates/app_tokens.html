@@ -1,44 +1,48 @@
-{% extends "base.html" %}
-
-{% block navbar %}
-{{ modules.NavBar('applications') }}
-{% end %}
-
-{% block tabbaritems %}
-{{ modules.TabBar(app, 'tokens') }}
-{% end %}
-
-{% block sidebaritems %}
-{{ modules.AppSideBar(app, 'tokens') }}
-{% end %}
-
-{% block body %}
-  <div class="row-fluid">
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th width="10%">{{ _('Device') }}</th>
-                <th width="70%">{{ _('Token/Registration ID') }}</th>
-                <th>{{ _('Delete') }}</th>
-            </tr>
-        </thead>
-        <tbody style="overflow:scroll">
-        {% for token in tokens %}
-            <tr>
-                <td>{{ token['device'] }}</td>
-                <td><div style="overflow:auto"><code>{{ token['token'] }}</div></code></td>
-                <td>
-                    <a class="btn btn-danger" href="/applications/{{app['shortname']}}/tokens?delete={{token['_id']}}"><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a>
-                </td>
-            </tr>
-        {% end %}
-        </tbody>
-    </table>
-    <div>
-        {% if not (page == 0) %}
-        <a class="btn" href="/applications/{{app['shortname']}}/tokens?page={{page - 1}}">{{ _('Previous') }}</a>
-        {% end %}
-        <a class="btn" href="/applications/{{app['shortname']}}/tokens?page={{page + 1}}">{{ _('Next') }}</a>
-    </div>
-  </div><!--/row-->
+{% extends "base.html" %} {% block navbar %} {{ modules.NavBar('applications')
+}} {% end %} {% block tabbaritems %} {{ modules.TabBar(app, 'tokens') }} {% end
+%} {% block sidebaritems %} {{ modules.AppSideBar(app, 'tokens') }} {% end %} {%
+block body %}
+<div class="row-fluid">
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th width="10%">{{ _('Device') }}</th>
+        <th width="70%">{{ _('Token/Registration ID') }}</th>
+        <th>{{ _('Delete') }}</th>
+      </tr>
+    </thead>
+    <tbody style="overflow:scroll">
+      {% for token in tokens %}
+      <tr>
+        <td>{{ token['device'] }}</td>
+        <td>
+          <div style="overflow:auto"><code>{{ token['token'] }}</code></div>
+        </td>
+        <td>
+          <a
+            class="btn btn-danger"
+            href="/applications/{{app['shortname']}}/tokens?delete={{token['_id']}}"
+            ><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a
+          >
+        </td>
+      </tr>
+      {% end %}
+    </tbody>
+  </table>
+  <div>
+    {% if not (page == 0) %}
+    <a
+      class="btn btn-primary"
+      href="/applications/{{app['shortname']}}/tokens?page={{page - 1}}"
+      >{{ _('Previous') }}</a
+    >
+    {% end %}
+    <a
+      class="btn btn-primary"
+      href="/applications/{{app['shortname']}}/tokens?page={{page + 1}}"
+      >{{ _('Next') }}</a
+    >
+  </div>
+</div>
+<!--/row-->
 {% end %}

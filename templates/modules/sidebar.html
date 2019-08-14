@@ -1,18 +1,96 @@
-<ul class="nav nav-list">
-    <li class="nav-header">{{ _('Admin') }}</li>
-    {% if active == 'managers'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/admin/managers"><i class="icon-user"></i> {{ _('Users') }}</a></li>
-    {% if active == 'createapp'%}<li class="active">{% else %}<li>{% end %}
-    <a href="/create/app"><i class="icon-plus"></i> {{ ('Create an app') }}</a></li>
+<!-- icons: https://github.com/danklammer/bytesize-icons -->
+<h6
+  class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted"
+>
+  <span>{{ _('Admin') }}</span>
+  <a class="d-flex align-items-center text-muted" href="#">
+    <span data-feather="plus-circle"></span>
+  </a>
+</h6>
+<ul class="nav flex-column">
+  <li class="nav-item">
+    <a
+      class="nav-link {% if active == 'managers' %}active{% end %}"
+      href="/admin/managers"
+    >
+      <svg
+        id="i-user"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 38 38"
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentcolor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+      >
+        <path
+          d="M22 11 C22 16 19 20 16 20 13 20 10 16 10 11 10 6 12 3 16 3 20 3 22 6 22 11 Z M4 30 L28 30 C28 21 22 20 16 20 10 20 4 21 4 30 Z"
+        />
+      </svg>
+
+      {{ _('Users') }}</a
+    >
+  </li>
+  <li class="nav-item">
+    <a
+      class="nav-link {% if active == 'createapp' %}active{% end %}"
+      href="/create/app"
+    >
+      <svg
+        id="i-plus"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 38 38"
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentcolor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+      >
+        <path d="M16 2 L16 30 M2 16 L30 16" />
+      </svg>
+
+      {{ ('Create') }}</a
+    >
+  </li>
 </ul>
 
-<ul class="nav nav-list">
-    <li class="nav-header">{{ _('Applications') }}</li>
-    {% for r in apps %}
-    {% if r['shortname'] == app.get('shortname', '') %}<li class="active">{% else %}<li>{% end %}
-        <a href="/applications/{{r['shortname']}}/settings">
-            <i class="icon-star"></i> {{ r.get('fullname', r.get('shortname')) }}
-        </a>
-    </li>
-    {% end %}
+<h6
+  class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted"
+>
+  <span>{{ _('Applications') }}</span>
+  <a class="d-flex align-items-center text-muted" href="#">
+    <span data-feather="plus-circle"></span>
+  </a>
+</h6>
+<ul class="nav flex-column">
+  {% for r in apps %}
+  <li class="nav-item">
+    <a
+      class="nav-link {% if r['shortname'] == app.get('shortname', '') %}active{%end%}"
+      href="/applications/{{r['shortname']}}/settings"
+    >
+      <svg
+        id="i-mobile"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 38 38"
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentcolor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+      >
+        <path
+          d="M21 2 L11 2 C10 2 9 3 9 4 L9 28 C9 29 10 30 11 30 L21 30 C22 30 23 29 23 28 L23 4 C23 3 22 2 21 2 Z M9 5 L23 5 M9 27 L23 27"
+        />
+      </svg>
+      {{ r.get('shortname', r.get('shortname')) }}
+    </a>
+  </li>
+  {% end %}
 </ul>

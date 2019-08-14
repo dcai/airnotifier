@@ -1,52 +1,56 @@
-{% extends "base.html" %}
-
-{% block navbar %}
-{{ modules.NavBar('applications') }}
-{% end %}
-
-{% block tabbaritems %}
-{{ modules.TabBar(app, 'logs') }}
-{% end %}
-
-{% block sidebaritems %}
-{{ modules.AppSideBar(app, 'logs') }}
-{% end %}
-
-{% block body %}
+{% extends "base.html" %} {% block navbar %} {{ modules.NavBar('applications')
+}} {% end %} {% block tabbaritems %} {{ modules.TabBar(app, 'logs') }} {% end %}
+{% block sidebaritems %} {{ modules.AppSideBar(app, 'logs') }} {% end %} {%
+block body %}
 <form class="form-horizontal" method="post" enctype="multipart/form-data">
-       <div class="form-actions">
-           <button type="submit" class="btn btn-danger">Purge logs more than 30 days old</button>
-       </div>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-danger">
+      Purge logs more than 30 days old
+    </button>
+  </div>
 </form>
 <div class="row-fluid">
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>{{ _('Action') }}</th>
-                <th>{{ _('Info') }}</th>
-                <th>{{ _('Time') }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% from datetime import datetime %}
-            {% for log in logs %}
-            <tr>
-                <td><span class="label label-{{log['level']}}">{{log['action']}}</span></td>
-                <td> {{ log['info'] }} </td>
-                {% if log.has_key('created') %}
-                <td>{{ datetime.fromtimestamp(log['created']).strftime("%I:%M%p %d, %B") }}</td>
-                {% else %}
-                <td></td>
-                {% end %}
-            </tr>
-            {% end %}
-        </tbody>
-    </table>
-    <div>
-        {% if not (page == 0) %}
-        <a class="btn" href="/applications/{{app['shortname']}}/logs?page={{page - 1}}">{{ _('Previous') }}</a>
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>{{ _('Action') }}</th>
+        <th>{{ _('Info') }}</th>
+        <th>{{ _('Time') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% from datetime import datetime %} {% for log in logs %}
+      <tr>
+        <td>
+          <span class="label label-{{log['level']}}">{{log['action']}}</span>
+        </td>
+        <td>{{ log['info'] }}</td>
+        {% if log.has_key('created') %}
+        <td>
+          {{ datetime.fromtimestamp(log['created']).strftime("%I:%M%p %d, %B")
+          }}
+        </td>
+        {% else %}
+        <td></td>
         {% end %}
-        <a class="btn" href="/applications/{{app['shortname']}}/logs?page={{page + 1}}">{{ _('Next') }}</a>
-    </div>
-</div><!--/row-->
+      </tr>
+      {% end %}
+    </tbody>
+  </table>
+  <div>
+    {% if not (page == 0) %}
+    <a
+      class="btn"
+      href="/applications/{{app['shortname']}}/logs?page={{page - 1}}"
+      >{{ _('Previous') }}</a
+    >
+    {% end %}
+    <a
+      class="btn"
+      href="/applications/{{app['shortname']}}/logs?page={{page + 1}}"
+      >{{ _('Next') }}</a
+    >
+  </div>
+</div>
+<!--/row-->
 {% end %}

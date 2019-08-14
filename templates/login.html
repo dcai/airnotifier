@@ -1,42 +1,34 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block navbar %} {{ modules.NavBar('applications')
+}} {% end %} {% block body %}
 
-{% block navbar %}
-{{ modules.NavBar('applications') }}
-{% end %}
+<form method="post" enctype="multipart/form-data">
+  <fieldset>
+    <legend>{{ _('Login') }}</legend>
 
-{% block sidebaritems %}
-<ul class="nav nav-list">
-    <li class="nav-header">{{ _('Actions') }}</li>
-    <a href="###"> {{ _('Register') }}</a></li>
-</ul>
+    <div class="form-row">
+      <div class="col">
+        <input
+          class="form-control"
+          type="text"
+          name="username"
+          placeholder="username"
+        />
+      </div>
 
-{% end %}
-
-{% block body %}
-
-<form class="form-horizontal" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="appname" value="" />
-    <fieldset>
-        <legend>{{ _('Login') }}</legend>
-
-        <div class="control-group">
-            <label class="control-label" for="appdescription">{{ _('Username') }}</label>
-            <div class="controls">
-                <input type="text" class="input-xlarge" name="username">
-            </div>
-        </div>
-
-        <div class="control-group">
-            <label class="control-label" for="appdescription">{{ _('Password') }}</label>
-            <div class="controls">
-                <input type="password" class="input-xlarge" name="password">
-            </div>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">{{ _('Sign in') }}</button>
-        </div>
-    </fieldset>
+      <div class="col">
+        <input
+          class="form-control"
+          type="password"
+          name="password"
+          placeholder="password"
+        />
+      </div>
+    </div>
+  </fieldset>
+  <hr />
+  <button type="submit" class="btn btn-primary">
+    {{ _('Sign in') }}
+  </button>
 </form>
 
 {% end %}

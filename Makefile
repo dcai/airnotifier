@@ -4,6 +4,9 @@ all: start
 install-db:
 	pipenv run ./install.py
 
+upgrade:
+	pipenv run ./upgrade.py
+
 start:
 	pipenv run ./app.py
 

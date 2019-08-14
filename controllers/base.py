@@ -119,7 +119,10 @@ class WebBaseHandler(tornado.web.RequestHandler):
         return user
 
     def render_string(self, template_name, **kwargs):
-        apps = self.masterdb.applications.find()
+        apps = []
+        if self.currentuser and "orgId" in self.currentuser:
+            currentuser_orgid = self.currentuser["orgId"]
+            apps = self.masterdb.applications.find({"orgId": currentuser_orgid})
         kwargs["apps"] = apps
         return super(WebBaseHandler, self).render_string(template_name, **kwargs)
 
@@ -281,9 +284,10 @@ class AdminHandler(WebBaseHandler):
             user["created"] = int(time.time())
             user["username"] = self.get_argument("newusername").strip()
             password = self.get_argument("newpassword").strip()
-            passwordhash = sha1("%s%s" % (options.passwordsalt, password)).hexdigest()
+            passwordhash = get_password(password, options.passwordsalt)
             user["password"] = passwordhash
             user["level"] = "manager"
+            user["orgId"] = self.currentuser["orgId"]
             result = self.masterdb.managers.update(
                 {"username": user["username"]}, user, upsert=True
             )

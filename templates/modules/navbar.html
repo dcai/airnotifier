@@ -1,15 +1,25 @@
-<ul class="nav">
+<ul class="navbar-nav bd-navbar-nav flex-row">
+  <li class="nav-item">
+    {% if tab == 'applications'%}
+    <a class="nav-link active" href="/applications">Admin</a>
+    {% else %}
+    <a class="nav-link" href="/applications">Admin</a>
+    {% end %}
+  </li>
 
-    {% if tab == 'applications'%} <li class="active"> {% else %} <li> {% end %}
-        <a href="/applications">Admin</a>
-    </li>
+  <li class="nav-item">
+    {% if tab == 'stats'%}
+    <a class="nav-link active" href="/stats/">Stats</a>
+    {% else %}
+    <a class="nav-link" href="/stats/">Stats</a>
+    {% end %}
+  </li>
 
-    {% if tab == 'stats'%} <li class="active"> {% else %} <li> {% end %}
-        <a href="/stats/">Stats</a>
-    </li>
-
-    {% if tab == 'info'%} <li class="active"> {% else %} <li> {% end %}
-        <a href="/info/">Server Info</a>
-    </li>
-
+  <li class="nav-item">
+    {% if tab == 'info'%}
+    <a class="nav-link active" href="/info/">Server Info</a>
+    {% else %}
+    <a class="nav-link" href="/info/">Server Info</a>
+    {% end %}
+  </li>
 </ul>

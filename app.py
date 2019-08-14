@@ -306,18 +306,6 @@ def init_messaging_agents():
                         _logger.error(ex)
                         continue
                     services["apns"][app["shortname"]].append(apn)
-        """ GCMClient setup """
-        services["gcm"][app["shortname"]] = []
-        if "gcmprojectnumber" in app and "gcmapikey" in app and "shortname" in app:
-            try:
-                http = GCMClient(
-                    app["gcmprojectnumber"], app["gcmapikey"], app["shortname"], 0
-                )
-            except Exception as ex:
-                _logger.error(ex)
-                continue
-            services["gcm"][app["shortname"]].append(http)
-
         """ FCMClient setup """
         services["fcm"][app["shortname"]] = []
         if "fcm-project-id" in app and "fcm-jsonkey" in app and "shortname" in app:
@@ -339,24 +327,6 @@ def init_messaging_agents():
                 _logger.error(ex)
                 continue
             services["wns"][app["shortname"]].append(wns)
-
-        """ MPNS setup """
-        services["mpns"][app["shortname"]] = []
-        try:
-            mpns = MPNSClient(masterdb, app, 0)
-        except Exception as ex:
-            _logger.error(ex)
-            continue
-        services["mpns"][app["shortname"]].append(mpns)
-
-        """ clickatell """
-        services["sms"][app["shortname"]] = []
-        try:
-            sms = ClickatellClient(masterdb, app, 0)
-        except Exception as ex:
-            _logger.error(ex)
-            continue
-        services["sms"][app["shortname"]].append(sms)
     mongodb.close()
     return services
 

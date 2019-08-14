@@ -178,6 +178,29 @@ if __name__ == "__main__":
         masterdb["options"].update_one(
             {"name": "version"}, {"$set": {"value": 20190125}}, upsert=True
         )
+    if version < 20190814:
+        users = masterdb.managers.find()
+        for user in users:
+            #  appname = app["shortname"]
+            # Repair application setting collection
+            if not "orgId" in user:
+                masterdb.managers.find_one_and_update(
+                    {"username": user["username"]}, {"$set": {"orgId": 0}}
+                )
+        apps = masterdb.applications.find()
+        for app in apps:
+            print(app)
+            if not "orgId" in app:
+                masterdb.applications.find_one_and_update(
+                    {"shortname": app["shortname"]}, {"$set": {"orgId": 0}}
+                )
+            #  if not "clickatellpassword" in app:
+            #  app["clickatellpassword"] = ""
+            #  if not "clickatellappid" in app:
+            #  app["clickatellappid"] = ""
+        #  masterdb["options"].update_one(
+        #  {"name": "version"}, {"$set": {"value": 20190814}}, upsert=True
+        #  )
 
     version_object = masterdb["options"].find_one({"name": "version"})
     version = version_object["value"]

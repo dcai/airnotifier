@@ -1,43 +1,38 @@
-{% extends "base.html" %}
-
-{% block sidebaritems %}
-{{ modules.AppSideBar({}, 'createapp') }}
-{% end %}
-
-{% block navbar %}
-{{ modules.NavBar('applications') }}
-{% end %}
-
-{% block body %}
-<form class="form-horizontal" method="post" enctype="multipart/form-data">
-    <fieldset>
-        <legend>{{ _('Create new app') }}</legend>
-        <div class="control-group">
-            <label class="control-label" for="shortnameinput">App short name</label>
-            <div class="controls">
-                <input type="text" class="input-xlarge" id="shortnameinput" name="appshortname" value="">
-                <p class="help-block">Unique identifier for your app.</p>
-            </div>
+{% extends "base.html" %} {% block sidebaritems %} {{ modules.AppSideBar({},
+'createapp') }} {% end %} {% block navbar %} {{ modules.NavBar('applications')
+}} {% end %} {% block body %}
+<form method="post" enctype="multipart/form-data">
+  <fieldset>
+    <legend>{{ _('Create new app') }}</legend>
+    <div class="form-row">
+      <div class="col">
+        <label class="control-label" for="shortnameinput">App short name</label>
+        <div class="controls">
+          <input
+            type="text"
+            class="form-control"
+            id="shortnameinput"
+            name="appshortname"
+            value=""
+          />
+          <p class="help-block">Unique identifier for your app.</p>
         </div>
+      </div>
+    </div>
 
-        <div class="control-group">
-            <label class="control-label" for="fullnameinput">App full name</label>
-            <div class="controls">
-                <input type="text" class="input-xlarge" id="fullnameinput" name="appfullname" value="">
-                <p class="help-block">Your app's fullname.</p>
-            </div>
-        </div>
-
-        <div class="control-group">
-            <label class="control-label" for="appdescription">Description</label>
-            <div class="controls">
-                <textarea class="input-xlarge" id="appdescription" rows="3" name="appdescription"></textarea>
-            </div>
-        </div>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
-        </div>
-    </fieldset>
+    <div class="form-group">
+      <label class="control-label" for="appdescription">Description</label>
+      <div class="controls">
+        <textarea
+          class="form-control"
+          id="appdescription"
+          rows="3"
+          name="appdescription"
+        ></textarea>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+  </fieldset>
 </form>
 
 {% end %}

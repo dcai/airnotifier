@@ -8,10 +8,9 @@ AirNotifier is a user friendly yet powerful application server for sending real-
 ## Supported devices
 - International SMS (uses [clickatell](https://www.clickatell.com/), credits required)
 - iPhone/iPad devices ([APNS](https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/Chapters/ApplePushService.html) protocol)
-- Android devices ([GCM](http://developer.android.com/google/gcm/index.html) protocol)
-- Windows 7.1/8 phone (MPNS protocol)
+- Android devices ([FCM](https://firebase.google.com/docs/cloud-messaging) protocol)
 - Windows 8.1 phone (WNS protocol)
-- Windows 8.1 desktop (WNS protocol)
+- Windows 10 desktop (WNS protocol)
 
 ## Features
 - Open source application server, you can install on your own server, own your data
@@ -144,9 +143,8 @@ Please read [Installation guide](https://github.com/airnotifier/airnotifier/wiki
 
 ## Requirements
 
-- [Python 2.7.9+](http://www.python.org)
+- [Python 3.6](http://www.python.org)
 - [MongoDB 2.0+](http://www.mongodb.org/)
-- [Tornado 4.5+](http://tornadoweb.org)
 
 ## Copyright
 Copyright (c) Dongsheng Cai and individual contributors

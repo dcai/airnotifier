@@ -143,6 +143,15 @@ def encode_file(file):
     return base64.b64encode(content).decode("utf-8")
 
 
+def save_file(req):
+    filename = sha1(req["body"]).hexdigest()
+    filepath = get_filepath(filename)
+    thefile = open(filepath, "w")
+    thefile.write(req["body"])
+    thefile.close()
+    return filename
+
+
 def file_exists(filename):
     if not filename:
         return False

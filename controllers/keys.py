@@ -56,6 +56,8 @@ class AppAccessKeysHandler(WebBaseHandler):
         if key_to_be_deleted:
             self.db.keys.remove({"key": key_to_be_deleted})
             self.redirect("/applications/%s/keys" % appname)
+        print(API_PERMISSIONS.items())
+        print(app)
         self.render(
             "app_keys.html",
             app=app,
@@ -82,7 +84,7 @@ class AppAccessKeysHandler(WebBaseHandler):
         key["permission"] = result
         # make key as shorter as possbile
         if action == "create":
-            key["key"] = md5(str(uuid.uuid4())).hexdigest()
+            key["key"] = md5(str(uuid.uuid4()).encode("utf-8")).hexdigest()
             # Alternative key generator, this is SHORT
             # crc = binascii.crc32(str(uuid.uuid4())) & 0xffffffff
             # key['key'] = '%08x' % crc
