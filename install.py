@@ -74,7 +74,7 @@ if __name__ == "__main__":
             masterdb.create_collection("applications")
             print("db.applications installed")
     except CollectionInvalid as ex:
-        print("Failed to created applications collection", ex)
+        print(("Failed to created applications collection", ex))
         pass
 
     try:
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         masterdb["managers"].insert(manager)
         print("Admin user created, username: admin, password: admin")
     except Exception as ex:
-        print("Failed to create admin user", ex)
+        print(("Failed to create admin user", ex))
 
     try:
         if not "options" in collection_names:
@@ -107,6 +107,6 @@ if __name__ == "__main__":
         option_ver["name"] = "version"
         option_ver["value"] = VERSION
         masterdb["options"].insert(option_ver)
-        print("Version number written: %s" % VERSION)
+        print(("Version number written: %s" % VERSION))
     except Exception:
         print("Failed to write version number")

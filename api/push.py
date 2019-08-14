@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 try:
-    from httplib import BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, ACCEPTED
+    from http.client import BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, ACCEPTED
 except:
     from http.client import BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, ACCEPTED
 from routes import route
@@ -65,7 +65,7 @@ class PushHandler(APIBaseHandler):
         return payload
 
     def get_apns_conn(self):
-        if not self.apnsconnections.has_key(self.app["shortname"]):
+        if self.app["shortname"] not in self.apnsconnections:
             self.send_response(INTERNAL_SERVER_ERROR, dict(error="APNs is offline"))
             return
         count = len(self.apnsconnections[self.app["shortname"]])

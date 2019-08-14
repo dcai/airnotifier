@@ -40,7 +40,7 @@ import sys
 def buildUpdateFields(params):
     """Join fields and values for SQL update statement
     """
-    return ",".join(['%s = "%s"' % (k, v) for k, v in params.items()])
+    return ",".join(['%s = "%s"' % (k, v) for k, v in list(params.items())])
 
 
 def normalize_tokens(tokens):

@@ -42,7 +42,7 @@ class FCMClient(PushService):
         # Try to convert all fields to string.
         formatted = {}
 
-        for (k, v) in data.iteritems():
+        for (k, v) in data.items():
             if isinstance(v, bool):
                 formatted[k] = "1" if v else "0"
 

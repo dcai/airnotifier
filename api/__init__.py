@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 try:
-    from httplib import (
+    from http.client import (
         BAD_REQUEST,
         LOCKED,
         FORBIDDEN,
@@ -49,7 +49,7 @@ import json
 import logging
 import random
 import time
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import uuid
 import requests
 import tornado.web
@@ -157,7 +157,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
             ) == API_PERMISSIONS[permissionname][0]
 
     def check_blockediplist(self, ip, app):
-        if app.has_key("blockediplist") and app["blockediplist"]:
+        if "blockediplist" in app and app["blockediplist"]:
             from netaddr import IPNetwork, IPAddress
 
             iplist = app["blockediplist"].splitlines()
@@ -247,7 +247,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
         try:
             data = json.loads(text)
         except:
-            data = json.loads(urllib.unquote_plus(text))
+            data = json.loads(urllib.parse.unquote_plus(text))
 
         return data
 
@@ -374,7 +374,7 @@ class NotificationHandler(APIBaseHandler):
         # Build the custom params  (everything not alert/sound/badge/token)
         customparams = {}
         allparams = {}
-        for name, value in self.request.arguments.items():
+        for name, value in list(self.request.arguments.items()):
             allparams[name] = self.get_argument(name)
             if name not in knownparams:
                 customparams[name] = self.get_argument(name)
@@ -389,7 +389,7 @@ class NotificationHandler(APIBaseHandler):
                 expiry=None,
                 customparams=customparams,
             )
-            if not self.apnsconnections.has_key(self.app["shortname"]):
+            if self.app["shortname"] not in self.apnsconnections:
                 # TODO: add message to queue in MongoDB
                 self.send_response(INTERNAL_SERVER_ERROR, dict(error="APNs is offline"))
                 return
@@ -407,7 +407,7 @@ class NotificationHandler(APIBaseHandler):
         elif device == DEVICE_TYPE_ANDROID:
             try:
                 gcm = self.gcmconnections[self.app["shortname"]][0]
-                data = dict({"message": alert}.items() + customparams.items())
+                data = dict(list({"message": alert}.items()) + list(customparams.items()))
                 response = gcm.send(
                     [self.token], data=data, collapse_key=collapse_key, ttl=3600
                 )

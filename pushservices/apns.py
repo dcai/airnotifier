@@ -76,7 +76,7 @@ class PayLoad(object):
         customparams=None,
     ):
         if expiry == None:
-            self.expiry = long(time.time() + 60 * 60 * 24)
+            self.expiry = int(time.time() + 60 * 60 * 24)
         else:
             self.expiry = expiry
         if not identifier:
@@ -122,7 +122,7 @@ class PayLoad(object):
 
         payload = {"aps": item}
         if self.customparams != None:
-            payload = dict(payload.items() + self.customparams.items())
+            payload = dict(list(payload.items()) + list(self.customparams.items()))
         return payload
 
     def json(self):

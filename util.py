@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 try:
-    from HTMLParser import HTMLParser
+    from html.parser import HTMLParser
 except:
     from html.parser import HTMLParser
 
@@ -35,7 +35,7 @@ import calendar
 import datetime
 
 try:
-    from htmlentitydefs import name2codepoint
+    from html.entities import name2codepoint
 except:
     from html.entities import name2codepoint
 import re
@@ -70,15 +70,15 @@ class HTMLTextExtractor(HTMLParser):
         self.result.append(d)
 
     def handle_charref(self, number):
-        codepoint = int(number[1:], 16) if number[0] in (u"x", u"X") else int(number)
-        self.result.append(unichr(codepoint))
+        codepoint = int(number[1:], 16) if number[0] in ("x", "X") else int(number)
+        self.result.append(chr(codepoint))
 
     def handle_entityref(self, name):
         codepoint = name2codepoint[name]
-        self.result.append(unichr(codepoint))
+        self.result.append(chr(codepoint))
 
     def get_text(self):
-        return u"".join(self.result)
+        return "".join(self.result)
 
 
 def strip_tags(html):

@@ -84,9 +84,9 @@ class GCMClient(PushService):
         return json.dumps(payload)
 
     def reverse_response_info(self, key, ids, results):
-        zipped = zip(ids, results)
+        zipped = list(zip(ids, results))
         # Get items having error key
-        filtered = filter(lambda x: key in x[1], zipped)
+        filtered = [x for x in zipped if key in x[1]]
         # Expose error value
         exposed = [(s[0], s[1][key]) for s in filtered]
         errors = {}
@@ -153,7 +153,7 @@ class GCMClient(PushService):
             errors = self.reverse_response_info(
                 "error", regids, responsedata["results"]
             )
-            for errorkey, packed_rregisteration_ids in errors.items():
+            for errorkey, packed_rregisteration_ids in list(errors.items()):
                 # Check for errors and act accordingly
                 if errorkey == "NotRegistered":
                     # Should remove the registration ID from your server database

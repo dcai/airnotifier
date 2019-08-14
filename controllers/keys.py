@@ -50,20 +50,20 @@ class AppAccessKeysHandler(WebBaseHandler):
                 app=app,
                 keys=keys,
                 key=key,
-                map=API_PERMISSIONS.items(),
+                map=list(API_PERMISSIONS.items()),
             )
             return
         if key_to_be_deleted:
             self.db.keys.remove({"key": key_to_be_deleted})
             self.redirect("/applications/%s/keys" % appname)
-        print(API_PERMISSIONS.items())
+        print((list(API_PERMISSIONS.items())))
         print(app)
         self.render(
             "app_keys.html",
             app=app,
             keys=keys,
             newkey=None,
-            map=API_PERMISSIONS.items(),
+            map=list(API_PERMISSIONS.items()),
         )
 
     @tornado.web.authenticated

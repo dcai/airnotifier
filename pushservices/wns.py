@@ -33,7 +33,7 @@ import time
 import xml.etree.ElementTree as ET
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except:
     from io import StringIO
 

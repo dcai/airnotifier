@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 try:
-    from httplib import (
+    from http.client import (
         BAD_REQUEST,
         LOCKED,
         FORBIDDEN,

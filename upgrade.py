@@ -129,11 +129,11 @@ if __name__ == "__main__":
         for app in apps:
             appname = app["shortname"]
             appid = ObjectId(app["_id"])
-            if app.has_key("certfile"):
+            if "certfile" in app:
                 app["certfile"] = os.path.basename(app.get("certfile"))
-            if app.has_key("keyfile"):
+            if "keyfile" in app:
                 app["keyfile"] = os.path.basename(app.get("keyfile"))
-            if app.has_key("mpnscertificatefile"):
+            if "mpnscertificatefile" in app:
                 app["mpnscertificatefile"] = os.path.basename(
                     app.get("mpnscertificatefile")
                 )
@@ -165,9 +165,9 @@ if __name__ == "__main__":
             appname = app["shortname"]
             db = mongodb[appprefix + appname]
             indexes = [("created", DESCENDING)]
-            print("Adding index to %s%s['tokens'].%s" % (appprefix, appname, "created"))
+            print(("Adding index to %s%s['tokens'].%s" % (appprefix, appname, "created")))
             db["tokens"].create_index(indexes)
-            print("Adding index to %s%s['logs'].%s" % (appprefix, appname, "created"))
+            print(("Adding index to %s%s['logs'].%s" % (appprefix, appname, "created")))
             db["logs"].create_index(indexes)
 
         masterdb["options"].update_one(

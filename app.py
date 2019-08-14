@@ -205,7 +205,7 @@ class AirNotifierApp(tornado.web.Application):
         app_settings = dict(
             debug=True,
             # debug=options.debug,
-            app_title=u"AirNotifier",
+            app_title="AirNotifier",
             current_year=str(now.year),
             version="{}-{}".format(RELEASE, VERSION),
             ui_modules={"AppSideBar": AppSideBar, "NavBar": NavBar, "TabBar": TabBar},

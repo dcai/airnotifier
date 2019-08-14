@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 try:
-    from httplib import FORBIDDEN, OK
+    from http.client import FORBIDDEN, OK
 except:
     from http.client import FORBIDDEN, OK
 from importlib import import_module
