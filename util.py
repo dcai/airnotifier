@@ -44,7 +44,7 @@ import unicodedata
 import os
 import base64
 from tornado.options import options
-from hashlib import sha1, sha512
+from hashlib import sha1, sha512, md5
 
 from bson.dbref import DBRef
 from bson.max_key import MaxKey
@@ -177,3 +177,7 @@ def get_password(password, salt):
     hash = sha512()
     hash.update(("%s%s" % (salt, password)).encode("utf-8"))
     return hash.hexdigest()
+
+
+def create_access_key():
+    return md5(str(uuid.uuid4()).encode("utf-8")).hexdigest()

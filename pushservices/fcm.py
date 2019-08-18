@@ -57,21 +57,16 @@ class FCMClient(PushService):
 
         return formatted
 
-    def build_request(self, token, alert, android=None, data=None, extra=None, apns=None):
+    def build_request(
+        self, token, alert, android=None, data=None, extra=None, apns=None
+    ):
         if alert is not None and not isinstance(alert, dict):
-            alert = {
-                "body": alert,
-                "title": alert
-            }
+            alert = {"body": alert, "title": alert}
 
         data["extra"] = extra
 
         # data structure: https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages
-        payload = {
-            "message": {
-                "token": token,
-            }
-        }
+        payload = {"message": {"token": token}}
 
         if alert:
             payload["message"]["notification"] = self.format_values(alert)
@@ -102,10 +97,19 @@ class FCMClient(PushService):
             android=android,
             extra=extra,
             data=data,
-            apns=apns
+            apns=apns,
         )
 
-    def send(self, token, alert=None, data=None, appdb=None, android=None, extra=None, apns=None):
+    def send(
+        self,
+        token,
+        alert=None,
+        data=None,
+        appdb=None,
+        android=None,
+        extra=None,
+        apns=None,
+    ):
         """
         Send message to google gcm endpoint
         :param token: device token

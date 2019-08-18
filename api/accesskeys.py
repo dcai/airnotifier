@@ -41,6 +41,7 @@ import uuid
 
 from api import APIBaseHandler
 from routes import route
+from util import *
 
 
 @route(r"/api/v2/accesskeys[\/]?")
@@ -75,7 +76,7 @@ class AccessKeysV2Handler(APIBaseHandler):
             key["description"] = data.get("description", "")
             key["created"] = int(time.time())
             key["permission"] = data["permission"]
-            key["key"] = md5(str(uuid.uuid4())).hexdigest()
+            key["key"] = create_access_key()
             self.db.keys.insert(key)
             self.send_response(OK, dict(accesskey=key["key"]))
         except Exception as ex:

@@ -25,11 +25,11 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-from hashlib import md5
+import sys, os
 import tornado.web
 from api import API_PERMISSIONS
 from controllers.base import *
+from util import *
 
 
 @route(r"/applications/([^/]+)/keys")
@@ -84,7 +84,7 @@ class AppAccessKeysHandler(WebBaseHandler):
         key["permission"] = result
         # make key as shorter as possbile
         if action == "create":
-            key["key"] = md5(str(uuid.uuid4()).encode("utf-8")).hexdigest()
+            key["key"] = create_access_key()
             # Alternative key generator, this is SHORT
             # crc = binascii.crc32(str(uuid.uuid4())) & 0xffffffff
             # key['key'] = '%08x' % crc
