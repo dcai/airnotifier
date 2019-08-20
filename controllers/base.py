@@ -310,7 +310,7 @@ class AdminHandler(WebBaseHandler):
                 )
         elif action == "changepassword":
             password = self.get_argument("newpassword").strip()
-            passwordhash = sha1("%s%s" % (options.passwordsalt, password)).hexdigest()
+            passwordhash = get_password(password, options.passwordsalt)
             self.masterdb.managers.update(
                 {"username": self.currentuser["username"]},
                 {"$set": {"password": passwordhash}},
