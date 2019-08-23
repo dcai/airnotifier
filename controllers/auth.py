@@ -28,25 +28,28 @@
 
 from controllers.base import *
 
+
 @route(r"/auth/([^/]+)")
 class AuthHandler(WebBaseHandler):
     def get(self, action):
-        next = self.get_argument('next', "/")
-        if action == 'logout':
-            self.clear_cookie('user')
+        next = self.get_argument("next", "/")
+        if action == "logout":
+            self.clear_cookie("user")
             self.redirect(next)
         else:
-            self.render('login.html')
+            self.render("login.html")
 
     def post(self, action):
-        next = self.get_argument('next', "/")
-        if action == 'logout':
-            self.clear_cookie('user')
+        next = self.get_argument("next", "/")
+        if action == "logout":
+            self.clear_cookie("user")
         else:
-            username = self.get_argument('username', None)
-            password = self.get_argument('password', None)
+            username = self.get_argument("username", None)
+            password = self.get_argument("password", None)
             passwordhash = sha1("%s%s" % (options.passwordsalt, password)).hexdigest()
-            user = self.masterdb.managers.find_one({'username': username, 'password': passwordhash})
+            user = self.masterdb.managers.find_one(
+                {"username": username, "password": passwordhash}
+            )
             if user:
-                self.set_secure_cookie('user', str(user['_id']))
+                self.set_secure_cookie("user", str(user["_id"]))
         self.redirect(next)

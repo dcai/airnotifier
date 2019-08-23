@@ -1,0 +1,234 @@
+{
+	"info": {
+		"_postman_id": "d9a00aff-fe72-990e-b2b1-d931bc1aac33",
+		"name": "airnotifier v2 API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "push (simple)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-AN-APP-NAME",
+						"value": "moodle"
+					},
+					{
+						"key": "X-AN-APP-KEY",
+						"value": "eb9977f82282513bfac8292702e4cf37"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"device\": \"fcm\",\n    \"alert\": {\n        \"title\": \"hello ts: {{$timestamp}}\",\n        \"body\": \"Hello from AirNotifier {{$guid}}\"\n    },\n    \"token\": \"{{airnotifier-device-token}}\"\n}"
+				},
+				"url": {
+					"raw": "{{airnotifier-host}}/api/v2/push",
+					"host": [
+						"{{airnotifier-host}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"push"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "push with hook",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-AN-APP-NAME",
+						"value": "moodle"
+					},
+					{
+						"key": "X-AN-APP-KEY",
+						"value": "eb9977f82282513bfac8292702e4cf37"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"device\": \"fcm\",\n    \"alert\": {\n        \"title\": \"hello ts: {{$timestamp}}\",\n        \"body\": \"Hello from AirNotifier {{$guid}}\"\n    },\n    \"fcm\": {\n        \"data\": {\n            \"title\": \"John Smith\",\n            \"body\": \"Message\",\n            \"notId\": \"1\",\n            \"image\": \"https://randomuser.me/api/portraits/men/6.jpg\",\n            \"image-type\": \"circle\",\n            \"style\": \"inbox\",\n            \"inbox-order\": \"asc\",\n            \"picture\": \"http://36.media.tumblr.com/c066cc2238103856c9ac506faa6f3bc2/tumblr_nmstmqtuo81tssmyno1_1280.jpg\",\n            \"summaryText\": \"There are %n% notifications\",\n            \"force-start\": \"1\",\n            \"actions\": [\n                {\n                    \"title\": \"EMAIL GUESTS\",\n                    \"callback\": \"testAction\",\n                    \"foreground\": false\n                },\n                {\n                    \"title\": \"SNOOZE\",\n                    \"callback\": \"discardAction\",\n                    \"foreground\": false,\n                    \"inline\": true,\n                    \"replyLabel\": \"Enter your reply here\"\n                }\n            ],\n            \"notif\": \"1\",\n            \"site\": \"27af9f306272ce65195720940e6845c6\"\n        }\n    },\n    \"extra\": {\n        \"processor\": \"moodle\"\n    },\n    \"token\": \"{{airnotifier-device-token}}\"\n}"
+				},
+				"url": {
+					"raw": "{{airnotifier-host}}/api/v2/push",
+					"host": [
+						"{{airnotifier-host}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"push"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create access key",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-AN-APP-NAME",
+						"value": "moodle"
+					},
+					{
+						"key": "X-AN-APP-KEY",
+						"value": "eb9977f82282513bfac8292702e4cf37"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"device\": \"fcm\",\n    \"alert\": {\n        \"title\": \"hello ts: {{$timestamp}}\",\n        \"body\": \"Hello from AirNotifier {{$guid}}\"\n    },\n    \"token\": \"{{airnotifier-device-token}}\"\n}"
+				},
+				"url": {
+					"raw": "{{airnotifier-host}}/api/v2/accesskeys",
+					"host": [
+						"{{airnotifier-host}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"accesskeys"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create user",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-AN-APP-NAME",
+						"value": "moodle"
+					},
+					{
+						"key": "X-AN-APP-KEY",
+						"value": "eb9977f82282513bfac8292702e4cf37"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "username",
+							"value": "test{{$randomInt}}",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "test",
+							"type": "text"
+						},
+						{
+							"key": "email",
+							"value": "test@test.test",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{airnotifier-host}}/api/v2/users",
+					"host": [
+						"{{airnotifier-host}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "find users",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-AN-APP-NAME",
+						"value": "moodle"
+					},
+					{
+						"key": "X-AN-APP-KEY",
+						"value": "eb9977f82282513bfac8292702e4cf37"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "username",
+							"value": "test{{$randomInt}}",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "test",
+							"type": "text"
+						},
+						{
+							"key": "email",
+							"value": "test@test.test",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{airnotifier-host}}/api/v2/users?where={\"username\":\"test205\"}",
+					"host": [
+						"{{airnotifier-host}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"users"
+					],
+					"query": [
+						{
+							"key": "where",
+							"value": "{\"username\":\"test205\"}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

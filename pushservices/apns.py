@@ -35,7 +35,7 @@ import struct
 import time
 import os
 from util import *
-from binascii import hexlify, unhexlify
+from binascii import hexlify, unhexlify, b2a_hex
 from tornado import ioloop, iostream
 import string
 import random
@@ -49,20 +49,32 @@ ENHANCED_NOTIFICATION_COMMAND = 1
 TOKEN_LENGTH = 32
 
 apns = {
-    'sandbox': ("gateway.sandbox.push.apple.com", 2195),
-    'production': ("gateway.push.apple.com", 2195)
+    "sandbox": ("gateway.sandbox.push.apple.com", 2195),
+    "production": ("gateway.push.apple.com", 2195),
 }
 
 feedbackhost = {
-    'sandbox': ("feedback.sandbox.push.apple.com", 2196),
-    'production': ("feedback.push.apple.com", 2196)
+    "sandbox": ("feedback.sandbox.push.apple.com", 2196),
+    "production": ("feedback.push.apple.com", 2196),
 }
+
+
 def id_generator(size=4, chars=string.ascii_letters + string.digits):
     """  string.ascii_letters + string.digits + string.punctuation """
-    return ''.join(random.choice(chars) for _ in range(size))
+    return "".join(random.choice(chars) for _ in range(size))
+
 
 class PayLoad(object):
-    def __init__(self, alert=None, badge=None, sound=None, content=None, identifier=0, expiry=None, customparams=None):
+    def __init__(
+        self,
+        alert=None,
+        badge=None,
+        sound=None,
+        content=None,
+        identifier=0,
+        expiry=None,
+        customparams=None,
+    ):
         if expiry == None:
             self.expiry = long(time.time() + 60 * 60 * 24)
         else:
@@ -83,41 +95,44 @@ class PayLoad(object):
         if self.sound is not None:
             # remove sound field ,'sound':""
             alertlength = alertlength - 11 - len(self.sound)
-            item['sound'] = self.sound
+            item["sound"] = self.sound
         if self.badge:
             # remove sound field ,'badge':""
             alertlength = alertlength - 11 - len(str(self.badge))
-            item['badge'] = int(self.badge)
+            item["badge"] = int(self.badge)
         if self.content:
             # Add support for 'content-available' key. - M.D.
             try:
                 content = int(self.content)
                 content = 1 if content == 1 else 0
-                item['content-available'] = content
+                item["content-available"] = content
             except ValueError as err:
-                _logger.warn('Bad value for content flag ("content-available"): %s', err)
+                _logger.warn(
+                    'Bad value for content flag ("content-available"): %s', err
+                )
 
         if type(self.alert) is dict:
-            item['alert'] = self.alert
+            item["alert"] = self.alert
         else:
             if len(self.alert) > alertlength:
                 alertlength = alertlength - 3
-                item['alert'] = self.alert[:alertlength] + '...'
+                item["alert"] = self.alert[:alertlength] + "..."
             else:
-                item['alert'] = self.alert
+                item["alert"] = self.alert
 
-        payload = {'aps': item}
+        payload = {"aps": item}
         if self.customparams != None:
             payload = dict(payload.items() + self.customparams.items())
         return payload
 
     def json(self):
-        jsontext = json.dumps(self.build_payload(), separators=(',', ':'))
-        _logger.debug('## ' + jsontext)
+        jsontext = json.dumps(self.build_payload(), separators=(",", ":"))
+        _logger.debug("## " + jsontext)
         return jsontext
 
+
 class APNFeedback(object):
-    def __init__(self, env="sandbox", certfile="", keyfile="", appname=""):
+    def __init__(self, env="sandbox", certfile="", keyfile="", appname="", appdb=None):
         certexists = file_exists(certfile)
         keyexists = file_exists(keyfile)
         if not certexists:
@@ -131,15 +146,21 @@ class APNFeedback(object):
         self.keyfile = get_filepath(keyfile)
         self.ioloop = ioloop.IOLoop.instance()
         self.appname = appname
+        self.appdb = appdb
+        self.buffer = b""
         self.connect()
 
     def connect(self):
         """ Setup socket """
         self.sock = socket(AF_INET, SOCK_STREAM)
-        self.remote_stream = iostream.SSLIOStream(self.sock, ssl_options=dict(certfile=self.certfile, keyfile=self.keyfile))
+        self.remote_stream = iostream.SSLIOStream(
+            self.sock, ssl_options=dict(certfile=self.certfile, keyfile=self.keyfile)
+        )
         self.remote_stream.connect(self.host, self._on_feedback_service_connected)
-        self.remote_stream.read_until_close(self._on_feedback_service_read_close,
-                                            self._on_feedback_service_read_streaming)
+        self.remote_stream.read_until_close(
+            self._on_feedback_service_read_close,
+            self._on_feedback_service_read_streaming,
+        )
 
     def shutdown(self):
         """Shutdown this connection"""
@@ -150,28 +171,44 @@ class APNFeedback(object):
         _logger.info("APNs connected")
 
     def _on_feedback_service_read_close(self, data):
+        self.parse_feedback()
         self.shutdown()
 
     def _on_feedback_service_read_streaming(self, data):
-        """ Feedback """
-        fmt = (
-            '!'
-            'I'   # expiry
-            'H'   # token length
-            '32s' # token
-        )
-        if len(data):
-            _logger.info(data)
-        else:
-            _logger.info("no data")
+        self.buffer += data
+
+    def parse_feedback(self):
+        tokens = []
+        buff = self.buffer
+        bytes_to_read = 6
+        while len(buff) > bytes_to_read:
+            token_length = struct.unpack(">H", buff[4:6])[0]
+            bytes_to_read = 6 + token_length
+            if len(buff) >= bytes_to_read:
+                token = b2a_hex(buff[6:bytes_to_read])
+                tokens.append(token)
+
+                buff = buff[bytes_to_read:]
+                bytes_to_read = 6
+        self.appdb.tokens.delete_many({"token": {"$in": tokens}})
+        self.add_to_log("APNS", "Cleaned unused tokens: " + ", ".join(tokens))
+
+    def add_to_log(self, action, info=None, level="info"):
+        log = {}
+        log["action"] = strip_tags(action)
+        log["info"] = strip_tags(info)
+        log["level"] = strip_tags(level)
+        log["created"] = int(time.time())
+        self.appdb.logs.insert(log)
 
 
 class APNClient(PushService):
-
     def is_online(self):
         return self.connected
 
-    def __init__(self, env='sandbox', certfile="", keyfile="", appname="", instanceid=0):
+    def __init__(
+        self, env="sandbox", certfile="", keyfile="", appname="", instanceid=0
+    ):
         self.apnsendpoint = apns[env]
 
         self.appname = appname
@@ -197,7 +234,9 @@ class APNClient(PushService):
     def _on_remote_connected(self):
         self.connected = True
         """ Callback when connected to APNs """
-        _logger.info('APNs connection: %s[%d] is online' % (self.appname, self.instanceid))
+        _logger.info(
+            "APNs connection: %s[%d] is online" % (self.appname, self.instanceid)
+        )
         # Processing the messages queue
         while self._write_to_remote_stream_from_queue():
             continue
@@ -205,7 +244,10 @@ class APNClient(PushService):
     def _on_remote_read_close(self, data):
         """ Close socket and reconnect """
         self.connected = False
-        _logger.warning('%s[%d] is offline. Reconnected?: %d' % (self.appname, self.instanceid, self.reconnect))
+        _logger.warning(
+            "%s[%d] is offline. Reconnected?: %d"
+            % (self.appname, self.instanceid, self.reconnect)
+        )
         """
             Command
                 | Status
@@ -217,17 +259,18 @@ class APNClient(PushService):
         Command always 8
         """
         status_table = {
-                0: "No erros",
-                1: "Processing error",
-                2: "Mssing device token",
-                3: "Missing topic",
-                4: "Missing payload",
-                5: "Invalid token size",
-                6: "Invalid topic size",
-                7: "Invalid payload size",
-                8: "Invalid token",
-               10: "Shutdown",
-              255: "None"}
+            0: "No erros",
+            1: "Processing error",
+            2: "Mssing device token",
+            3: "Missing topic",
+            4: "Missing payload",
+            5: "Invalid token size",
+            6: "Invalid topic size",
+            7: "Invalid payload size",
+            8: "Invalid token",
+            10: "Shutdown",
+            255: "None",
+        }
         # The error response packet
         self.connected = False
         if (len(data) == 0) and (self.reconnect == True):
@@ -235,11 +278,11 @@ class APNClient(PushService):
             if we get a 0 byte response and we're closing
             we should in theory just re-connect
             """
-            _logger.error('0 byte recieved.')
+            _logger.error("0 byte recieved.")
             try:
                 self.remote_stream.close()
                 self.sock.close()
-                _logger.error('Attempting re-connect...')
+                _logger.error("Attempting re-connect...")
                 self.connect()
             except Exception as ex:
                 raise ex
@@ -250,18 +293,25 @@ class APNClient(PushService):
             """
 
         if len(data) != 6:
-            _logger.error('response must be a 6-byte binary string.')
+            _logger.error("response must be a 6-byte binary string.")
         else:
             error_format = (
-                '!'  # network big-endian
-                'b'  # command, should be 8
-                'b'  # status
-                '4s'  # identifier
+                "!"  # network big-endian
+                "b"  # command, should be 8
+                "b"  # status
+                "4s"  # identifier
             )
-            (command, statuscode, identifier) = struct.unpack_from(error_format, data, 0)
+            (command, statuscode, identifier) = struct.unpack_from(
+                error_format, data, 0
+            )
             # command should be 8
-            _logger.error('%s[%d] Status: %s MSGID: #%s', self.appname,
-                    self.instanceid, status_table[statuscode], identifier)
+            _logger.error(
+                "%s[%d] Status: %s MSGID: #%s",
+                self.appname,
+                self.instanceid,
+                status_table[statuscode],
+                identifier,
+            )
 
             self.errors = "%s (ID: %s)" % (status_table[statuscode], identifier)
 
@@ -276,7 +326,9 @@ class APNClient(PushService):
     def connect(self):
         """ Setup socket """
         self.sock = socket(AF_INET, SOCK_STREAM)
-        self.remote_stream = iostream.SSLIOStream(self.sock, ssl_options=dict(certfile=self.certfile, keyfile=self.keyfile))
+        self.remote_stream = iostream.SSLIOStream(
+            self.sock, ssl_options=dict(certfile=self.certfile, keyfile=self.keyfile)
+        )
         self.remote_stream.connect(self.apnsendpoint, self._on_remote_connected)
         self.remote_stream.read_until_close(self._on_remote_read_close)
 
@@ -295,33 +347,34 @@ class APNClient(PushService):
         self._append_to_queue(token, pl)
 
     def process(self, **kwargs):
-        token = kwargs['token']
-        apnsparams = kwargs['apns']
-        sound = apnsparams.get('sound', None)
-        badge = apnsparams.get('badge', None)
-        content = apnsparams.get('content', None)
-        customparams = apnsparams.get('custom', None)
-        pl = PayLoad(alert=kwargs['alert'], sound=sound, badge=badge, content=content, identifier=0, expiry=None, customparams=customparams)
+        token = kwargs["token"]
+        apnsparams = kwargs["apns"]
+        sound = apnsparams.get("sound", None)
+        badge = apnsparams.get("badge", None)
+        content = apnsparams.get("content", None)
+        customparams = apnsparams.get("custom", None)
+        pl = PayLoad(
+            alert=kwargs["alert"],
+            sound=sound,
+            badge=badge,
+            content=content,
+            identifier=0,
+            expiry=None,
+            customparams=customparams,
+        )
         self._append_to_queue(token, pl)
 
     def sendbulk(self, deviceToken, payload):
         """ TODO """
-        msghead = '!bI'
-        msghead = (
-            '!'  # network big-endian
-            'b'  # command -> 2
-            'I'  # Frame length
-        )
-        itemheadfmt = (
-            'b'  # item ID
-            'I'  # item length
-        )
+        msghead = "!bI"
+        msghead = "!" "b" "I"  # network big-endian  # command -> 2  # Frame length
+        itemheadfmt = "b" "I"  # item ID  # item length
         itembodyfmt = (
-            '32s' # token
-            '%ds' # payload
-            'I'   # notification identifier
-            'I'   # expiry date
-            'b'   # priority
+            "32s"  # token
+            "%ds"  # payload
+            "I"  # notification identifier
+            "I"  # expiry date
+            "b"  # priority
         ) % (payload_length, notification_id)
 
     def getQueueLength(self):
@@ -342,14 +395,14 @@ class APNClient(PushService):
         _logger.info(json)
         json_len = len(json)
         fmt = (
-            '!'   # network big-endian
-            'b'   # command
-            '4s'  # identifier
-            'I'   # expiry
-            'H'   # token length
-            '32s' # token
-            'H'   # payload length
-            '%ds' # payload
+            "!"  # network big-endian
+            "b"  # command
+            "4s"  # identifier
+            "I"  # expiry
+            "H"  # token length
+            "32s"  # token
+            "H"  # payload length
+            "%ds"  # payload
         ) % json_len
         """
         Legacy APNs format
@@ -383,8 +436,16 @@ class APNClient(PushService):
         # One day
         expiry = payload.expiry
         _logger.info("MSGID #%s => %s" % (identifier, deviceToken))
-        frame = struct.pack(fmt, ENHANCED_NOTIFICATION_COMMAND, identifier, expiry,
-                TOKEN_LENGTH, unhexlify(deviceToken), json_len, json)
+        frame = struct.pack(
+            fmt,
+            ENHANCED_NOTIFICATION_COMMAND,
+            identifier,
+            expiry,
+            TOKEN_LENGTH,
+            unhexlify(deviceToken),
+            json_len,
+            json,
+        )
         self.messages.append(frame)
         # Calls the given callback on the next I/O loop iteration.
         self.ioloop.add_callback(self._write_to_remote_stream_from_queue)

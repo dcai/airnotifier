@@ -34,6 +34,7 @@ import os.path
 from tornado.httpclient import AsyncHTTPClient
 from util import *
 import xml.etree.ElementTree as ET
+
 try:
     from cStringIO import StringIO
 except:
@@ -45,28 +46,32 @@ _logger = logging.getLogger(__name__)
 try:
     register_namespace = ET.register_namespace
 except AttributeError:
+
     def register_namespace(prefix, uri):
         ET._namespace_map[uri] = prefix
+
 
 class MPNSClient(PushService):
     def __init__(self, masterdb, app, instanceid=0):
         self.app = app
         self.masterdb = masterdb
+
     def process(self, **kwargs):
-        uri = kwargs['token']
-        message = kwargs['alert']
-        mpnsparams = kwargs['mpns']
-        mpnstype = 'toast'
-        if 'type' in mpnsparams:
-            mpnstype = mpnsparams['type']
-        if mpnstype == 'toast':
+        uri = kwargs["token"]
+        message = kwargs["alert"]
+        mpnsparams = kwargs["mpns"]
+        mpnstype = "toast"
+        if "type" in mpnsparams:
+            mpnstype = mpnsparams["type"]
+        if mpnstype == "toast":
             mpns = MPNSToast()
-            if 'text1' not in mpnsparams:
-                mpnsparams['text1'] = message
-        elif mpnstype == 'tile':
+            if "text1" not in mpnsparams:
+                mpnsparams["text1"] = message
+        elif mpnstype == "tile":
             mpns = MPNSTile()
-        cert = get_filepath(self.app.get('mpnscertificatefile', ''))
+        cert = get_filepath(self.app.get("mpnscertificatefile", ""))
         mpns.send(uri, mpnsparams, cert=cert)
+
 
 # https://github.com/max-arnold/python-mpns
 #
@@ -76,12 +81,12 @@ class MPNSClient(PushService):
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-#* Redistributions of source code must retain the above copyright
+# * Redistributions of source code must retain the above copyright
 #  notice, this list of conditions and the following disclaimer.
-#* Redistributions in binary form must reproduce the above copyright
+# * Redistributions in binary form must reproduce the above copyright
 #  notice, this list of conditions and the following disclaimer in the
 #  documentation and/or other materials provided with the distribution.
-#* Neither the name of the "DM Group LLC" nor the names of its
+# * Neither the name of the "DM Group LLC" nor the names of its
 #  contributors may be used to endorse or promote products derived
 #  from this software without specific prior written permission.
 #
@@ -98,38 +103,39 @@ class MPNSClient(PushService):
 #
 # https://raw.githubusercontent.com/max-arnold/python-mpns/master/mpns/notification.py
 
+
 class MPNSBase(object):
     DELAY_IMMEDIATE = None
     DELAY_450S = None
     DELAY_900S = None
 
-    HEADER_NOTIFICATION_CLASS = 'X-NotificationClass'
-    HEADER_TARGET = 'X-WindowsPhone-Target'
-    HEADER_MESSAGE_ID = 'X-MessageID'
-    HEADER_CALLBACK_URI = 'X-CallbackURI'
+    HEADER_NOTIFICATION_CLASS = "X-NotificationClass"
+    HEADER_TARGET = "X-WindowsPhone-Target"
+    HEADER_MESSAGE_ID = "X-MessageID"
+    HEADER_CALLBACK_URI = "X-CallbackURI"
 
     def __init__(self, delay=None):
         self.delay = delay or self.DELAY_IMMEDIATE
         self.headers = {
-            'Content-Type': 'text/xml',
-            'Accept': 'application/*',
+            "Content-Type": "text/xml",
+            "Accept": "application/*",
             self.HEADER_NOTIFICATION_CLASS: str(self.delay),
-            }
-        register_namespace('wp', 'WPNotification')
+        }
+        register_namespace("wp", "WPNotification")
 
     def set_target(self, target):
         self.headers[self.HEADER_TARGET] = target
 
     def serialize_tree(self, tree):
         file = StringIO()
-        tree.write(file, encoding='utf-8')
+        tree.write(file, encoding="utf-8")
         contents = "<?xml version='1.0' encoding='utf-8'?>" + file.getvalue()
         file.close()
         return contents
 
     def optional_attribute(self, element, attribute, payload_param, payload):
         if payload_param in payload:
-            element.attrib['attribute'] = payload[payload_param]
+            element.attrib["attribute"] = payload[payload_param]
 
     def optional_subelement(self, parent, element, payload_param, payload):
         if payload_param in payload:
@@ -138,48 +144,62 @@ class MPNSBase(object):
             return el
 
     def prepare_payload(self, payload):
-        raise NotImplementedError('Subclasses should override prepare_payload method')
+        raise NotImplementedError("Subclasses should override prepare_payload method")
 
     def parse_response(self, response):
         status = {
-            'device_connection_status': response.headers.get('x-deviceconnectionstatus', ''), # Connected, InActive, Disconnected, TempDisconnected
-            'subscription_status': response.headers.get('x-subscriptionstatus', ''),          # Active, Expired
-            'notification_status': response.headers.get('x-notificationstatus', ''),          # Received, Suppressed, Dropped, QueueFull
-            'message_id': response.headers.get('x-messageid'),                                # 00000000-0000-0000-0000-000000000000
-            }
+            "device_connection_status": response.headers.get(
+                "x-deviceconnectionstatus", ""
+            ),  # Connected, InActive, Disconnected, TempDisconnected
+            "subscription_status": response.headers.get(
+                "x-subscriptionstatus", ""
+            ),  # Active, Expired
+            "notification_status": response.headers.get(
+                "x-notificationstatus", ""
+            ),  # Received, Suppressed, Dropped, QueueFull
+            "message_id": response.headers.get(
+                "x-messageid"
+            ),  # 00000000-0000-0000-0000-000000000000
+        }
 
         code = response.code
-        status['http_status_code'] = code
+        status["http_status_code"] = code
 
         if code == 200:
-            if status['notification_status'] == 'QueueFull':
-                status['error'] = 'Queue full, try again later'
-                status['backoff_seconds'] = 60
+            if status["notification_status"] == "QueueFull":
+                status["error"] = "Queue full, try again later"
+                status["backoff_seconds"] = 60
         elif code == 400:
-            status['error'] = 'Bad Request - invalid payload or subscription URI'
+            status["error"] = "Bad Request - invalid payload or subscription URI"
         elif code == 401:
-            status['error'] = 'Unauthorized - invalid token or subscription URI'
-            status['drop_subscription'] = True
+            status["error"] = "Unauthorized - invalid token or subscription URI"
+            status["drop_subscription"] = True
         elif code == 404:
-            status['error'] = 'Not Found - subscription URI is invalid'
-            status['drop_subscription'] = True
+            status["error"] = "Not Found - subscription URI is invalid"
+            status["drop_subscription"] = True
         elif code == 405:
-            status['error'] = 'Invalid Method' # (this should not happen, module uses only POST method)
+            status[
+                "error"
+            ] = (
+                "Invalid Method"
+            )  # (this should not happen, module uses only POST method)
         elif code == 406:
-            status['error'] = 'Not Acceptable - per-day throttling limit reached'
-            status['backoff_seconds'] = 24 * 60 * 60
+            status["error"] = "Not Acceptable - per-day throttling limit reached"
+            status["backoff_seconds"] = 24 * 60 * 60
         elif code == 412:
-            status['error'] = 'Precondition Failed - device inactive, try once per-hour'
-            status['backoff_seconds'] = 60 * 60
+            status["error"] = "Precondition Failed - device inactive, try once per-hour"
+            status["backoff_seconds"] = 60 * 60
         elif code == 503:
-            status['error'] = 'Service Unavailable - try again later'
-            status['backoff_seconds'] = 60
+            status["error"] = "Service Unavailable - try again later"
+            status["backoff_seconds"] = 60
         else:
-            status['error'] = 'Unexpected status'
+            status["error"] = "Unexpected status"
 
         return status
 
-    def send(self, uri, payload, message_id=None, callback_uri=None, cert=None, debug=False):
+    def send(
+        self, uri, payload, message_id=None, callback_uri=None, cert=None, debug=False
+    ):
         """
         Send push message. Input parameters:
 
@@ -208,11 +228,14 @@ class MPNSBase(object):
 
         # reset per-message headers
         for k in (self.HEADER_MESSAGE_ID, self.HEADER_CALLBACK_URI):
-            if k in self.headers: self.headers.pop(k)
+            if k in self.headers:
+                self.headers.pop(k)
 
         # set per-message headers if necessary
         if message_id:
-            self.headers[self.HEADER_MESSAGE_ID] = str(message_id) # TODO: validate UUID
+            self.headers[self.HEADER_MESSAGE_ID] = str(
+                message_id
+            )  # TODO: validate UUID
 
         if callback_uri:
             self.headers[self.HEADER_CALLBACK_URI] = str(callback_uri)
@@ -223,12 +246,23 @@ class MPNSBase(object):
         if not file_exists(cert):
             cert = None
 
-        http.fetch(uri, self.handle_response, method="POST", headers=self.headers, body=data, ca_certs=cert)
+        http.fetch(
+            uri,
+            self.handle_response,
+            method="POST",
+            headers=self.headers,
+            body=data,
+            ca_certs=cert,
+        )
 
     def handle_response(self, response):
         result = self.parse_response(response)
-        #result['request'] = {'data': data, 'headers': dict(self.headers) }
-        result['response'] = {'status': response.code, 'headers': dict(response.headers), 'text': response.body}
+        # result['request'] = {'data': data, 'headers': dict(self.headers) }
+        result["response"] = {
+            "status": response.code,
+            "headers": dict(response.headers),
+            "text": response.body,
+        }
 
 
 # TODO: create separate classes for FlipTile, Cycle and Iconic notifications (also add version 2.0)
@@ -257,28 +291,39 @@ class MPNSTile(MPNSBase):
 
     def __init__(self, *args, **kwargs):
         super(MPNSTile, self).__init__(*args, **kwargs)
-        self.set_target('token') # TODO: flip tile
+        self.set_target("token")  # TODO: flip tile
 
     def clearable_subelement(self, parent, element, payload_param, payload):
         if payload_param in payload:
             el = ET.SubElement(parent, element)
             if payload[payload_param] is None:
-                el.attrib['Action'] = 'Clear'
+                el.attrib["Action"] = "Clear"
             else:
                 el.text = payload[payload_param]
             return el
 
     def prepare_payload(self, payload):
         root = ET.Element("{WPNotification}Notification")
-        tile = ET.SubElement(root, '{WPNotification}Tile')
-        self.optional_attribute(tile, 'Id', 'id', payload)
-        self.optional_attribute(tile, 'Template', 'template', payload)
-        self.optional_subelement(tile, '{WPNotification}BackgroundImage', 'background_image', payload)
-        self.clearable_subelement(tile, '{WPNotification}Count', 'count', payload)
-        self.clearable_subelement(tile, '{WPNotification}Title', 'title', payload)
-        self.clearable_subelement(tile, '{WPNotification}BackBackgroundImage', 'back_background_image', payload)
-        self.clearable_subelement(tile, '{WPNotification}BackTitle', 'back_title', payload)
-        self.clearable_subelement(tile, '{WPNotification}BackContent', 'back_content', payload)
+        tile = ET.SubElement(root, "{WPNotification}Tile")
+        self.optional_attribute(tile, "Id", "id", payload)
+        self.optional_attribute(tile, "Template", "template", payload)
+        self.optional_subelement(
+            tile, "{WPNotification}BackgroundImage", "background_image", payload
+        )
+        self.clearable_subelement(tile, "{WPNotification}Count", "count", payload)
+        self.clearable_subelement(tile, "{WPNotification}Title", "title", payload)
+        self.clearable_subelement(
+            tile,
+            "{WPNotification}BackBackgroundImage",
+            "back_background_image",
+            payload,
+        )
+        self.clearable_subelement(
+            tile, "{WPNotification}BackTitle", "back_title", payload
+        )
+        self.clearable_subelement(
+            tile, "{WPNotification}BackContent", "back_content", payload
+        )
         return self.serialize_tree(ET.ElementTree(root))
 
 
@@ -290,20 +335,23 @@ class MPNSToast(MPNSBase):
     text2
     param
     """
+
     DELAY_IMMEDIATE = 2
     DELAY_450S = 12
     DELAY_900S = 22
 
     def __init__(self, *args, **kwargs):
         super(MPNSToast, self).__init__(*args, **kwargs)
-        self.set_target('toast')
+        self.set_target("toast")
 
     def prepare_payload(self, payload):
         root = ET.Element("{WPNotification}Notification")
-        toast = ET.SubElement(root, '{WPNotification}Toast')
-        self.optional_subelement(toast, '{WPNotification}Text1', 'text1', payload)
-        self.optional_subelement(toast, '{WPNotification}Text2', 'text2', payload)
-        self.optional_subelement(toast, '{WPNotification}Param', 'param', payload) # TODO: validate param (/ and length)
+        toast = ET.SubElement(root, "{WPNotification}Toast")
+        self.optional_subelement(toast, "{WPNotification}Text1", "text1", payload)
+        self.optional_subelement(toast, "{WPNotification}Text2", "text2", payload)
+        self.optional_subelement(
+            toast, "{WPNotification}Param", "param", payload
+        )  # TODO: validate param (/ and length)
         return self.serialize_tree(ET.ElementTree(root))
 
 
@@ -311,13 +359,14 @@ class MPNSRaw(MPNSBase):
     """
     Raw notification. Payload format can be arbitrary.
     """
+
     DELAY_IMMEDIATE = 3
     DELAY_450S = 13
     DELAY_900S = 23
 
     def __init__(self, *args, **kwargs):
         super(MPNSRaw, self).__init__(*args, **kwargs)
-        self.set_target('raw')
+        self.set_target("raw")
 
     def prepare_payload(self, payload):
         return payload

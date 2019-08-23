@@ -31,49 +31,64 @@ import tornado.web
 from api import API_PERMISSIONS
 from controllers.base import *
 
+
 @route(r"/applications/([^/]+)/keys")
 class AppAccessKeysHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self, appname):
         self.appname = appname
-        app = self.masterdb.applications.find_one({'shortname':appname})
-        if not app: raise tornado.web.HTTPError(500)
+        app = self.masterdb.applications.find_one({"shortname": appname})
+        if not app:
+            raise tornado.web.HTTPError(500)
         keys = self.db.keys.find()
-        key_to_be_deleted = self.get_argument('delete', None)
-        key_to_be_edited = self.get_argument('edit', None)
+        key_to_be_deleted = self.get_argument("delete", None)
+        key_to_be_edited = self.get_argument("edit", None)
         if key_to_be_edited:
-            key = self.db.keys.find_one({'key': key_to_be_edited})
-            self.render("app_edit_key.html", app=app, keys=keys, key=key, map=API_PERMISSIONS.items())
+            key = self.db.keys.find_one({"key": key_to_be_edited})
+            self.render(
+                "app_edit_key.html",
+                app=app,
+                keys=keys,
+                key=key,
+                map=API_PERMISSIONS.items(),
+            )
             return
         if key_to_be_deleted:
-            self.db.keys.remove({'key':key_to_be_deleted})
+            self.db.keys.remove({"key": key_to_be_deleted})
             self.redirect("/applications/%s/keys" % appname)
-        self.render("app_keys.html", app=app, keys=keys, newkey=None, map=API_PERMISSIONS.items())
+        self.render(
+            "app_keys.html",
+            app=app,
+            keys=keys,
+            newkey=None,
+            map=API_PERMISSIONS.items(),
+        )
+
     @tornado.web.authenticated
     def post(self, appname):
         self.appname = appname
-        app = self.masterdb.applications.find_one({'shortname':appname})
-        if not app: raise tornado.web.HTTPError(500)
+        app = self.masterdb.applications.find_one({"shortname": appname})
+        if not app:
+            raise tornado.web.HTTPError(500)
         key = {}
-        key['contact'] = self.get_argument('keycontact').strip()
-        action = self.get_argument('action').strip()
-        key['description'] = self.get_argument('keydesc').strip()
-        key['created'] = int(time.time())
-        permissions = self.get_arguments('permissions[]')
+        key["contact"] = self.get_argument("keycontact").strip()
+        action = self.get_argument("action").strip()
+        key["description"] = self.get_argument("keydesc").strip()
+        key["created"] = int(time.time())
+        permissions = self.get_arguments("permissions[]")
         result = 0
         for permission in permissions:
             result = result | int(permission)
-        key['permission'] = result
+        key["permission"] = result
         # make key as shorter as possbile
-        if action == 'create':
-            key['key'] = md5(str(uuid.uuid4())).hexdigest()
+        if action == "create":
+            key["key"] = md5(str(uuid.uuid4())).hexdigest()
             # Alternative key generator, this is SHORT
             # crc = binascii.crc32(str(uuid.uuid4())) & 0xffffffff
             # key['key'] = '%08x' % crc
             keyObjectId = self.db.keys.insert(key)
             self.redirect("/applications/%s/keys" % appname)
         else:
-            key['key'] = self.get_argument('accesskey').strip()
-            self.db.keys.update({'key': key['key']}, key, safe=True)
+            key["key"] = self.get_argument("accesskey").strip()
+            self.db.keys.update({"key": key["key"]}, key)
             self.redirect("/applications/%s/keys" % appname)
-

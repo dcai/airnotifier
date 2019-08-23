@@ -28,7 +28,7 @@
 
 from hashlib import sha1
 from os import path
-from pymongo.connection import Connection
+import pymongo
 from pymongo.errors import CollectionInvalid
 from tornado.options import define, options
 import tornado.options
@@ -38,34 +38,45 @@ from constants import VERSION
 
 define("apns", default=(), help="APNs address and port")
 define("pemdir", default="pemdir", help="Directory to store pems")
-define("passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash")
+define(
+    "passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash"
+)
 
 define("mongohost", default="localhost", help="MongoDB host name")
 define("mongoport", default=27017, help="MongoDB port")
 define("mongodbname", default="airnotifier", help="MongoDB database name")
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
 
+# Database Authentication parameters
+define("dbuser", help="MongoDB admin user")
+define("dbpass", help="MongoDB admin password")
+define("dbauthsource", default="admin", help="MongoDB authentication source database")
+
 
 if __name__ == "__main__":
     if not path.exists("airnotifier.conf"):
-        raise Exception('Please create airnotiier.conf before running install.py')
+        raise Exception("Please create airnotiier.conf before running install.py")
 
     tornado.options.parse_config_file("airnotifier.conf")
     tornado.options.parse_command_line()
-    mongodb = Connection(options.mongohost, options.mongoport)
+    mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
     masterdb = mongodb[options.masterdb]
+    # Authenticate if credentials are supplied.
+    if options.dbuser is not None and options.dbpass is not None:
+        masterdb.authenticate(options.dbuser, options.dbpass, source=options.dbauthsource)
+
     collection_names = masterdb.collection_names()
     try:
-        if not 'applications' in collection_names:
-            masterdb.create_collection('applications')
+        if not "applications" in collection_names:
+            masterdb.create_collection("applications")
             print("db.applications installed")
     except CollectionInvalid as ex:
         print("Failed to created applications collection", ex)
         pass
 
     try:
-        if not 'managers' in collection_names:
-            masterdb.create_collection('managers')
+        if not "managers" in collection_names:
+            masterdb.create_collection("managers")
             masterdb.managers.ensure_index("username", unique=True)
             print("db.managers installed")
     except CollectionInvalid:
@@ -74,25 +85,25 @@ if __name__ == "__main__":
 
     try:
         manager = {}
-        manager['username'] = 'admin'
-        manager['password'] = sha1('%sadmin' % options.passwordsalt).hexdigest()
-        masterdb['managers'].insert(manager)
+        manager["username"] = "admin"
+        manager["password"] = sha1("%sadmin" % options.passwordsalt).hexdigest()
+        masterdb["managers"].insert(manager)
         print("Admin user created, username: admin, password: admin")
-    except Exception:
-        print("Failed to create admin user")
+    except Exception as ex:
+        print("Failed to create admin user", ex)
 
     try:
-        if not 'options' in collection_names:
-            masterdb.create_collection('options')
+        if not "options" in collection_names:
+            masterdb.create_collection("options")
             print("db.options installed")
     except CollectionInvalid:
         print("db.options installed")
 
     try:
         option_ver = {}
-        option_ver['name'] = 'version'
-        option_ver['value'] = VERSION
-        masterdb['options'].insert(option_ver)
+        option_ver["name"] = "version"
+        option_ver["value"] = VERSION
+        masterdb["options"].insert(option_ver)
         print("Version number written: %s" % VERSION)
     except Exception:
         print("Failed to write version number")
