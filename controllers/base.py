@@ -179,7 +179,7 @@ class AppLogViewHandler(WebBaseHandler):
     def post(self, appname):
         self.appname = appname
         now = int(time.time())
-        thirtydaysago = now - 60 * 60 * 24
+        thirtydaysago = now - 60 * 60 * 24 * 30
         self.db.logs.remove({"created": {"$lt": thirtydaysago}})
         self.redirect(r"/applications/%s/logs" % appname)
 
