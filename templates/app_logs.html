@@ -25,7 +25,7 @@ block body %}
           <span class="label label-{{log['level']}}">{{log['action']}}</span>
         </td>
         <td>{{ log['info'] }}</td>
-        {% if log.has_key('created') %}
+        {% if 'created' in log %}
         <td>
           {{ datetime.fromtimestamp(log['created']).strftime("%I:%M%p %d, %B")
           }}
