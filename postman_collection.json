@@ -6,17 +6,17 @@
 	},
 	"item": [
 		{
-			"name": "push (simple)",
+			"name": "push (fcm)",
 			"request": {
 				"method": "POST",
 				"header": [
 					{
 						"key": "X-AN-APP-NAME",
-						"value": "moodle"
+						"value": "{{app-name}}"
 					},
 					{
 						"key": "X-AN-APP-KEY",
-						"value": "eb9977f82282513bfac8292702e4cf37"
+						"value": "{{access-key}}"
 					},
 					{
 						"key": "Content-Type",
@@ -25,7 +25,43 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"device\": \"fcm\",\n    \"alert\": {\n        \"title\": \"hello ts: {{$timestamp}}\",\n        \"body\": \"Hello from AirNotifier {{$guid}}\"\n    },\n    \"token\": \"{{airnotifier-device-token}}\"\n}"
+					"raw": "{\n    \"device\": \"fcm\",\n    \"alert\": {\n        \"title\": \"hello @ {{$timestamp}}\",\n        \"body\": \"From AirNotifier {{$guid}}\"\n    },\n    \"token\": \"{{airnotifier-device-token}}\"\n}"
+				},
+				"url": {
+					"raw": "{{airnotifier-host}}/api/v2/push",
+					"host": [
+						"{{airnotifier-host}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"push"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "push (ios)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-AN-APP-NAME",
+						"value": "{{app-name}}"
+					},
+					{
+						"key": "X-AN-APP-KEY",
+						"value": "{{access-key}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"device\": \"ios\",\n   \"alert\": {\n        \"title\": \"hello @ {{$timestamp}}\",\n        \"body\": \"From AirNotifier {{$guid}}\"\n    },\n    \"token\": \"{{airnotifier-device-token}}\"\n}"
 				},
 				"url": {
 					"raw": "{{airnotifier-host}}/api/v2/push",
@@ -52,7 +88,7 @@
 					},
 					{
 						"key": "X-AN-APP-KEY",
-						"value": "eb9977f82282513bfac8292702e4cf37"
+						"value": "{{access-key}}"
 					},
 					{
 						"key": "Content-Type",
@@ -84,11 +120,11 @@
 				"header": [
 					{
 						"key": "X-AN-APP-NAME",
-						"value": "moodle"
+						"value": "{{app-name}}"
 					},
 					{
 						"key": "X-AN-APP-KEY",
-						"value": "eb9977f82282513bfac8292702e4cf37"
+						"value": "{{access-key}}"
 					},
 					{
 						"key": "Content-Type",
