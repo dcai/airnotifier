@@ -165,7 +165,9 @@ if __name__ == "__main__":
             appname = app["shortname"]
             db = mongodb[appprefix + appname]
             indexes = [("created", DESCENDING)]
-            print(("Adding index to %s%s['tokens'].%s" % (appprefix, appname, "created")))
+            print(
+                ("Adding index to %s%s['tokens'].%s" % (appprefix, appname, "created"))
+            )
             db["tokens"].create_index(indexes)
             print(("Adding index to %s%s['logs'].%s" % (appprefix, appname, "created")))
             db["logs"].create_index(indexes)
@@ -178,7 +180,8 @@ if __name__ == "__main__":
         masterdb["options"].update_one(
             {"name": "version"}, {"$set": {"value": 20190125}}, upsert=True
         )
-    if version < 20190814:
+
+    if version < 20190824:
         users = masterdb.managers.find()
         for user in users:
             #  appname = app["shortname"]
@@ -201,6 +204,9 @@ if __name__ == "__main__":
         #  masterdb["options"].update_one(
         #  {"name": "version"}, {"$set": {"value": 20190814}}, upsert=True
         #  )
+        masterdb["options"].update_one(
+            {"name": "version"}, {"$set": {"value": 20190824}}, upsert=True
+        )
 
     version_object = masterdb["options"].find_one({"name": "version"})
     version = version_object["value"]

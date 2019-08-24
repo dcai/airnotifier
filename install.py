@@ -90,6 +90,7 @@ if __name__ == "__main__":
         manager = {}
         manager["username"] = "admin"
         manager["password"] = get_password("admin", options.passwordsalt)
+        manager["orgId"] = 0
         masterdb["managers"].insert(manager)
         print("Admin user created, username: admin, password: admin")
     except Exception as ex:
