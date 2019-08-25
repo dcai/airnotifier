@@ -44,11 +44,12 @@ from tornado.options import define
 from uimodules import *
 from util import *
 from constants import (
+    DEVICE_TYPE_ANDROID,
+    DEVICE_TYPE_FCM,
+    DEVICE_TYPE_IOS,
+    DEVICE_TYPE_WNS,
     RELEASE,
     VERSION,
-    DEVICE_TYPE_IOS,
-    DEVICE_TYPE_ANDROID,
-    DEVICE_TYPE_WNS,
 )
 
 
@@ -123,6 +124,10 @@ class AirNotifierApp(tornado.web.Application):
             wns = self.services["wns"][appname][0]
         except (IndexError, KeyError):
             wns = None
+        try:
+            fcm = self.services["fcm"][appname][0]
+        except (IndexError, KeyError):
+            fcm = None
 
         conditions = []
         if channel == "default":
@@ -149,8 +154,10 @@ class AirNotifierApp(tornado.web.Application):
                             extra=extra,
                             apns=kwargs.get("apns", {}),
                         )
-                elif token["device"] == DEVICE_TYPE_ANDROID:
-                    regids.append(t)
+                elif token["device"] == DEVICE_TYPE_FCM:
+                    fcm.process(
+                        token=t, alert=alert, extra=extra, fcm=kwargs.get("fcm", {})
+                    )
                 elif token["device"] == DEVICE_TYPE_WNS:
                     if wns is not None:
                         wns.process(
@@ -240,6 +247,21 @@ def init_messaging_agents():
 
     apps = masterdb.applications.find()
     for app in apps:
+        """ FCMClient setup """
+        services["fcm"][app["shortname"]] = []
+        if "fcm-project-id" in app and "fcm-jsonkey" in app:
+            try:
+                fcminstance = FCMClient(
+                    project_id=app["fcm-project-id"],
+                    jsonkey=app["fcm-jsonkey"],
+                    appname=app["shortname"],
+                    instanceid=0,
+                )
+            except Exception as ex:
+                _logger.error(ex)
+                continue
+            services["fcm"][app["shortname"]].append(fcminstance)
+
         """ APNs setup """
         services["apns"][app["shortname"]] = []
         conns = int(app["connections"])
@@ -267,17 +289,6 @@ def init_messaging_agents():
                         _logger.error(ex)
                         continue
                     services["apns"][app["shortname"]].append(apn)
-        """ FCMClient setup """
-        services["fcm"][app["shortname"]] = []
-        if "fcm-project-id" in app and "fcm-jsonkey" in app and "shortname" in app:
-            try:
-                fcminstance = FCMClient(
-                    app["fcm-project-id"], app["fcm-jsonkey"], app["shortname"], 0
-                )
-            except Exception as ex:
-                _logger.error(ex)
-                continue
-            services["fcm"][app["shortname"]].append(fcminstance)
 
         """ WNS setup """
         services["wns"][app["shortname"]] = []

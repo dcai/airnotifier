@@ -107,7 +107,8 @@ class PushHandler(APIBaseHandler):
                     self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
                     return
 
-            if device in [DEVICE_TYPE_FCM, DEVICE_TYPE_ANDROID]:
+            #  if device in [DEVICE_TYPE_FCM, DEVICE_TYPE_ANDROID]:
+            if device.endswith(DEVICE_TYPE_FCM):
                 fcm_payload = requestPayload.get("fcm", {})
                 try:
                     fcmconn = self.fcmconnections[self.app["shortname"]][0]

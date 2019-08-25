@@ -22,12 +22,12 @@ class FCMClient(PushService):
     def __str__(self):
         return "endpoint: %s" % (self.endpoint)
 
-    def __init__(self, project_id, jsonkey, appname, instanceid=0):
-        self.project_id = project_id
-        self.jsonkey = jsonkey
-        self.appname = appname
-        self.instanceid = instanceid
-        jsonData = json_decode(jsonkey)
+    def __init__(self, **kwargs):
+        self.project_id = kwargs["project_id"]
+        self.jsonkey = kwargs["jsonkey"]
+        self.appname = kwargs["appname"]
+        self.instanceid = kwargs["instanceid"]
+        jsonData = json_decode(self.jsonkey)
         self.credentials = ServiceAccountCredentials.from_json_keyfile_dict(
             jsonData, SCOPES
         )
