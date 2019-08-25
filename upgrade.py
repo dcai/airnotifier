@@ -192,7 +192,6 @@ if __name__ == "__main__":
                 )
         apps = masterdb.applications.find()
         for app in apps:
-            print(app)
             if not "orgId" in app:
                 masterdb.applications.find_one_and_update(
                     {"shortname": app["shortname"]}, {"$set": {"orgId": 0}}
