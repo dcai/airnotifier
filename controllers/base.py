@@ -120,9 +120,9 @@ class WebBaseHandler(tornado.web.RequestHandler):
 
     def render_string(self, template_name, **kwargs):
         apps = []
-        if self.currentuser and "orgId" in self.currentuser:
-            currentuser_orgid = self.currentuser["orgId"]
-            apps = self.masterdb.applications.find({"orgId": currentuser_orgid})
+        if self.currentuser and "orgid" in self.currentuser:
+            currentuser_orgid = self.currentuser["orgid"]
+            apps = self.masterdb.applications.find({"orgid": currentuser_orgid})
         kwargs["apps"] = apps
         return super(WebBaseHandler, self).render_string(template_name, **kwargs)
 
@@ -287,7 +287,7 @@ class AdminHandler(WebBaseHandler):
             passwordhash = get_password(password, options.passwordsalt)
             user["password"] = passwordhash
             user["level"] = "manager"
-            user["orgId"] = self.currentuser["orgId"]
+            user["orgid"] = self.currentuser["orgid"]
             result = self.masterdb.managers.update(
                 {"username": user["username"]}, user, upsert=True
             )

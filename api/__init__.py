@@ -142,7 +142,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
             ) == API_PERMISSIONS[permissionname][0]
 
     def check_blockediplist(self, ip, app):
-        if "blockediplist" in app and app["blockediplist"]:
+        if "blockediplist" in app:
             from netaddr import IPNetwork, IPAddress
 
             iplist = app["blockediplist"].splitlines()

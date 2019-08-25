@@ -157,7 +157,10 @@ class AppHandler(WebBaseHandler):
             if update_fcm:
                 # reset fcm connections
                 fcm = FCMClient(
-                    app["fcm-project-id"], app["fcm-jsonkey"], app["shortname"], 0
+                    project_id=app["fcm-project-id"],
+                    jsonkey=app["fcm-jsonkey"],
+                    appname=app["shortname"],
+                    instanceid=0,
                 )
                 self.fcmconnections[app["shortname"]] = [fcm]
                 _logger.info(fcm)

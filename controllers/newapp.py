@@ -44,7 +44,7 @@ class AppCreateNewHandler(WebBaseHandler):
             self.get_argument("appshortname").strip().lower()
         )
         app["shortname"] = self.appname
-        app["orgId"] = self.currentuser["orgId"]
+        app["orgid"] = self.currentuser["orgid"]
         app["environment"] = "sandbox"
         app["enableapns"] = 0
         app["connections"] = 1
