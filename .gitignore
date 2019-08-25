@@ -5,4 +5,4 @@ logging.ini
 nohup.out
 airnotifier.err
 airnotifier.log
-
+config.py

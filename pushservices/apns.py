@@ -28,6 +28,7 @@
 
 from . import PushService
 from collections import deque
+from util import json_decode, json_encode
 from socket import socket, AF_INET, SOCK_STREAM
 import json
 import logging
@@ -126,7 +127,7 @@ class PayLoad(object):
         return payload
 
     def json(self):
-        jsontext = json.dumps(self.build_payload(), separators=(",", ":"))
+        jsontext = json_encode(self.build_payload())
         _logger.debug("## " + jsontext)
         return jsontext
 

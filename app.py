@@ -27,6 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+import datetime
 import logging.config
 import pymongo
 import sys
@@ -48,37 +49,28 @@ from constants import (
     DEVICE_TYPE_IOS,
     DEVICE_TYPE_ANDROID,
     DEVICE_TYPE_WNS,
-    DEVICE_TYPE_MPNS,
 )
 
-reload(sys)
-sys.setdefaultencoding("utf8")
 
-define("port", default=8801, help="Application server listen port", type=int)
-
-define("pemdir", default="pemdir", help="Directory to store pems")
-define(
-    "passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash"
-)
+define("appprefix", default="", help="DB name prefix")
+define("collectionprefix", default="obj_", help="Collection name prefix")
 define("cookiesecret", default="airnotifiercookiesecret", help="Cookie secret")
+define("dbauthsource", default="admin", help="MongoDB authentication source database")
+define("dbpass", help="MongoDB admin password")
+define("dbprefix", default="app_", help="DB name prefix")
+define("dbuser", help="MongoDB admin user")
 define("debug", default=False, help="Debug mode")
-
 define("https", default=False, help="Enable HTTPS")
 define("httpscertfile", default="", help="HTTPS cert file")
 define("httpskeyfile", default="", help="HTTPS key file")
-
+define("masterdb", default="airnotifier", help="MongoDB DB to store information")
 define("mongohost", default="localhost", help="MongoDB host name")
 define("mongoport", default=27017, help="MongoDB port")
-
-define("masterdb", default="airnotifier", help="MongoDB DB to store information")
-define("collectionprefix", default="obj_", help="Collection name prefix")
-define("dbprefix", default="app_", help="DB name prefix")
-define("appprefix", default="", help="DB name prefix")
-
-# Database Authentication parameters
-define("dbuser", help="MongoDB admin user")
-define("dbpass", help="MongoDB admin password")
-define("dbauthsource", default="admin", help="MongoDB authentication source database")
+define(
+    "passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash"
+)
+define("pemdir", default="pemdir", help="Directory to store pems")
+define("port", default=8801, help="Application server listen port", type=int)
 
 
 loggingconfigfile = "logging.ini"
@@ -131,14 +123,6 @@ class AirNotifierApp(tornado.web.Application):
             wns = self.services["wns"][appname][0]
         except (IndexError, KeyError):
             wns = None
-        try:
-            mpns = self.services["mpns"][appname][0]
-        except (IndexError, KeyError):
-            mpns = None
-        try:
-            gcm = self.services["gcm"][appname][0]
-        except (IndexError, KeyError):
-            gcm = None
 
         conditions = []
         if channel == "default":
@@ -172,33 +156,10 @@ class AirNotifierApp(tornado.web.Application):
                         wns.process(
                             token=t, alert=alert, extra=extra, wns=kwargs.get("wns", {})
                         )
-                elif token["device"] == DEVICE_TYPE_MPNS:
-                    if mpns is not None:
-                        mpns.process(
-                            token=t,
-                            alert=alert,
-                            extra=extra,
-                            mpns=kwargs.get("mpns", {}),
-                        )
         except Exception as ex:
             _logger.error(ex)
 
-        # Now sending android notifications
-        try:
-            if (gcm is not None) and regids:
-                response = gcm.process(
-                    token=regids,
-                    alert=alert,
-                    extra=extra,
-                    gcm=kwargs.get("gcm", {}),
-                    appdb=appdb,
-                )
-                responsedata = response.json()
-        except Exception as ex:
-            _logger.error("GCM problem: " + str(ex))
-
     def __init__(self, services):
-        import datetime
 
         now = datetime.datetime.now()
 
@@ -233,12 +194,12 @@ class AirNotifierApp(tornado.web.Application):
                 error_log("Cannot not connect to MongoDB")
 
         self.mongodb = mongodb
-        self.masterdb = mongodb[options.masterdb]
         # Authenticate if credentials are supplied.
         if options.dbuser is not None and options.dbpass is not None:
             self.masterdb.authenticate(
                 options.dbuser, options.dbpass, source=options.dbauthsource
             )
+        self.masterdb = mongodb[options.masterdb]
 
     def main(self):
         if options.https:
@@ -263,19 +224,19 @@ class AirNotifierApp(tornado.web.Application):
 
 
 def init_messaging_agents():
-    services = {"apns": {}, "fcm": {}, "gcm": {}, "mpns": {}, "sms": {}, "wns": {}}
+    services = {"apns": {}, "fcm": {}, "sms": {}, "wns": {}}
     mongodb = None
     while not mongodb:
         try:
             mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
         except Exception as ex:
             _logger.error(ex)
-    masterdb = mongodb[options.masterdb]
     # Authenticate if credentials are supplied.
     if options.dbuser is not None and options.dbpass is not None:
         masterdb.authenticate(
             options.dbuser, options.dbpass, source=options.dbauthsource
         )
+    masterdb = mongodb[options.masterdb]
 
     apps = masterdb.applications.find()
     for app in apps:
@@ -327,6 +288,7 @@ def init_messaging_agents():
                 _logger.error(ex)
                 continue
             services["wns"][app["shortname"]].append(wns)
+
     mongodb.close()
     return services
 

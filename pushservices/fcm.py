@@ -3,10 +3,8 @@
 
 import argparse
 import requests
+from util import json_decode, json_encode
 from . import PushService
-import json
-import time
-from util import strip_tags
 import logging
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -29,7 +27,7 @@ class FCMClient(PushService):
         self.jsonkey = jsonkey
         self.appname = appname
         self.instanceid = instanceid
-        jsonData = json.loads(jsonkey)
+        jsonData = json_decode(jsonkey)
         self.credentials = ServiceAccountCredentials.from_json_keyfile_dict(
             jsonData, SCOPES
         )
@@ -48,7 +46,7 @@ class FCMClient(PushService):
 
             elif isinstance(v, dict):
                 try:
-                    formatted[k] = json.dumps(self.format_values(v))
+                    formatted[k] = json_encode(self.format_values(v))
                 except:
                     _logger.error("Error treating field " + k)
 
@@ -80,48 +78,24 @@ class FCMClient(PushService):
         if apns:
             payload["message"]["apns"] = apns
 
-        return json.dumps(payload)
+        return json_encode(payload)
 
     def process(self, **kwargs):
-        fcm_param = kwargs.get("fcm", {})
-        extra = kwargs.get("extra", {})
-        alert = kwargs.get("alert", None)
+        fcm_param = kwargs.get("payload", {})
         android = fcm_param.get("android", {})
         apns = fcm_param.get("apns", {})
         data = fcm_param.get("data", {})
-        appdb = kwargs.get("appdb", None)
-        return self.send(
-            kwargs["token"],
-            alert=alert,
-            appdb=appdb,
-            android=android,
-            extra=extra,
-            data=data,
-            apns=apns,
-        )
 
-    def send(
-        self,
-        token,
-        alert=None,
-        data=None,
-        appdb=None,
-        android=None,
-        extra=None,
-        apns=None,
-    ):
-        """
-        Send message to google gcm endpoint
-        :param token: device token
-        :param data: dict
-        :param appdb: Database
-        """
+        extra = kwargs.get("extra", {})
+        alert = kwargs.get("alert", None)
+        appdb = kwargs.get("appdb", None)
+        token = kwargs["token"]
         if not token:
             raise FCMException("token is required")
 
-        self.access_token_info = self.credentials.get_access_token()
+        access_token_info = self.credentials.get_access_token()
         headers = {
-            "Authorization": "Bearer %s" % self.access_token_info.access_token,
+            "Authorization": "Bearer %s" % access_token_info.access_token,
             "Content-Type": "application/json; UTF-8",
         }
 
@@ -133,12 +107,3 @@ class FCMClient(PushService):
             _logger.info(jsonError)
             raise FCMException(jsonError["error"])
         return response
-
-    def add_to_log(self, appdb, action, info=None, level="info"):
-        log = {}
-        log["action"] = strip_tags(action)
-        log["info"] = strip_tags(info)
-        log["level"] = strip_tags(level)
-        log["created"] = int(time.time())
-        if appdb is not None:
-            appdb.logs.insert(log)

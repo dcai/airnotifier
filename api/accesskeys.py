@@ -26,10 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-try:
-    from http.client import FORBIDDEN, OK
-except:
-    from http.client import FORBIDDEN, OK
+from http.client import FORBIDDEN, OK
 from importlib import import_module
 
 try:
@@ -54,7 +51,7 @@ class AccessKeysV2Handler(APIBaseHandler):
         """Create access key
         """
         try:
-            data = self.json_decode(self.request.body)
+            data = json_decode(self.request.body)
 
             # if not self.can('create_accesskey'):
             # self.send_response(FORBIDDEN, dict(error="No permission to create accesskey"))

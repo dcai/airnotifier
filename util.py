@@ -31,6 +31,7 @@ try:
 except:
     from html.parser import HTMLParser
 
+import json
 import calendar
 import datetime
 
@@ -181,3 +182,18 @@ def get_password(password, salt):
 
 def create_access_key():
     return md5(str(uuid.uuid4()).encode("utf-8")).hexdigest()
+
+
+def json_decode(text):
+    """ python data to string """
+    try:
+        obj = json.loads(text)
+    except:
+        obj = json.loads(urllib.parse.unquote_plus(text))
+
+    return obj
+
+
+def json_encode(obj):
+    """ Serialize obj to a JSON formatted str """
+    return json.dumps(obj)

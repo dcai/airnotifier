@@ -26,26 +26,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-try:
-    from http.client import (
-        BAD_REQUEST,
-        LOCKED,
-        FORBIDDEN,
-        NOT_FOUND,
-        INTERNAL_SERVER_ERROR,
-        OK,
-    )
-except:
-    from http.client import (
-        BAD_REQUEST,
-        LOCKED,
-        FORBIDDEN,
-        NOT_FOUND,
-        INTERNAL_SERVER_ERROR,
-        OK,
-    )
+from http.client import (
+    BAD_REQUEST,
+    LOCKED,
+    FORBIDDEN,
+    NOT_FOUND,
+    INTERNAL_SERVER_ERROR,
+    OK,
+)
 import binascii
-import json
 import logging
 import random
 import time
@@ -54,12 +43,8 @@ import uuid
 import requests
 import tornado.web
 
-from constants import (
-    DEVICE_TYPE_IOS,
-    DEVICE_TYPE_ANDROID,
-    DEVICE_TYPE_WNS,
-    DEVICE_TYPE_MPNS,
-)
+from util import json_decode, json_encode
+from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, RELEASE
 from pushservices.apns import PayLoad
 from pushservices.gcm import (
     GCMException,
@@ -213,7 +198,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
 
     def set_default_headers(self):
         self.set_header("Content-Type", "application/json; charset=utf-8")
-        self.set_header("X-Powered-By", "AirNotifier/1.0")
+        self.set_header("X-Powered-By", "AirNotifier/%s" % RELEASE)
 
     def set_headers(self, headers):
         for name in headers:
@@ -225,7 +210,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
         if headers is not None:
             self.set_headers(headers)
         if data:
-            data = json.dumps(data, default=json_default)
+            data = json_encode(data)
         else:
             data = ""
 
@@ -242,14 +227,6 @@ class APIBaseHandler(tornado.web.RequestHandler):
         log["level"] = strip_tags(level)
         log["created"] = int(time.time())
         self.db.logs.insert(log)
-
-    def json_decode(self, text):
-        try:
-            data = json.loads(text)
-        except:
-            data = json.loads(urllib.parse.unquote_plus(text))
-
-        return data
 
 
 class EntityBuilder(object):
@@ -407,7 +384,9 @@ class NotificationHandler(APIBaseHandler):
         elif device == DEVICE_TYPE_ANDROID:
             try:
                 gcm = self.gcmconnections[self.app["shortname"]][0]
-                data = dict(list({"message": alert}.items()) + list(customparams.items()))
+                data = dict(
+                    list({"message": alert}.items()) + list(customparams.items())
+                )
                 response = gcm.send(
                     [self.token], data=data, collapse_key=collapse_key, ttl=3600
                 )
@@ -467,7 +446,7 @@ class UsersHandler(APIBaseHandler):
         else:
             try:
                 # unpack query conditions
-                data = self.json_decode(where)
+                data = json_decode(where)
             except Exception as ex:
                 self.send_response(BAD_REQUEST, dict(error=str(ex)))
 
@@ -506,7 +485,7 @@ class ObjectHandler(APIBaseHandler):
         """Update a object
         """
         self.classname = classname
-        data = self.json_decode(self.request.body)
+        data = json_decode(self.request.body)
         self.objectid = ObjectId(objectId)
         result = self.db[self.collection].update({"_id": self.objectid}, data)
 
@@ -546,7 +525,7 @@ class ClassHandler(APIBaseHandler):
         else:
             try:
                 # unpack query conditions
-                data = self.json_decode(where)
+                data = json_decode(where)
             except Exception as ex:
                 self.send_response(BAD_REQUEST, dict(error=str(ex)))
 
@@ -561,7 +540,7 @@ class ClassHandler(APIBaseHandler):
         """
         self.classname = classname
         try:
-            data = self.json_decode(self.request.body)
+            data = json_decode(self.request.body)
         except Exception as ex:
             self.send_response(BAD_REQUEST, ex)
 

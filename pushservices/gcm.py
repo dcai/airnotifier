@@ -32,6 +32,7 @@ import json
 import logging
 import requests
 import time
+from util import json_decode, json_encode
 
 _logger = logging.getLogger(__name__)
 
@@ -81,7 +82,7 @@ class GCMClient(PushService):
         if collapse_key:
             payload["collapse_key"] = collapse_key
 
-        return json.dumps(payload)
+        return json_encode(payload)
 
     def reverse_response_info(self, key, ids, results):
         zipped = list(zip(ids, results))

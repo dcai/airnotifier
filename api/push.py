@@ -26,30 +26,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-try:
-    from http.client import BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, ACCEPTED
-except:
-    from http.client import BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, ACCEPTED
+from http.client import BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, ACCEPTED
 from routes import route
 from api import APIBaseHandler, EntityBuilder
+from util import json_decode, json_encode
 import random
-import time
+import time, sys
 from importlib import import_module
 from constants import (
     DEVICE_TYPE_IOS,
     DEVICE_TYPE_ANDROID,
     DEVICE_TYPE_WNS,
-    DEVICE_TYPE_MPNS,
-    DEVICE_TYPE_SMS,
     DEVICE_TYPE_FCM,
 )
-from pushservices.gcm import (
-    GCMUpdateRegIDsException,
-    GCMInvalidRegistrationException,
-    GCMNotRegisteredException,
-    GCMException,
-)
-from pushservices.fcm import FCMException
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -85,30 +74,28 @@ class PushHandler(APIBaseHandler):
                 return
 
             # if request body is json entity
-            requestPayload = self.json_decode(self.request.body)
+            requestPayload = json_decode(self.request.body)
             requestPayload = self.validate_payload(requestPayload)
 
+            # application specific requestPayload
+            extra = requestPayload.get("extra", {})
             # Hook
-            if "extra" in requestPayload:
-                if "processor" in requestPayload["extra"]:
-                    try:
-                        proc = import_module(
-                            "hooks." + requestPayload["extra"]["processor"]
-                        )
-                        requestPayload = proc.process_pushnotification_payload(
-                            requestPayload
-                        )
-                    except Exception as ex:
-                        self.send_response(BAD_REQUEST, dict(error=str(ex)))
+            if "processor" in extra:
+                try:
+                    proc = import_module("hooks." + extra["processor"])
+                    requestPayload = proc.process_pushnotification_payload(
+                        requestPayload
+                    )
+                except Exception as ex:
+                    self.send_response(BAD_REQUEST, dict(error=str(ex)))
+                    return
 
             if not self.token:
                 self.token = requestPayload.get("token", None)
 
-            # application specific requestPayload
-            extra = requestPayload.get("extra", {})
-
-            device = requestPayload.get("device", DEVICE_TYPE_IOS).lower()
+            device = requestPayload.get("device", DEVICE_TYPE_FCM).lower()
             channel = requestPayload.get("channel", "default")
+            alert = requestPayload.get("alert", "")
             token = self.db.tokens.find_one({"token": self.token})
 
             if not token:
@@ -126,119 +113,55 @@ class PushHandler(APIBaseHandler):
                     self.db.tokens.insert(token)
                 except Exception as ex:
                     self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+                    return
 
-            if device == DEVICE_TYPE_SMS:
-                requestPayload.setdefault("sms", {})
-                requestPayload["sms"].setdefault("to", requestPayload.get("token", ""))
-                requestPayload["sms"].setdefault(
-                    "message", requestPayload.get("message", "")
-                )
-                sms = self.smsconnections[self.app["shortname"]][0]
-                sms.process(
-                    token=requestPayload["token"],
-                    alert=requestPayload["alert"],
-                    extra=extra,
-                    sms=requestPayload["sms"],
-                )
-                self.send_response(ACCEPTED)
+            if device in [DEVICE_TYPE_FCM, DEVICE_TYPE_ANDROID]:
+                fcm_payload = requestPayload.get("fcm", {})
+                try:
+                    fcmconn = self.fcmconnections[self.app["shortname"]][0]
+                    response = fcmconn.process(
+                        token=self.token, alert=alert, extra=extra, payload=fcm_payload
+                    )
+                except Exception as ex:
+                    self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+                    return
+
             elif device == DEVICE_TYPE_IOS:
-
                 # Use splitlines trick to remove line ending (only for iOS).
-                if type(requestPayload["alert"]) is not dict:
-                    alert = "".join(requestPayload["alert"].splitlines())
-                else:
-                    alert = requestPayload["alert"]
-                requestPayload.setdefault("apns", {})
-                requestPayload["apns"].setdefault(
-                    "badge", requestPayload.get("badge", None)
-                )
-                requestPayload["apns"].setdefault(
-                    "sound", requestPayload.get("sound", None)
-                )
-                requestPayload["apns"].setdefault(
-                    "content", requestPayload.get("content", None)
-                )
-                requestPayload["apns"].setdefault(
-                    "custom", requestPayload.get("custom", None)
-                )
+                if type(alert) is not dict:
+                    alert = "".join(alert.splitlines())
+
+                apns_default = {
+                    "badge": None,
+                    "sound": None,
+                    "content": None,
+                    "custom": None,
+                }
+                apns = {**apns_default, **requestPayload["apns"]}
                 conn = self.get_apns_conn()
                 if conn:
-                    conn.process(
-                        token=self.token,
-                        alert=alert,
-                        extra=extra,
-                        apns=requestPayload["apns"],
-                    )
+                    conn.process(token=self.token, alert=alert, extra=extra, apns=apns)
                 else:
                     _logger.error("no active apns connection")
-                self.send_response(ACCEPTED)
-            elif device == DEVICE_TYPE_FCM:
-                requestPayload.setdefault("fcm", {})
-                try:
-                    fcm = self.fcmconnections[self.app["shortname"]][0]
-                    response = fcm.process(
-                        token=self.token,
-                        alert=requestPayload["alert"],
-                        extra=requestPayload["extra"],
-                        fcm=requestPayload["fcm"],
-                    )
-                    self.send_response(ACCEPTED)
-                except FCMException as ex:
-                    self.send_response(INTERNAL_SERVER_ERROR, dict(error=ex.error))
-            elif device == DEVICE_TYPE_ANDROID:
-                if "gcm" not in requestPayload:
-                    requestPayload.setdefault("gcm", {})
-                try:
-                    gcm = self.gcmconnections[self.app["shortname"]][0]
-                    response = gcm.process(
-                        token=[self.token],
-                        alert=requestPayload["alert"],
-                        extra=requestPayload["extra"],
-                        gcm=requestPayload["gcm"],
-                    )
-                    responserequestPayload = response.json()
-                    if responserequestPayload["failure"] == 0:
-                        self.send_response(ACCEPTED)
-                except GCMUpdateRegIDsException as ex:
-                    self.send_response(ACCEPTED)
-                except GCMInvalidRegistrationException as ex:
-                    self.send_response(
-                        BAD_REQUEST, dict(error=str(ex), regids=ex.regids)
-                    )
-                except GCMNotRegisteredException as ex:
-                    self.send_response(
-                        BAD_REQUEST, dict(error=str(ex), regids=ex.regids)
-                    )
-                except GCMException as ex:
-                    self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
             elif device == DEVICE_TYPE_WNS:
                 requestPayload.setdefault("wns", {})
                 wns = self.wnsconnections[self.app["shortname"]][0]
                 wns.process(
                     token=requestPayload["token"],
-                    alert=requestPayload["alert"],
+                    alert=alert,
                     extra=extra,
                     wns=requestPayload["wns"],
                 )
-                self.send_response(ACCEPTED)
-            elif device == DEVICE_TYPE_MPNS:
-                requestPayload.setdefault("mpns", {})
-                mpns = self.mpnsconnections[self.app["shortname"]][0]
-                mpns.process(
-                    token=requestPayload["token"],
-                    alert=requestPayload["alert"],
-                    extra=extra,
-                    mpns=requestPayload["mpns"],
-                )
-                self.send_response(ACCEPTED)
             else:
                 self.send_response(BAD_REQUEST, dict(error="Invalid device type"))
+                return
 
-            logmessage = "Message length: %s, Access key: %s" % (
-                len(requestPayload["alert"]),
+            logmessage = "Payload size: %s, Access key: %s" % (
+                len(json_encode(requestPayload)),
                 self.appkey,
             )
             self.add_to_log("%s notification" % self.appname, logmessage)
+            self.send_response(ACCEPTED)
         except Exception as ex:
             import traceback
 

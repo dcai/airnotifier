@@ -26,14 +26,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-try:
-    from http.client import BAD_REQUEST, FORBIDDEN, NOT_FOUND, INTERNAL_SERVER_ERROR, OK
-except:
-    from http.client import BAD_REQUEST, FORBIDDEN, NOT_FOUND, INTERNAL_SERVER_ERROR, OK
+from http.client import BAD_REQUEST, FORBIDDEN, NOT_FOUND, INTERNAL_SERVER_ERROR, OK
 from routes import route
 from api import APIBaseHandler, EntityBuilder
 from constants import DEVICE_TYPE_IOS
 import binascii
+from util import json_decode
 
 
 @route(r"/api/v2/tokens/([^/]+)")
@@ -64,7 +62,7 @@ class TokenV2Handler(APIBaseHandler):
         if not self.can("create_token"):
             self.send_response(FORBIDDEN, dict(error="No permission to create token"))
             return
-        data = self.json_decode(self.request.body)
+        data = json_decode(self.request.body)
 
         device = data.get("device", DEVICE_TYPE_IOS).lower()
         channel = data.get("channel", "default")

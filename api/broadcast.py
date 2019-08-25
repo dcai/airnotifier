@@ -26,31 +26,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-try:
-    from http.client import (
-        BAD_REQUEST,
-        LOCKED,
-        FORBIDDEN,
-        NOT_FOUND,
-        INTERNAL_SERVER_ERROR,
-        OK,
-        ACCEPTED,
-    )
-except:
-    from http.client import (
-        BAD_REQUEST,
-        LOCKED,
-        FORBIDDEN,
-        NOT_FOUND,
-        INTERNAL_SERVER_ERROR,
-        OK,
-        ACCEPTED,
-    )
-
+from http.client import (
+    BAD_REQUEST,
+    LOCKED,
+    FORBIDDEN,
+    NOT_FOUND,
+    INTERNAL_SERVER_ERROR,
+    OK,
+    ACCEPTED,
+)
 from routes import route
 from api import APIBaseHandler
 import time
 import logging
+from util import json_decode
 
 
 @route(r"/api/v2/broadcast[\/]?")
@@ -60,7 +49,7 @@ class BroadcastHandler(APIBaseHandler):
             self.send_response(FORBIDDEN, dict(error="No permission to send broadcast"))
             return
         # if request body is json entity
-        data = self.json_decode(self.request.body)
+        data = json_decode(self.request.body)
         # the channel to be broadcasted
         channel = data.get("channel", "default")
         # device type
@@ -90,10 +79,7 @@ class BroadcastHandler(APIBaseHandler):
             badge=badge,
             device=device,
             fcm=data.get("fcm", {}),
-            gcm=data.get("gcm", {}),
-            mpns=data.get("mpns", {}),
             wns=data.get("wns", {}),
-            sms=data.get("sms", {}),
             apns=data.get("apns", {}),
         )
         delta_t = time.time() - self._time_start

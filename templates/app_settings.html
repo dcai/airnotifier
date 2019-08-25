@@ -74,7 +74,7 @@ end %} {% block sidebaritems %} {{ modules.AppSideBar(app, 'settings') }} {% end
 
 <form class="form-horizontal" id="form-ios-settings" method="post">
   <fieldset>
-    <legend>{{ _('Apple push notification settings') }}</legend>
+    <legend>{{ _('APNs (TCP connection, legacy)') }}</legend>
     <div class="form-group">
       <label> {{ _('APNs service') }}</label>
       <input type="hidden" name="appname" value="{{app['shortname']}}" />
