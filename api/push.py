@@ -46,13 +46,6 @@ _logger = logging.getLogger(__name__)
 
 @route(r"/api/v2/push[\/]?")
 class PushHandler(APIBaseHandler):
-    def validate_payload(self, payload):
-        payload.setdefault("channel", "default")
-        payload.setdefault("sound", "default")
-        payload.setdefault("badge", None)
-        payload.setdefault("extra", {})
-        return payload
-
     def get_apns_conn(self):
         if self.app["shortname"] not in self.apnsconnections:
             self.send_response(INTERNAL_SERVER_ERROR, dict(error="APNs is offline"))
@@ -75,7 +68,6 @@ class PushHandler(APIBaseHandler):
 
             # if request body is json entity
             requestPayload = json_decode(self.request.body)
-            requestPayload = self.validate_payload(requestPayload)
 
             # application specific requestPayload
             extra = requestPayload.get("extra", {})

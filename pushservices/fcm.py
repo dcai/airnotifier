@@ -55,13 +55,15 @@ class FCMClient(PushService):
 
         return formatted
 
-    def build_request(
-        self, token, alert, android=None, data=None, extra=None, apns=None
-    ):
+    def build_request(self, token, alert, **kwargs):
         if alert is not None and not isinstance(alert, dict):
             alert = {"body": alert, "title": alert}
 
-        data["extra"] = extra
+        fcm_param = kwargs.get("payload", {})
+        android = fcm_param.get("android", {})
+        apns = fcm_param.get("apns", {})
+        webpush = fcm_param.get("webpush", {})
+        data = fcm_param.get("data", {})
 
         # data structure: https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages
         payload = {"message": {"token": token}}
@@ -75,21 +77,23 @@ class FCMClient(PushService):
         if android:
             payload["message"]["android"] = android
 
+        if webpush:
+            payload["message"]["webpush"] = webpush
+
         if apns:
             payload["message"]["apns"] = apns
 
-        return json_encode(payload)
+        text = json_encode(payload)
+        return text
 
     def process(self, **kwargs):
-        fcm_param = kwargs.get("payload", {})
-        android = fcm_param.get("android", {})
-        apns = fcm_param.get("apns", {})
-        data = fcm_param.get("data", {})
 
+        payload = kwargs.get("payload", {})
         extra = kwargs.get("extra", {})
         alert = kwargs.get("alert", None)
         appdb = kwargs.get("appdb", None)
         token = kwargs["token"]
+
         if not token:
             raise FCMException("token is required")
 
@@ -99,11 +103,11 @@ class FCMClient(PushService):
             "Content-Type": "application/json; UTF-8",
         }
 
-        payload = self.build_request(token, alert, android, data, extra, apns)
-        response = requests.post(self.endpoint, data=payload, headers=headers)
+        data = self.build_request(token, alert, extra=extra, payload=payload)
+        response = requests.post(self.endpoint, data=data, headers=headers)
 
         if response.status_code >= 400:
             jsonError = response.json()
-            _logger.info(jsonError)
+            _logger.error(jsonError)
             raise FCMException(jsonError["error"])
         return response
