@@ -26,20 +26,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import logging.config
 
+import logging.config
 import pymongo
-from tornado.options import define
+import sys
 import tornado.httpserver
 import tornado.ioloop
 import tornado.options
-
 from pushservices.apns import *
-from pushservices.gcm import GCMClient
-from pushservices.fcm import FCMClient
-from pushservices.wns import WNSClient
-from pushservices.mpns import MPNSClient
 from pushservices.clickatell import *
+from pushservices.fcm import FCMClient
+from pushservices.gcm import GCMClient
+from pushservices.mpns import MPNSClient
+from pushservices.wns import WNSClient
+from tornado.options import define
 from uimodules import *
 from util import *
 from constants import (
@@ -50,6 +50,9 @@ from constants import (
     DEVICE_TYPE_WNS,
     DEVICE_TYPE_MPNS,
 )
+
+reload(sys)
+sys.setdefaultencoding("utf8")
 
 define("port", default=8801, help="Application server listen port", type=int)
 
