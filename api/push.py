@@ -149,11 +149,11 @@ class PushHandler(APIBaseHandler):
                 self.send_response(BAD_REQUEST, dict(error="Invalid device type"))
                 return
 
-            logmessage = "Payload size: %s, Access key: %s" % (
-                len(json_encode(requestPayload)),
+            logmessage = "payload: %s, access key: %s" % (
+                request.body.encode("utf-8"),
                 self.appkey,
             )
-            self.add_to_log("%s notification" % self.appname, logmessage)
+            self.add_to_log("notification", logmessage)
             self.send_response(ACCEPTED)
         except Exception as ex:
             import traceback

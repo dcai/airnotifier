@@ -11,23 +11,36 @@ block body %}
 </form>
 <div class="row-fluid">
   <table class="table table-bordered table-striped">
-    <thead>
+    <thead class="thead-dark">
       <tr>
-        <th>{{ _('Action') }}</th>
-        <th>{{ _('Info') }}</th>
-        <th>{{ _('Time') }}</th>
+        <th scope="col text-break" style="width: 10%">{{ _('Action') }}</th>
+        <th scope="col">{{ _('Info') }}</th>
+        <th scope="col" style="width: 15%">{{ _('Time') }}</th>
       </tr>
     </thead>
     <tbody>
-      {% from datetime import datetime %} {% for log in logs %}
+      {% from datetime import datetime %} {% for idx, log in enumerate(logs) %}
       <tr>
-        <td>
+        <th scope="row">
           <span class="label label-{{log['level']}}">{{log['action']}}</span>
+        </th>
+        <td>
+          <a
+            class="btn btn-info text-break"
+            data-toggle="collapse"
+            href="#log{{idx}}"
+            role="button"
+            aria-expanded="false"
+            aria-controls="log{{idx}}"
+            >{{ log['info'][0:50] }}</a
+          >
+          <div class="collapse multi-collapse" id="log{{idx}}">
+            <code>{{ log['info'] }}</code>
+          </div>
         </td>
-        <td>{{ log['info'] }}</td>
         {% if 'created' in log %}
         <td>
-          {{ datetime.fromtimestamp(log['created']).strftime("%I:%M%p %d, %B")
+          {{ datetime.fromtimestamp(log['created']).strftime("%d, %b %H:%M:%S")
           }}
         </td>
         {% else %}
