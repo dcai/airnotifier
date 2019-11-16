@@ -66,9 +66,9 @@
     <span data-feather="plus-circle"></span>
   </a>
 </h6>
-<ul class="nav flex-column">
+<ul class="nav flex-column mb-2">
   {% for r in apps %}
-  <li class="nav-item">
+  <li class="nav-item text-break">
     <a
       class="nav-link {% if r['shortname'] == app.get('shortname', '') %}active{%end%}"
       href="/applications/{{r['shortname']}}/settings"
