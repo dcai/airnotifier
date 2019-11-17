@@ -82,32 +82,35 @@ if __name__ == "__main__":
             masterdb.create_collection("managers")
             masterdb.managers.ensure_index("username", unique=True)
             print("db.managers installed")
+            try:
+                user = self.masterdb.managers.find_one({"username": username})
+                if not user:
+                    manager = {}
+                    manager["username"] = "admin"
+                    manager["password"] = get_password("admin", options.passwordsalt)
+                    manager["orgid"] = 0
+                    masterdb["managers"].insert(manager)
+                    print("Admin user created, username: admin, password: admin")
+            except Exception as ex:
+                print(("Failed to create admin user", ex))
+
     except CollectionInvalid:
         print("Failed to created managers collection")
         pass
 
     try:
-        manager = {}
-        manager["username"] = "admin"
-        manager["password"] = get_password("admin", options.passwordsalt)
-        manager["orgid"] = 0
-        masterdb["managers"].insert(manager)
-        print("Admin user created, username: admin, password: admin")
-    except Exception as ex:
-        print(("Failed to create admin user", ex))
-
-    try:
         if not "options" in collection_names:
             masterdb.create_collection("options")
             print("db.options installed")
+            try:
+                version = self.masterdb["options"].find_one({"name": "version"})
+                if not version:
+                    option_ver = {}
+                    option_ver["name"] = "version"
+                    option_ver["value"] = VERSION
+                    masterdb["options"].insert(option_ver)
+                    print(("Version number written: %s" % VERSION))
+            except Exception:
+                print("Failed to write version number")
     except CollectionInvalid:
         print("db.options installed")
-
-    try:
-        option_ver = {}
-        option_ver["name"] = "version"
-        option_ver["value"] = VERSION
-        masterdb["options"].insert(option_ver)
-        print(("Version number written: %s" % VERSION))
-    except Exception:
-        print("Failed to write version number")
