@@ -10,9 +10,10 @@ services:
       - 27017:27017
     environment:
       - MONGO_DATA_DIR=/data/db
-      - MONGO_LOG_DIR=/dev/null
+      - MONGO_LOG_DIR=/tmp/mongo/mongo.log
     volumes:
-      - ./db:/data/db
+      - ./mongo/data:/data/db
+      - ./mongo/log:/tmp/mongo
     command: mongod --logpath=/dev/null # --quiet
   airnotifier:
     links:
