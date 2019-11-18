@@ -1,15 +1,8 @@
 [loggers]
-keys=root,python_requests,tornado_access,tornado_application,tornado_general,iospush
-
-[handlers]
-keys=console,silent,accesslog,main,pushlog
-
-[formatters]
-keys=default
+keys=root,python_requests,tornado_access,tornado_application,tornado_general,push,apns,fcm
 
 [logger_root]
-; default logger
-handlers=main
+handlers=console
 qualname=root
 
 [logger_tornado_access]
@@ -35,11 +28,24 @@ propagate=0
 handlers=silent
 qualname=requests.*
 
-[logger_iospush]
+[logger_push]
+; controller logger
+handlers=pushlog
+qualname=push
+
+[logger_apns]
 ; apns logger
 propagate=0
 handlers=pushlog
-qualname=pushservices.apns
+qualname=apns
+
+[logger_fcm]
+; fcm logger
+handlers=pushlog
+qualname=fcm
+
+[handlers]
+keys=console,silent,accesslog,main,pushlog
 
 [handler_console]
 class = StreamHandler
@@ -48,27 +54,32 @@ formatter = default
 level = DEBUG
 
 [handler_accesslog]
-class = logging.FileHandler
 level = NOTSET
 formatter = default
-args = ("/tmp/an_access.log", "w")
+# 2000 maxBytes 100 backups
+class=handlers.TimedRotatingFileHandler
+args=('/var/log/airnotifier/access.log', 'H', 24, 50)
 
 [handler_main]
-class = logging.FileHandler
 level = DEBUG
 formatter = default
-args = ("/tmp/airnotifier.log", "w")
+class=handlers.TimedRotatingFileHandler
+args=('/var/log/airnotifier/main.log', 'H', 24, 50)
 
 [handler_pushlog]
-class = logging.FileHandler
-level = DEBUG
 formatter = default
-args = ("/tmp/pushlog.log", "w")
+# 2000 maxBytes 100 backups
+class=handlers.TimedRotatingFileHandler
+args=('/var/log/airnotifier/push.log', 'H', 24, 50)
+
 
 [handler_silent]
 class=StreamHandler
 level=WARNING
 args=(sys.stdout,)
+
+[formatters]
+keys=default
 
 [formatter_default]
 datefmt = %s

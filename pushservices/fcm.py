@@ -104,10 +104,11 @@ class FCMClient(PushService):
         }
 
         data = self.build_request(token, alert, extra=extra, payload=payload)
+        _logger.debug("post fcm payload to firebase")
         response = requests.post(self.endpoint, data=data, headers=headers)
 
         if response.status_code >= 400:
             jsonError = response.json()
-            _logger.error(jsonError)
+            _logger.error("fcm response code >= 400 %s", str(jsonError))
             raise FCMException(jsonError["error"])
         return response

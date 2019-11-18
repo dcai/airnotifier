@@ -41,7 +41,7 @@ from tornado import ioloop, iostream
 import string
 import random
 
-_logger = logging.getLogger(__name__)
+_logger = logging.getLogger("apns")
 
 PAYLOAD_LENGTH = 256
 

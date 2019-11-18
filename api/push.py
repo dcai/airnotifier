@@ -40,8 +40,9 @@ from constants import (
     DEVICE_TYPE_FCM,
 )
 import logging
+import traceback
 
-_logger = logging.getLogger(__name__)
+_logger = logging.getLogger("push")
 
 
 @route(r"/api/v2/push[\/]?")
@@ -79,6 +80,7 @@ class PushHandler(APIBaseHandler):
                         requestPayload
                     )
                 except Exception as ex:
+                    _logger.error(str(ex))
                     self.send_response(BAD_REQUEST, dict(error=str(ex)))
                     return
 
@@ -104,9 +106,11 @@ class PushHandler(APIBaseHandler):
                     # TODO check permission to insert
                     self.db.tokens.insert(token)
                 except Exception as ex:
+                    _logger.error(str(ex))
                     self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
                     return
 
+            _logger.info("sending notification to %s: %s" % (device, self.token))
             #  if device in [DEVICE_TYPE_FCM, DEVICE_TYPE_ANDROID]:
             if device.endswith(DEVICE_TYPE_FCM):
                 fcm_payload = requestPayload.get("fcm", {})
@@ -116,6 +120,7 @@ class PushHandler(APIBaseHandler):
                         token=self.token, alert=alert, extra=extra, payload=fcm_payload
                     )
                 except Exception as ex:
+                    _logger.error("catch exception from fcm.py %s" % str(ex))
                     self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
                     return
 
@@ -146,6 +151,7 @@ class PushHandler(APIBaseHandler):
                     wns=requestPayload["wns"],
                 )
             else:
+                _logger.error("invalid device type %s" % device)
                 self.send_response(BAD_REQUEST, dict(error="Invalid device type"))
                 return
 
@@ -156,7 +162,6 @@ class PushHandler(APIBaseHandler):
             self.add_to_log("notification", logmessage)
             self.send_response(ACCEPTED)
         except Exception as ex:
-            import traceback
-
-            traceback.print_exc()
+            traceback_ex = traceback.format_exception()
+            _logger.error("%s %s" % (traceback_ex, str(ex)))
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
