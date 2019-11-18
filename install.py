@@ -42,6 +42,11 @@ DEFAULTPASSWORD = "admin"
 
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
 define("mongouri", default="mongodb://localhost:27017/", help="MongoDB host name")
+EMAIL = "admin@airnotifier"
+DEFAULTPASSWORD = "admin"
+
+define("apns", default=(), help="APNs address and port")
+define("pemdir", default="pemdir", help="Directory to store pems")
 define(
     "passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash"
 )
