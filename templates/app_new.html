@@ -4,6 +4,22 @@
 <form method="post" enctype="multipart/form-data">
   <fieldset>
     <legend>{{ _('Create new app') }}</legend>
+
+    {% if currentuser['orgid'] == 0 %}
+    <div class="form-group">
+      <label class="control-label" for="orgid">OrgId</label>
+      <div class="controls">
+        <input
+          type="text"
+          class="input-xlarge"
+          id="orgid"
+          name="orgid"
+          value="0"
+        />
+      </div>
+    </div>
+    {% end %}
+
     <div class="form-row">
       <div class="col">
         <label class="control-label" for="shortnameinput">App short name</label>
@@ -31,6 +47,7 @@
         ></textarea>
       </div>
     </div>
+
     <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
   </fieldset>
 </form>

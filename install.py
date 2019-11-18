@@ -37,6 +37,9 @@ from util import *
 from constants import VERSION
 
 
+EMAIL = "admin@airnotifier"
+DEFAULTPASSWORD = "admin"
+
 define("apns", default=(), help="APNs address and port")
 define("pemdir", default="pemdir", help="Directory to store pems")
 define(
@@ -80,21 +83,22 @@ if __name__ == "__main__":
     try:
         if not "managers" in collection_names:
             masterdb.create_collection("managers")
-            masterdb.managers.ensure_index("username", unique=True)
+            #  masterdb.managers.ensure_index("username", unique=True)
+            masterdb.managers.ensure_index("email", unique=True)
             print("db.managers installed")
             try:
-                username = "admin"
-                password = "admin"
-                user = masterdb.managers.find_one({"username": username})
+                user = masterdb.managers.find_one({"email": EMAIL})
                 if not user:
                     manager = {}
-                    manager["username"] = username
-                    manager["password"] = get_password(password, options.passwordsalt)
+                    manager["email"] = EMAIL
+                    manager["password"] = get_password(
+                        DEFAULTPASSWORD, options.passwordsalt
+                    )
                     manager["orgid"] = 0
                     masterdb["managers"].insert(manager)
                     print(
                         "Admin user created, username: %s, password: %s"
-                        % (username, password)
+                        % (EMAIL, DEFAULTPASSWORD)
                     )
             except Exception as ex:
                 print(("Failed to create admin user", ex))

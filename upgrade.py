@@ -211,6 +211,16 @@ if __name__ == "__main__":
         masterdb["options"].update_one(
             {"name": "version"}, {"$set": {"value": 20190825}}, upsert=True
         )
+    if version < 20191117:
+        masterdb.managers.ensure_index("email", unique=True)
+        try:
+            masterdb.managers.drop_index("user")
+        except Exception as ex:
+            print(ex)
+
+        masterdb["options"].update_one(
+            {"name": "version"}, {"$set": {"value": 20191117}}, upsert=True
+        )
 
     version_object = masterdb["options"].find_one({"name": "version"})
     version = version_object["value"]

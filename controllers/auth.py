@@ -44,11 +44,14 @@ class AuthHandler(WebBaseHandler):
         if action == "logout":
             self.clear_cookie("user")
         else:
-            username = self.get_argument("username", None)
+            login = self.get_argument("login", None)
             password = self.get_argument("password", None)
             passwordhash = get_password(password, options.passwordsalt)
             user = self.masterdb.managers.find_one(
-                {"username": username, "password": passwordhash}
+                {
+                    "$or": [{"email": login}, {"username": login}],
+                    "password": passwordhash,
+                }
             )
             if user:
                 self.set_secure_cookie("user", str(user["_id"]))

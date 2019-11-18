@@ -32,8 +32,8 @@
         <li class="nav-item dropdown">
           {% if current_user %}
           <a href="/auth/logout?next={{ url_escape(request.uri) }}"
-            >{{ _("Sign out") }}</a
-          >
+            >{{ _("Sign out") }} {{ current_user['email'] }}
+          </a>
           {% else %} {{ _('<a href="%(url)s">Sign in</a>') % {"url":
           "/auth/login?next=" + url_escape(request.uri)} }} {% end %}
         </li>

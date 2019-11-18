@@ -122,7 +122,10 @@ class WebBaseHandler(tornado.web.RequestHandler):
         apps = []
         if self.currentuser and "orgid" in self.currentuser:
             currentuser_orgid = self.currentuser["orgid"]
-            apps = self.masterdb.applications.find({"orgid": currentuser_orgid})
+            if currentuser_orgid == 0:
+                apps = self.masterdb.applications.find()
+            else:
+                apps = self.masterdb.applications.find({"orgid": currentuser_orgid})
         kwargs["apps"] = apps
         return super(WebBaseHandler, self).render_string(template_name, **kwargs)
 
@@ -268,7 +271,12 @@ class AdminHandler(WebBaseHandler):
                 self.masterdb.managers.remove({"_id": ObjectId(user_id)})
                 self.redirect("/admin/managers")
                 return
-        managers = self.masterdb.managers.find()
+        currentuser_orgid = self.currentuser["orgid"]
+        if currentuser_orgid == 0:
+            managers = self.masterdb.managers.find()
+        else:
+            managers = self.masterdb.managers.find({"orgid": currentuser_orgid})
+
         self.render(
             "managers.html",
             managers=managers,
@@ -282,14 +290,18 @@ class AdminHandler(WebBaseHandler):
         if action == "createuser":
             user = {}
             user["created"] = int(time.time())
-            user["username"] = self.get_argument("newusername").strip()
+            user["email"] = self.get_argument("newemail").strip()
             password = self.get_argument("newpassword").strip()
             passwordhash = get_password(password, options.passwordsalt)
             user["password"] = passwordhash
             user["level"] = "manager"
-            user["orgid"] = self.currentuser["orgid"]
+            currentuser_orgid = self.currentuser["orgid"]
+            if currentuser_orgid == 0:
+                user["orgid"] = int(self.get_argument("orgid", 0))
+            else:
+                user["orgid"] = currentuser_orgid
             result = self.masterdb.managers.update(
-                {"username": user["username"]}, user, upsert=True
+                {"email": user["email"]}, user, upsert=True
             )
             managers = self.masterdb.managers.find()
             if result["updatedExisting"]:

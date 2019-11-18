@@ -2,11 +2,11 @@
 }} {% end %} {% block sidebaritems %} {{ modules.AppSideBar({}, 'managers') }}
 {% end %} {% block body %} {% if updated %}
 <div class="alert alert-success">
-  User "{{updated['username']}}" updated.
+  User "{{updated['email']}}" updated.
 </div>
 {% end %} {% if created %}
 <div class="alert alert-success">
-  User "{{created['username']}} created.
+  User "{{created['email']}} created.
 </div>
 {% end %}
 <section>
@@ -33,9 +33,9 @@
     <tbody>
       {% for m in managers %}
       <tr>
-        <td><strong>{{ m['username'] }}</strong></td>
+        <td><strong>{{ m['email'] }}</strong></td>
         <td>
-          {% if currentuser['username'] != m['username'] %}
+          {% if currentuser['email'] != m['email'] %}
           <a class="btn btn-danger" href="/admin/managers?delete={{m['_id']}}"
             ><i class="icon-trash icon-white"></i> {{ _('Delete') }}</a
           >
@@ -138,15 +138,24 @@
         <div class="modal-body">
           <fieldset>
             <div class="control-group">
-              <label class="control-label" for="newusername"
-                >{{ _('Username') }}</label
+              <label class="control-label" for="orgid">{{ _('OrgId') }}</label>
+              <div class="controls">
+                <input type="text" class="input-xlarge" id="orgid" name="orgid"
+                value="{{currentuser['orgid']}}" {% if currentuser['orgid'] != 0
+                %} disabled {% end %} />
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label" for="newemail"
+                >{{ _('Email') }}</label
               >
               <div class="controls">
                 <input
-                  type="text"
+                  type="email"
                   class="input-xlarge"
-                  id="newusername"
-                  name="newusername"
+                  id="newemail"
+                  name="newemail"
                 />
                 <input type="hidden" name="action" value="createuser" />
               </div>

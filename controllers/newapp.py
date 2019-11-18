@@ -34,7 +34,7 @@ from controllers.base import *
 class AppCreateNewHandler(WebBaseHandler):
     @tornado.web.authenticated
     def get(self):
-        self.render("app_new.html")
+        self.render("app_new.html", currentuser=self.currentuser)
 
     @tornado.web.authenticated
     def post(self):
@@ -44,7 +44,10 @@ class AppCreateNewHandler(WebBaseHandler):
             self.get_argument("appshortname").strip().lower()
         )
         app["shortname"] = self.appname
-        app["orgid"] = self.currentuser["orgid"]
+        if self.currentuser["orgid"] == 0:
+            app["orgid"] = int(self.get_argument("orgid", 0))
+        else:
+            app["orgid"] = self.currentuser["orgid"]
         app["environment"] = "sandbox"
         app["enableapns"] = 0
         app["connections"] = 1
