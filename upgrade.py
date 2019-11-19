@@ -165,11 +165,13 @@ if __name__ == "__main__":
             appname = app["shortname"]
             db = mongodb[appprefix + appname]
             indexes = [("created", DESCENDING)]
-            print(
+            logging.info(
                 ("Adding index to %s%s['tokens'].%s" % (appprefix, appname, "created"))
             )
             db["tokens"].create_index(indexes)
-            print(("Adding index to %s%s['logs'].%s" % (appprefix, appname, "created")))
+            logging.info(
+                ("Adding index to %s%s['logs'].%s" % (appprefix, appname, "created"))
+            )
             db["logs"].create_index(indexes)
 
         masterdb["options"].update_one(
@@ -216,7 +218,7 @@ if __name__ == "__main__":
         try:
             masterdb.managers.drop_index("user")
         except Exception as ex:
-            print(ex)
+            logging.error(ex)
 
         masterdb["options"].update_one(
             {"name": "version"}, {"$set": {"value": 20191117}}, upsert=True

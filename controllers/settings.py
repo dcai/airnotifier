@@ -49,7 +49,7 @@ import requests
 import traceback
 from controllers.base import *
 
-_logger = logging.getLogger("settings")
+_logger = logging.getLogger()
 
 
 @route(r"/applications/([^/]+)/settings[\/]?")
@@ -60,7 +60,6 @@ class AppHandler(WebBaseHandler):
             self.redirect(r"/create/app")
         else:
             app = self.masterdb.applications.find_one({"shortname": appname})
-            print(app)
             if not file_exists(app.get("certfile", "")):
                 app["certfile"] = None
             if not file_exists(app.get("keyfile", "")):
@@ -179,12 +178,12 @@ class AppHandler(WebBaseHandler):
                 self.perform_feedback(app)
 
             if self.get_argument("launchapns", None):
-                logging.info("Start APNS")
+                _logger.info("Start APNS")
                 app["enableapns"] = 1
                 self.start_apns(app)
 
             if self.get_argument("stopapns", None):
-                logging.info("Shutdown APNS")
+                _logger.info("Shutdown APNS")
                 app["enableapns"] = 0
                 self.stop_apns(app)
 
@@ -237,5 +236,5 @@ class AppHandler(WebBaseHandler):
             self.masterdb.applications.update({"shortname": self.appname}, app)
             self.redirect(r"/applications/%s/settings" % self.appname)
         except Exception as ex:
-            logging.error(traceback.format_exc())
+            _logger.error(traceback.format_exc())
             self.render("app_settings.html", app=app, error=str(ex))

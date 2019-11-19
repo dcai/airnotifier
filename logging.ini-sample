@@ -1,5 +1,5 @@
 [loggers]
-keys=root,python_requests,tornado_access,tornado_application,tornado_general,push,apns,fcm
+keys=root,tornado_access,push,apns,fcm
 
 [logger_root]
 handlers=console
@@ -10,23 +10,6 @@ qualname=root
 propagate=0
 handlers=accesslog
 qualname=tornado.access
-
-[logger_tornado_application]
-; tornado app logger
-propagate=0
-handlers=main
-qualname=tornado.application
-
-[logger_tornado_general]
-; tornado general logger
-propagate=0
-handlers=main
-qualname=tornado.general
-
-[logger_python_requests]
-propagate=0
-handlers=silent
-qualname=requests.*
 
 [logger_push]
 ; controller logger

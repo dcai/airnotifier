@@ -3,6 +3,7 @@
 
 import click
 import sys
+import logging
 
 
 @click.group(name="admin")
@@ -15,7 +16,7 @@ def cli():
 @click.option("--password", help="org id")
 @click.option("--org", help="org id")
 def cmd_add_user(email, password, org):
-    print("add user")
+    logging.info("add user")
 
 
 @cli.command(name="chanageorg")

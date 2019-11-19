@@ -30,6 +30,9 @@ import tornado.web
 from api import API_PERMISSIONS
 from controllers.base import *
 from util import *
+import logging
+
+_logger = logging.getLogger()
 
 
 @route(r"/applications/([^/]+)/keys")
@@ -56,8 +59,7 @@ class AppAccessKeysHandler(WebBaseHandler):
         if key_to_be_deleted:
             self.db.keys.remove({"key": key_to_be_deleted})
             self.redirect("/applications/%s/keys" % appname)
-        print((list(API_PERMISSIONS.items())))
-        print(app)
+        _logger.info((list(API_PERMISSIONS.items())))
         self.render(
             "app_keys.html",
             app=app,

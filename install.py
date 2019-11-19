@@ -32,6 +32,7 @@ import pymongo
 from pymongo.errors import CollectionInvalid
 from tornado.options import define, options
 import tornado.options
+import logging
 from util import *
 
 from constants import VERSION
@@ -75,9 +76,9 @@ if __name__ == "__main__":
     try:
         if not "applications" in collection_names:
             masterdb.create_collection("applications")
-            print("db.applications installed")
+            logging.info("db.applications installed")
     except CollectionInvalid as ex:
-        print(("Failed to created applications collection", ex))
+        logging.info(("Failed to created applications collection", ex))
         pass
 
     try:
@@ -85,7 +86,7 @@ if __name__ == "__main__":
             masterdb.create_collection("managers")
             #  masterdb.managers.ensure_index("username", unique=True)
             masterdb.managers.ensure_index("email", unique=True)
-            print("db.managers installed")
+            logging.info("db.managers installed")
             try:
                 user = masterdb.managers.find_one({"email": EMAIL})
                 if not user:
@@ -96,21 +97,21 @@ if __name__ == "__main__":
                     )
                     manager["orgid"] = 0
                     masterdb["managers"].insert(manager)
-                    print(
+                    logging.info(
                         "Admin user created, username: %s, password: %s"
                         % (EMAIL, DEFAULTPASSWORD)
                     )
             except Exception as ex:
-                print(("Failed to create admin user", ex))
+                logging.error(("Failed to create admin user", ex))
 
     except CollectionInvalid:
-        print("Failed to created managers collection")
+        logging.info("Failed to created managers collection")
         pass
 
     try:
         if not "options" in collection_names:
             masterdb.create_collection("options")
-            print("db.options installed")
+            logging.info("db.options installed")
             try:
                 version = masterdb["options"].find_one({"name": "version"})
                 if not version:
@@ -118,8 +119,8 @@ if __name__ == "__main__":
                     option_ver["name"] = "version"
                     option_ver["value"] = VERSION
                     masterdb["options"].insert(option_ver)
-                    print(("Version number written: %s" % VERSION))
+                    logging.info(("Version number written: %s" % VERSION))
             except Exception:
-                print("Failed to write version number")
+                logging.error("Failed to write version number")
     except CollectionInvalid:
-        print("db.options installed")
+        logging.error("db.options installed")

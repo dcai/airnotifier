@@ -14,7 +14,8 @@ _logger = logging.getLogger("fcm")
 
 
 class FCMException(Exception):
-    def __init__(self, error):
+    def __init__(self, response_statuscode, error):
+        self.response_statuscode = response_statuscode
         self.error = error
 
 
@@ -95,7 +96,7 @@ class FCMClient(PushService):
         token = kwargs["token"]
 
         if not token:
-            raise FCMException("token is required")
+            raise FCMException(400, "token is required")
 
         access_token_info = self.credentials.get_access_token()
         headers = {
@@ -109,6 +110,8 @@ class FCMClient(PushService):
 
         if response.status_code >= 400:
             jsonError = response.json()
-            _logger.error("fcm response code >= 400 %s", str(jsonError))
-            raise FCMException(jsonError["error"])
+            _logger.info("fcm response code is >= 400 %s" % jsonError)
+            raise FCMException(
+                400, jsonError["error"],
+            )
         return response

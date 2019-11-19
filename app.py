@@ -220,7 +220,7 @@ class AirNotifierApp(tornado.web.Application):
                 ssl_ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
                 ssl_ctx.load_cert_chain(options.httpscertfile, options.httpskeyfile)
             except IOError:
-                print("Invalid path to SSL certificate and private key")
+                _logger.error("Invalid path to SSL certificate and private key")
                 raise
             http_server = tornado.httpserver.HTTPServer(self, ssl_options=ssl_ctx)
         else:

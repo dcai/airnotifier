@@ -120,8 +120,11 @@ class PushHandler(APIBaseHandler):
                         token=self.token, alert=alert, extra=extra, payload=fcm_payload
                     )
                 except Exception as ex:
-                    _logger.error("catch exception from fcm.py %s" % str(ex))
-                    self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
+                    _logger.error(str(ex))
+                    statuscode = ex.response_statuscode
+                    self.send_response(
+                        statuscode, dict(error="error response from fcm")
+                    )
                     return
 
             elif device == DEVICE_TYPE_IOS:
