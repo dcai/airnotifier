@@ -423,23 +423,21 @@ class UsersHandler(APIBaseHandler):
     def post(self):
         """Register user
         """
-        username = self.get_argument("username")
         password = self.get_argument("password")
         email = self.get_argument("email")
         now = int(time.time())
         user = {
-            "username": username,
             "password": password,
             "email": email,
             "created": now,
         }
         try:
-            cursor = self.db.users.find_one({"username": username})
+            cursor = self.db.users.find_one({"email": email})
             if cursor:
-                self.send_response(BAD_REQUEST, dict(error="Username already exists"))
+                self.send_response(BAD_REQUEST, dict(error="email already exists"))
             else:
                 userid = self.db.users.insert(user)
-                self.add_to_log("Add user", username)
+                self.add_to_log("Add user", email)
                 self.send_response(OK, {"userid": str(userid)})
         except Exception as ex:
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))

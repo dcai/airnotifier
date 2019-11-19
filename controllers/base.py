@@ -324,7 +324,7 @@ class AdminHandler(WebBaseHandler):
             password = self.get_argument("newpassword").strip()
             passwordhash = get_password(password, options.passwordsalt)
             self.masterdb.managers.update(
-                {"username": self.currentuser["username"]},
+                {"email": self.currentuser["email"]},
                 {"$set": {"password": passwordhash}},
             )
             managers = self.masterdb.managers.find()
