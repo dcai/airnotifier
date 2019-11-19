@@ -41,6 +41,9 @@ from pushservices.gcm import GCMClient
 from pushservices.mpns import MPNSClient
 from pushservices.wns import WNSClient
 from tornado.options import define
+import sentry_sdk
+from sentry_sdk.integrations.tornado import TornadoIntegration
+
 from uimodules import *
 from util import *
 from constants import (
@@ -72,6 +75,7 @@ define(
 )
 define("pemdir", default="pemdir", help="Directory to store pems")
 define("port", default=8801, help="Application server listen port", type=int)
+define("sentrydsn", default="", help="sentry dsn")
 
 
 loggingconfigfile = "logging.ini"
@@ -308,5 +312,12 @@ def init_messaging_agents():
 if __name__ == "__main__":
     tornado.options.parse_config_file("config.py")
     tornado.options.parse_command_line()
+    if options.sentrydsn:
+        sentry_sdk.init(
+            dsn=options.sentrydsn, integrations=[TornadoIntegration()],
+        )
+    else:
+        _logger.warn("sentry dsn is not set")
+
     services = init_messaging_agents()
     AirNotifierApp(services=services).main()

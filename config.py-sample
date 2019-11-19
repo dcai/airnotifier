@@ -17,6 +17,7 @@ masterdb = "airnotifier"
 collectionprefix = "obj_"
 dbprefix = ""
 appprefix = "app_"
+sentrydsn = "https://xxxxxxx@sentry.io/xxxxxxx"
 
 # If your MongoDB requires authentication, create a user with full permissions
 # to the masterdb and enter credentials here. For details, see:
