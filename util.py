@@ -31,10 +31,10 @@ try:
 except:
     from html.parser import HTMLParser
 
-import json
 import calendar
 import datetime
 import logging
+import tornado
 
 try:
     from html.entities import name2codepoint
@@ -187,14 +187,9 @@ def create_access_key():
 
 def json_decode(text):
     """ python data to string """
-    try:
-        obj = json.loads(text)
-    except:
-        obj = json.loads(urllib.parse.unquote_plus(text))
-
-    return obj
+    return tornado.escape.json_decode(text)
 
 
 def json_encode(obj):
     """ Serialize obj to a JSON formatted str """
-    return json.dumps(obj)
+    return tornado.escape.json_encode(obj)

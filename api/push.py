@@ -41,6 +41,7 @@ from constants import (
 )
 import logging
 import traceback
+import tornado
 
 _logger = logging.getLogger("push")
 
@@ -67,9 +68,8 @@ class PushHandler(APIBaseHandler):
                 )
                 return
 
-            request_body = self.request.body.decode("utf-8")
             # if request body is json entity
-            request_dict = json_decode(request_body)
+            request_dict = json_decode(self.request.body)
 
             # application specific request_dict
             extra = request_dict.get("extra", {})
@@ -157,7 +157,10 @@ class PushHandler(APIBaseHandler):
                 self.send_response(BAD_REQUEST, dict(error="Invalid device type"))
                 return
 
-            logmessage = "payload: %s, access key: %s" % (request_body, self.appkey)
+            logmessage = "payload: %s, access key: %s" % (
+                tornado.escape.to_unicode(self.request.body),
+                self.appkey,
+            )
             self.add_to_log("notification", logmessage)
             self.send_response(ACCEPTED)
         except Exception as ex:

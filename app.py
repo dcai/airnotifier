@@ -263,7 +263,10 @@ def init_messaging_agents():
                     instanceid=0,
                 )
             except Exception as ex:
-                _logger.error(ex)
+                import traceback
+
+                traceback_ex = traceback.format_exc()
+                _logger.error("%s " % (traceback_ex))
                 continue
             services["fcm"][app["shortname"]].append(fcminstance)
 
