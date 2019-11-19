@@ -96,7 +96,7 @@ class FCMClient(PushService):
         token = kwargs["token"]
 
         if not token:
-            raise FCMException(400, "token is required")
+            raise FCMException(400, "devicde token is required")
 
         access_token_info = self.credentials.get_access_token()
         headers = {
@@ -105,7 +105,7 @@ class FCMClient(PushService):
         }
 
         data = self.build_request(token, alert, extra=extra, payload=payload)
-        _logger.debug("post fcm payload to firebase")
+        _logger.debug("posting payload to fcm")
         response = requests.post(self.endpoint, data=data, headers=headers)
 
         if response.status_code >= 400:

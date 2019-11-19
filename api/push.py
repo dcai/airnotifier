@@ -67,29 +67,28 @@ class PushHandler(APIBaseHandler):
                 )
                 return
 
+            request_body = self.request.body.decode("utf-8")
             # if request body is json entity
-            requestPayload = json_decode(self.request.body)
+            request_dict = json_decode(request_body)
 
-            # application specific requestPayload
-            extra = requestPayload.get("extra", {})
+            # application specific request_dict
+            extra = request_dict.get("extra", {})
             # Hook
             if "processor" in extra:
                 try:
                     proc = import_module("hooks." + extra["processor"])
-                    requestPayload = proc.process_pushnotification_payload(
-                        requestPayload
-                    )
+                    request_dict = proc.process_pushnotification_payload(request_dict)
                 except Exception as ex:
                     _logger.error(str(ex))
                     self.send_response(BAD_REQUEST, dict(error=str(ex)))
                     return
 
             if not self.token:
-                self.token = requestPayload.get("token", None)
+                self.token = request_dict.get("token", None)
 
-            device = requestPayload.get("device", DEVICE_TYPE_FCM).lower()
-            channel = requestPayload.get("channel", "default")
-            alert = requestPayload.get("alert", "")
+            device = request_dict.get("device", DEVICE_TYPE_FCM).lower()
+            channel = request_dict.get("channel", "default")
+            alert = request_dict.get("alert", "")
             token = self.db.tokens.find_one({"token": self.token})
 
             if not token:
@@ -113,7 +112,7 @@ class PushHandler(APIBaseHandler):
             _logger.info("sending notification to %s: %s" % (device, self.token))
             #  if device in [DEVICE_TYPE_FCM, DEVICE_TYPE_ANDROID]:
             if device.endswith(DEVICE_TYPE_FCM):
-                fcm_payload = requestPayload.get("fcm", {})
+                fcm_payload = request_dict.get("fcm", {})
                 try:
                     fcmconn = self.fcmconnections[self.app["shortname"]][0]
                     response = fcmconn.process(
@@ -138,33 +137,30 @@ class PushHandler(APIBaseHandler):
                     "content": None,
                     "custom": None,
                 }
-                apns = {**apns_default, **requestPayload["apns"]}
+                apns = {**apns_default, **request_dict["apns"]}
                 conn = self.get_apns_conn()
                 if conn:
                     conn.process(token=self.token, alert=alert, extra=extra, apns=apns)
                 else:
                     _logger.error("no active apns connection")
             elif device == DEVICE_TYPE_WNS:
-                requestPayload.setdefault("wns", {})
+                request_dict.setdefault("wns", {})
                 wns = self.wnsconnections[self.app["shortname"]][0]
                 wns.process(
-                    token=requestPayload["token"],
+                    token=request_dict["token"],
                     alert=alert,
                     extra=extra,
-                    wns=requestPayload["wns"],
+                    wns=request_dict["wns"],
                 )
             else:
                 _logger.error("invalid device type %s" % device)
                 self.send_response(BAD_REQUEST, dict(error="Invalid device type"))
                 return
 
-            logmessage = "payload: %s, access key: %s" % (
-                request.body.encode("utf-8"),
-                self.appkey,
-            )
+            logmessage = "payload: %s, access key: %s" % (request_body, self.appkey)
             self.add_to_log("notification", logmessage)
             self.send_response(ACCEPTED)
         except Exception as ex:
-            traceback_ex = traceback.format_exception()
+            traceback_ex = traceback.format_exc()
             _logger.error("%s %s" % (traceback_ex, str(ex)))
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))

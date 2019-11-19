@@ -34,6 +34,7 @@ except:
 import json
 import calendar
 import datetime
+import logging
 
 try:
     from html.entities import name2codepoint
