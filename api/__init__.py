@@ -429,11 +429,7 @@ class UsersHandler(APIBaseHandler):
         password = self.get_argument("password")
         email = self.get_argument("email")
         now = int(time.time())
-        user = {
-            "password": password,
-            "email": email,
-            "created": now,
-        }
+        user = {"password": password, "email": email, "created": now}
         try:
             cursor = self.db.users.find_one({"email": email})
             if cursor:

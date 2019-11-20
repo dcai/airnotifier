@@ -224,7 +224,7 @@ class AirNotifierApp(tornado.web.Application):
                 raise
             http_server = tornado.httpserver.HTTPServer(self, ssl_options=ssl_ctx)
         else:
-            http_server = tornado.httpserver.HTTPServer(self)
+            http_server = tornado.httpserver.HTTPServer(self, xheaders=True)
         http_server.listen(options.port)
         _logger.info("AirNotifier is listening at port: %s" % options.port)
         try:
@@ -316,9 +316,7 @@ if __name__ == "__main__":
     tornado.options.parse_config_file("config.py")
     tornado.options.parse_command_line()
     if options.sentrydsn:
-        sentry_sdk.init(
-            dsn=options.sentrydsn, integrations=[TornadoIntegration()],
-        )
+        sentry_sdk.init(dsn=options.sentrydsn, integrations=[TornadoIntegration()])
     else:
         _logger.warn("sentry dsn is not set")
 
