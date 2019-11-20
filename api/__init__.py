@@ -225,6 +225,9 @@ class APIBaseHandler(tornado.web.RequestHandler):
     def finish(self, chunk=None):
         super(APIBaseHandler, self).finish(chunk)
         self._time_end = time.time()
+        _logger.info(
+            "%s call ends %s" % (type(self).__name__, self._time_end - self._time_start)
+        )
 
     def add_to_log(self, action, info=None, level="info"):
         log = {}

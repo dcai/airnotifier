@@ -59,7 +59,7 @@ class PushHandler(APIBaseHandler):
             instanceid = random.randint(0, count - 1)
             return self.apnsconnections[self.app["shortname"]][instanceid]
 
-    def post(self):
+    async def post(self):
         try:
             """ Send notifications """
             if not self.can("send_notification"):
@@ -115,7 +115,7 @@ class PushHandler(APIBaseHandler):
                 fcm_payload = request_dict.get("fcm", {})
                 try:
                     fcmconn = self.fcmconnections[self.app["shortname"]][0]
-                    response = fcmconn.process(
+                    response = await fcmconn.process(
                         token=self.token, alert=alert, extra=extra, payload=fcm_payload
                     )
                 except Exception as ex:

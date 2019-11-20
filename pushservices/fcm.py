@@ -2,15 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import requests
+import tornado
 from util import json_decode, json_encode
 from . import PushService
 import logging
+import datetime
 from oauth2client.service_account import ServiceAccountCredentials
 
 BASE_URL = "https://fcm.googleapis.com"
 SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
 _logger = logging.getLogger("fcm")
+
+
+http = tornado.httpclient.AsyncHTTPClient()
 
 
 class FCMException(Exception):
@@ -29,7 +33,7 @@ class FCMClient(PushService):
         self.appname = kwargs["appname"]
         self.instanceid = kwargs["instanceid"]
         jsonData = json_decode(self.jsonkey)
-        self.credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+        self.oauth_client = ServiceAccountCredentials.from_json_keyfile_dict(
             jsonData, SCOPES
         )
         self.endpoint = "%s/v1/projects/%s/messages:send" % (BASE_URL, self.project_id)
@@ -87,7 +91,7 @@ class FCMClient(PushService):
         text = json_encode(payload)
         return text
 
-    def process(self, **kwargs):
+    async def process(self, **kwargs):
 
         payload = kwargs.get("payload", {})
         extra = kwargs.get("extra", {})
@@ -98,20 +102,23 @@ class FCMClient(PushService):
         if not token:
             raise FCMException(400, "devicde token is required")
 
-        access_token_info = self.credentials.get_access_token()
+        access_token, expires_in = self.oauth_client.get_access_token()
+        _logger.info(
+            "access token expiring in %s..." % datetime.timedelta(seconds=expires_in)
+        )
         headers = {
-            "Authorization": "Bearer %s" % access_token_info.access_token,
+            "Authorization": "Bearer %s" % access_token,
             "Content-Type": "application/json; UTF-8",
         }
 
         data = self.build_request(token, alert, extra=extra, payload=payload)
-        _logger.debug("posting payload to fcm")
-        response = requests.post(self.endpoint, data=data, headers=headers)
 
-        if response.status_code >= 400:
-            jsonError = response.json()
+        response = await http.fetch(
+            self.endpoint, method="POST", body=data, headers=headers
+        )
+
+        if response.code >= 400:
+            jsonError = tornado.escape.json_decode(response.body)
             _logger.info("fcm response code is >= 400 %s" % jsonError)
-            raise FCMException(
-                400, jsonError["error"],
-            )
+            raise FCMException(400, jsonError["error"])
         return response
