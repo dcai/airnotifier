@@ -34,36 +34,17 @@ from bson import *
 from constants import *
 from tornado.options import define, options
 
-define("apns", default=(), help="APNs address and port")
-define("pemdir", default="pemdir", help="Directory to store pems")
-define(
-    "passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash"
-)
-
-define("mongohost", default="localhost", help="MongoDB host name")
-define("mongoport", default=27017, help="MongoDB port")
-define("mongodbname", default="airnotifier", help="MongoDB database name")
+define("mongouri", default="mongodb://localhost:27017/", help="MongoDB host name")
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
-define("collectionprefix", default="obj_", help="Collection name prefix")
 define("appprefix", default="", help="DB name prefix")
-
-# Database Authentication parameters
-define("dbuser", help="MongoDB admin user")
-define("dbpass", help="MongoDB admin password")
-define("dbauthsource", default="admin", help="MongoDB authentication source database")
 
 if __name__ == "__main__":
     curpath = os.path.dirname(os.path.realpath(__file__))
 
     tornado.options.parse_config_file("%s/config.py" % curpath)
     tornado.options.parse_command_line()
-    mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
+    mongodb = pymongo.MongoClient(options.mongouri)
     masterdb = mongodb[options.masterdb]
-    # Authenticate if credentials are supplied.
-    if options.dbuser is not None and options.dbpass is not None:
-        masterdb.authenticate(
-            options.dbuser, options.dbpass, source=options.dbauthsource
-        )
 
     version_object = masterdb["options"].find_one({"name": "version"})
     appprefix = options.appprefix

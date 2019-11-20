@@ -1,19 +1,17 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import argparse
-import tornado
-from util import json_decode, json_encode
 from . import PushService
-import logging
-import datetime
 from oauth2client.service_account import ServiceAccountCredentials
+from util import json_decode, json_encode
+import argparse
+import datetime
+import logging
+import tornado
 
 BASE_URL = "https://fcm.googleapis.com"
 SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
 _logger = logging.getLogger("fcm")
-
-
 http = tornado.httpclient.AsyncHTTPClient()
 
 

@@ -130,10 +130,6 @@ def filter_alphabetanum(string):
     return string
 
 
-def error_log(log):
-    sys.stderr.write(log)
-
-
 def get_filepath(filename):
     return os.path.join(os.path.abspath(options.pemdir), filename)
 

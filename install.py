@@ -26,36 +26,26 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from constants import VERSION
 from hashlib import sha1
 from os import path
-import pymongo
 from pymongo.errors import CollectionInvalid
 from tornado.options import define, options
-import tornado.options
-import logging
 from util import *
-
-from constants import VERSION
+import logging
+import pymongo
+import tornado.options
 
 
 EMAIL = "admin@airnotifier"
 DEFAULTPASSWORD = "admin"
 
-define("apns", default=(), help="APNs address and port")
-define("pemdir", default="pemdir", help="Directory to store pems")
+define("masterdb", default="airnotifier", help="MongoDB DB to store information")
+define("mongouri", default="mongodb://localhost:27017/", help="MongoDB host name")
 define(
     "passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash"
 )
-
-define("mongohost", default="localhost", help="MongoDB host name")
-define("mongoport", default=27017, help="MongoDB port")
-define("mongodbname", default="airnotifier", help="MongoDB database name")
-define("masterdb", default="airnotifier", help="MongoDB DB to store information")
-
-# Database Authentication parameters
-define("dbuser", help="MongoDB admin user")
-define("dbpass", help="MongoDB admin password")
-define("dbauthsource", default="admin", help="MongoDB authentication source database")
+define("pemdir", default="pemdir", help="Directory to store pems")
 
 
 if __name__ == "__main__":
@@ -64,13 +54,8 @@ if __name__ == "__main__":
 
     tornado.options.parse_config_file("config.py")
     tornado.options.parse_command_line()
-    mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
+    mongodb = pymongo.MongoClient(options.mongouri)
     masterdb = mongodb[options.masterdb]
-    # Authenticate if credentials are supplied.
-    if options.dbuser is not None and options.dbpass is not None:
-        masterdb.authenticate(
-            options.dbuser, options.dbpass, source=options.dbauthsource
-        )
 
     collection_names = masterdb.collection_names()
     try:

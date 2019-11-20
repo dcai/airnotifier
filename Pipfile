@@ -4,8 +4,8 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-ptr = "*"
 pytest = "*"
+pytest-watch = "*"
 
 [packages]
 netaddr = "==0.7.18"

@@ -15,12 +15,7 @@ if [ ! -f "/config/logging.ini" ]; then
   cp logging.ini-sample logging.ini
 fi
 
-if [ -n "$MONGO_SERVER" ]; then
-  sed -i "s/mongohost = \"localhost\"/mongohost = \"$MONGO_SERVER\"/g" ./config.py
-fi
-if [ -n "$MONGO_PORT" ]; then
-  sed -i "s/mongoport = 27017/mongoport = $MONGO_PORT/g" ./config.py
-fi
+sed -i "s/mongouri = \"mongodb:\/\/localhost:27017\/\"/mongouri = \"mongodb:\/\/${MONGO_SERVER-localhost}:${MONGO_PORT-27017}\"/g" ./config.py
 
 if [ ! -f "$LOGFILE" ]; then
   touch "$LOGFILE"

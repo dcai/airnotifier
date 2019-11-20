@@ -27,49 +27,28 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import datetime
+from container import Container
+from pushservices.bootstrap import init_messaging_agents
+from sentry_sdk.integrations.tornado import TornadoIntegration
+from tornado.options import define
 import logging.config
 import pymongo
-import sys
-import tornado.httpserver
-import tornado.ioloop
-import tornado.options
-from pushservices.apns import *
-from pushservices.clickatell import *
-from pushservices.fcm import FCMClient
-from pushservices.gcm import GCMClient
-from pushservices.mpns import MPNSClient
-from pushservices.wns import WNSClient
-from tornado.options import define
 import sentry_sdk
-from sentry_sdk.integrations.tornado import TornadoIntegration
-
-from uimodules import *
-from util import *
-from constants import (
-    DEVICE_TYPE_ANDROID,
-    DEVICE_TYPE_FCM,
-    DEVICE_TYPE_IOS,
-    DEVICE_TYPE_WNS,
-    RELEASE,
-    VERSION,
-)
+from tornado.options import define, options
+from web import WebApplication
+import os
 
 
 define("appprefix", default="", help="DB name prefix")
 define("collectionprefix", default="obj_", help="Collection name prefix")
 define("cookiesecret", default="airnotifiercookiesecret", help="Cookie secret")
-define("dbauthsource", default="admin", help="MongoDB authentication source database")
-define("dbpass", help="MongoDB admin password")
 define("dbprefix", default="app_", help="DB name prefix")
-define("dbuser", help="MongoDB admin user")
 define("debug", default=False, help="Debug mode")
 define("https", default=False, help="Enable HTTPS")
 define("httpscertfile", default="", help="HTTPS cert file")
 define("httpskeyfile", default="", help="HTTPS key file")
 define("masterdb", default="airnotifier", help="MongoDB DB to store information")
-define("mongohost", default="localhost", help="MongoDB host name")
-define("mongoport", default=27017, help="MongoDB port")
+define("mongouri", default="mongodb://localhost:27017/", help="MongoDB host name")
 define(
     "passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash"
 )
@@ -78,247 +57,39 @@ define("port", default=8801, help="Application server listen port", type=int)
 define("sentrydsn", default="", help="sentry dsn")
 
 
-loggingconfigfile = "logging.ini"
+if __name__ == "__main__":
+    loggingconfigfile = "logging.ini"
 
-if os.path.isfile(loggingconfigfile):
-    logging.config.fileConfig(loggingconfigfile)
+    if os.path.isfile(loggingconfigfile):
+        logging.config.fileConfig(loggingconfigfile)
 
-_logger = logging.getLogger("AirNotifierApp")
+    _logger = logging.getLogger("app")
 
+    options.parse_config_file("config.py")
+    options.parse_command_line()
 
-class NotFoundHandler(tornado.web.RequestHandler):
-    def prepare(self):  # for all methods
-        self.set_status(404, None)
-        self.finish()
+    if options.sentrydsn:
+        sentry_sdk.init(dsn=options.sentrydsn, integrations=[TornadoIntegration()])
+    else:
+        _logger.warn("Sentry dsn is not set")
 
-
-class AirNotifierApp(tornado.web.Application):
-    def init_routes(self, dir):
-        from routes import RouteLoader
-
-        return RouteLoader.load(dir)
-
-    def get_broadcast_status(self, appname):
-        status = "Notification sent!"
-        error = False
-
-        try:
-            apns = self.services["apns"][appname][0]
-        except (IndexError, KeyError):
-            apns = None
-
-        if apns is not None and apns.hasError():
-            status = apns.getError()
-            error = True
-
-        return {"msg": status, "error": error}
-
-    def send_broadcast(self, appname, appdb, **kwargs):
-        channel = kwargs.get("channel", "default")
-        alert = kwargs.get("alert", None)
-        sound = kwargs.get("sound", None)
-        badge = kwargs.get("badge", None)
-        device = kwargs.get("device", None)
-        extra = kwargs.get("extra", {})
-        try:
-            apns = self.services["apns"][appname][0]
-        except (IndexError, KeyError):
-            apns = None
-        try:
-            wns = self.services["wns"][appname][0]
-        except (IndexError, KeyError):
-            wns = None
-        try:
-            fcm = self.services["fcm"][appname][0]
-        except (IndexError, KeyError):
-            fcm = None
-
-        conditions = []
-        if channel == "default":
-            # channel is not set or channel is default
-            conditions.append({"channel": {"$exists": False}})
-            conditions.append({"channel": "default"})
-        else:
-            conditions.append({"channel": channel})
-
-        if device:
-            conditions.append({"device": device})
-
-        tokens = appdb.tokens.find({"$or": conditions})
-
-        regids = []
-        try:
-            for token in tokens:
-                t = token.get("token")
-                if token["device"] == DEVICE_TYPE_IOS:
-                    if apns is not None:
-                        apns.process(
-                            token=t,
-                            alert=alert,
-                            extra=extra,
-                            apns=kwargs.get("apns", {}),
-                        )
-                elif token["device"] == DEVICE_TYPE_FCM:
-                    fcm.process(
-                        token=t, alert=alert, extra=extra, fcm=kwargs.get("fcm", {})
-                    )
-                elif token["device"] == DEVICE_TYPE_WNS:
-                    if wns is not None:
-                        wns.process(
-                            token=t, alert=alert, extra=extra, wns=kwargs.get("wns", {})
-                        )
-        except Exception as ex:
-            _logger.error(ex)
-
-    def __init__(self, services):
-
-        now = datetime.datetime.now()
-
-        app_settings = dict(
-            debug=True,
-            # debug=options.debug,
-            app_title="AirNotifier",
-            current_year=str(now.year),
-            version="{}-{}".format(RELEASE, VERSION),
-            ui_modules={"AppSideBar": AppSideBar, "NavBar": NavBar, "TabBar": TabBar},
-            template_path=os.path.join(os.path.dirname(__file__), "templates"),
-            static_path=os.path.join(os.path.dirname(__file__), "static"),
-            cookie_secret=options.cookiesecret,
-            login_url=r"/auth/login",
-            autoescape=None,
-            default_handler_class=NotFoundHandler,
-        )
-        self.services = services
-
-        sitehandlers = self.init_routes("controllers")
-        apihandlers = self.init_routes("api")
-
-        tornado.web.Application.__init__(
-            self, sitehandlers + apihandlers, **app_settings
-        )
-
-        mongodb = None
-        while not mongodb:
-            try:
-                mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
-            except:
-                error_log("Cannot not connect to MongoDB")
-
-        self.mongodb = mongodb
-        self.masterdb = mongodb[options.masterdb]
-        # Authenticate if credentials are supplied.
-        if options.dbuser is not None and options.dbpass is not None:
-            self.masterdb.authenticate(
-                options.dbuser, options.dbpass, source=options.dbauthsource
-            )
-
-    def main(self):
-        if options.https:
-            import ssl
-
-            try:
-                ssl_ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-                ssl_ctx.load_cert_chain(options.httpscertfile, options.httpskeyfile)
-            except IOError:
-                _logger.error("Invalid path to SSL certificate and private key")
-                raise
-            http_server = tornado.httpserver.HTTPServer(self, ssl_options=ssl_ctx)
-        else:
-            http_server = tornado.httpserver.HTTPServer(self, xheaders=True)
-        http_server.listen(options.port)
-        _logger.info("AirNotifier is listening at port: %s" % options.port)
-        try:
-            tornado.ioloop.IOLoop.instance().start()
-        except KeyboardInterrupt:
-            _logger.info("AirNotifier is quiting")
-            tornado.ioloop.IOLoop.instance().stop()
-
-
-def init_messaging_agents():
-    services = {"apns": {}, "fcm": {}, "sms": {}, "wns": {}}
     mongodb = None
     while not mongodb:
         try:
-            mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
+            mongodb = pymongo.MongoClient(options.mongouri)
         except Exception as ex:
             _logger.error(ex)
 
     masterdb = mongodb[options.masterdb]
-    # Authenticate if credentials are supplied.
-    if options.dbuser is not None and options.dbpass is not None:
-        masterdb.authenticate(
-            options.dbuser, options.dbpass, source=options.dbauthsource
-        )
+    services = init_messaging_agents(masterdb)
 
-    apps = masterdb.applications.find()
-    for app in apps:
-        """ FCMClient setup """
-        services["fcm"][app["shortname"]] = []
-        if "fcm-project-id" in app and "fcm-jsonkey" in app:
-            try:
-                fcminstance = FCMClient(
-                    project_id=app["fcm-project-id"],
-                    jsonkey=app["fcm-jsonkey"],
-                    appname=app["shortname"],
-                    instanceid=0,
-                )
-            except Exception as ex:
-                import traceback
+    SYSTEM_DATA = (
+        ("mongodburi", options.mongouri, None),
+        ("mongodbconn", mongodb, None),
+        ("services", services, None),
+        ("serveroptions", options, None),
+    )
 
-                traceback_ex = traceback.format_exc()
-                _logger.error("%s " % (traceback_ex))
-                continue
-            services["fcm"][app["shortname"]].append(fcminstance)
+    container = Container(SYSTEM_DATA)
 
-        """ APNs setup """
-        services["apns"][app["shortname"]] = []
-        conns = int(app["connections"])
-        if conns < 1:
-            conns = 1
-        if "environment" not in app:
-            app["environment"] = "sandbox"
-
-        if (
-            file_exists(app.get("certfile", False))
-            and file_exists(app.get("keyfile", False))
-            and "shortname" in app
-        ):
-            if app.get("enableapns", False):
-                for instanceid in range(0, conns):
-                    try:
-                        apn = APNClient(
-                            app["environment"],
-                            app["certfile"],
-                            app["keyfile"],
-                            app["shortname"],
-                            instanceid,
-                        )
-                    except Exception as ex:
-                        _logger.error(ex)
-                        continue
-                    services["apns"][app["shortname"]].append(apn)
-
-        """ WNS setup """
-        services["wns"][app["shortname"]] = []
-        if "wnsclientid" in app and "wnsclientsecret" in app and "shortname" in app:
-            try:
-                wns = WNSClient(masterdb, app, 0)
-            except Exception as ex:
-                _logger.error(ex)
-                continue
-            services["wns"][app["shortname"]].append(wns)
-
-    mongodb.close()
-    return services
-
-
-if __name__ == "__main__":
-    tornado.options.parse_config_file("config.py")
-    tornado.options.parse_command_line()
-    if options.sentrydsn:
-        sentry_sdk.init(dsn=options.sentrydsn, integrations=[TornadoIntegration()])
-    else:
-        _logger.warn("sentry dsn is not set")
-
-    services = init_messaging_agents()
-    AirNotifierApp(services=services).main()
+    WebApplication(container).main()
