@@ -7,7 +7,7 @@ AirNotifier is a user friendly yet powerful application server for sending real-
 
 
 ## Hosted AirNotifier Service
-If you need hosted AirNotifier Service to integrate with the most popular open source learning management system, please email friendlyrobotco@gmail.com. We have a range of hosting options :)
+If you need hosted AirNotifier Service to integrate with the most popular open source learning management system, please email [friendlyrobotco@gmail.com](mailto:friendlyrobotco@gmail.com). We have a range of hosting options :)
 
 
 ## Supported devices
