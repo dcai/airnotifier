@@ -5,138 +5,30 @@
 
 AirNotifier is a user friendly yet powerful application server for sending real-time notifications to mobile and desktop applications. AirNotifier provides a unified web service interface to deliver messages to multi devices using multi protocols, it also features a web based administrator UI to configure and manage services.
 
+
+## Hosted AirNotifier Service
+If you need hosted AirNotifier Service to integrate with the most popular open source learning management system, please email friendlyrobotco@gmail.com. We have a range of hosting options :)
+
+
 ## Supported devices
-- International SMS (uses [clickatell](https://www.clickatell.com/), credits required)
 - iPhone/iPad devices ([APNS](https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/Chapters/ApplePushService.html) protocol)
-- Android devices ([FCM](https://firebase.google.com/docs/cloud-messaging) protocol)
+- Android devices and chrome browser ([FCM](https://firebase.google.com/docs/cloud-messaging) protocol)
 - Windows 8.1 phone (WNS protocol)
 - Windows 10 desktop (WNS protocol)
 
 ## Features
 - Open source application server, you can install on your own server, own your data
-- Subscribe to multi channels
 - Unlimited number of devices and channels
 - API access control
 - Web-based UI to configure
-- Broadcase notifications
 - Access key management
 - Logging activities
-- Apple Feedback API
-- GCM broadcast API
+- FCM for iOS/Android/Chrome
 
-## Push notification examples
-
-
-### Sending basic notification to iOS devices
-```
-POST /api/v2/push HTTP/1.1
-X-AN-APP-NAME: moodlemobileapp
-X-AN-APP-KEY: b2b56dbb
-Content-Type: application/json
-{
-    "device": "ios",
-    "token": "FE66489F304DC75B8D6E8200DFF8A456E8DAEACEC428B427E9518741C92C6660",
-    "alert": "Hello from AirNotifier",
-    "sound": "Submarine.aiff",
-    "badge": 1
-}
-```
-
-### Sending notification via FCM
-```
-POST /api/v2/push HTTP/1.1
-X-AN-APP-NAME: moodlemobileapp
-X-AN-APP-KEY: b2b56dbb
-Content-Type: application/json
-{
-    "device": "fcm",
-    "token": "FE66489F304DC75B8D6E8200DFF8A456E8DAEACEC428B427E9518741C92C6660",
-    "alert": {
-        "title": "hello",
-        "body": "Hello from AirNotifier"
-    },
-    "fcm": {
-        "data": {
-            "story_id": "xxxxx"
-        },
-        "android": {
-            "collapse_key": "KKKKKKKKKK",
-            "priority": "NORMAL",
-            "ttl": "100",
-            "restricted_package_name": "package name",
-            "data": {
-                "android-data-key": "data-value",
-            },
-            "notification": {
-                "title": "android notification title",
-                "body": "android notification body",
-                "icon": "icon",
-                "color": "black",
-                "sound": "ring",
-                "tag": "app",
-                "click_action": "action name",
-                "body_loc_key": "loc key",
-                "body_loc_args": [
-                    "abc"
-                ],
-                "title_loc_key": "title key",
-                "title_loc_args": [
-                    "title"
-                ],
-                "channel_id": "new channel"
-            }
-        }
-    }
-}
-```
-
-### SMS
-```
-POST /api/v2/push HTTP/1.1
-X-AN-APP-NAME: moodlemobileapp
-X-AN-APP-KEY: b2b56dbb
-Content-Type: application/json
-{
-    "device": "sms",
-    "token": "61412345987 [phone no]",
-    "alert": "SMS message goes here"
-}
-```
-
-### Sending toast type notification to windows 8.1 devices
-```
-POST /api/v2/push HTTP/1.1
-X-AN-APP-NAME: moodlemobileapp
-X-AN-APP-KEY: b2b56dbb
-Content-Type: application/json
-{
-    "device": "wns",
-    "token": "https:\/\/sin.notify.windows.com\/?token=AgYAAACDWksZrGbln5sUbP6D3F%2b9ddjptarcZ%2f9vJsDwCt16EHiupJaRddEXJ8BEfx4SE5slxQlB6iknY7zdUEXFayFclNXCIYp6CWnMTYSHGVRySO7aglj6%2b09wTBYqBFxFuoA%3d",
-    "alert": "alert contetnt",
-    "wns": {
-        "type": "toast",
-        "template": "ToastImageAndText01",
-        "image": ["image1"],
-        "text": ["test1"]
-    },
-    "extra": {
-        "processor":"moodle",
-        "data":{"key1":"param1 value","key2":"param2 value"}
-    }
-}
-```
 
 ## Installation
 
 Please read [Installation guide](https://github.com/airnotifier/airnotifier/wiki/Installation)
-
-## Configuration
-`config.py` is the config file, options:
-
-- pemdir: The directory storing certificates
-- passwordsalt: passwordsalt
-- masterdb: MongoDB database name
-- appprefix: Prefix added to app database name
 
 ## Web service documentation
 - [Web service interfaces](https://github.com/airnotifier/airnotifier/wiki/API)
