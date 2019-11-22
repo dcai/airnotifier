@@ -83,14 +83,19 @@ if __name__ == "__main__":
             masterdb.managers.ensure_index("username", unique=True)
             print("db.managers installed")
             try:
-                user = self.masterdb.managers.find_one({"username": username})
+                username = "admin"
+                password = "admin"
+                user = masterdb.managers.find_one({"username": username})
                 if not user:
                     manager = {}
-                    manager["username"] = "admin"
-                    manager["password"] = get_password("admin", options.passwordsalt)
+                    manager["username"] = username
+                    manager["password"] = get_password(password, options.passwordsalt)
                     manager["orgid"] = 0
                     masterdb["managers"].insert(manager)
-                    print("Admin user created, username: admin, password: admin")
+                    print(
+                        "Admin user created, username: %s, password: %s"
+                        % (username, password)
+                    )
             except Exception as ex:
                 print(("Failed to create admin user", ex))
 
@@ -103,7 +108,7 @@ if __name__ == "__main__":
             masterdb.create_collection("options")
             print("db.options installed")
             try:
-                version = self.masterdb["options"].find_one({"name": "version"})
+                version = masterdb["options"].find_one({"name": "version"})
                 if not version:
                     option_ver = {}
                     option_ver["name"] = "version"
