@@ -59,7 +59,6 @@ class AppAccessKeysHandler(WebBaseHandler):
         if key_to_be_deleted:
             self.db.keys.remove({"key": key_to_be_deleted})
             self.redirect("/applications/%s/keys" % appname)
-        _logger.info((list(API_PERMISSIONS.items())))
         self.render(
             "app_keys.html",
             app=app,
