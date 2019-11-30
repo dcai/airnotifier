@@ -44,7 +44,13 @@ import requests
 import tornado.web
 
 from util import json_decode, json_encode
-from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_ANDROID, DEVICE_TYPE_WNS, RELEASE
+from constants import (
+    DEVICE_TYPE_FCM,
+    DEVICE_TYPE_IOS,
+    DEVICE_TYPE_ANDROID,
+    DEVICE_TYPE_WNS,
+    RELEASE,
+)
 from pushservices.apns import PayLoad
 from pushservices.gcm import (
     GCMException,
@@ -267,7 +273,8 @@ class TokenV1Handler(APIBaseHandler):
             self.send_response(FORBIDDEN, dict(error="No permission to create token"))
             return
 
-        device = self.get_argument("device", DEVICE_TYPE_IOS).lower()
+        device = self.get_argument("device", DEVICE_TYPE_FCM).lower()
+
         if device == DEVICE_TYPE_IOS and devicetoken:
             if len(devicetoken) != 64:
                 # hack until we resolve some bugs at the moodle side
@@ -282,8 +289,8 @@ class TokenV1Handler(APIBaseHandler):
                 except Exception as ex:
                     self.send_response(BAD_REQUEST, dict(error="Invalid token"))
         else:
-            # if it's not ios then we force android type device here
-            device = DEVICE_TYPE_ANDROID
+            # if it's not ios then we force FCM type device here
+            device = DEVICE_TYPE_FCM
 
         channel = self.get_argument("channel", "default")
 
