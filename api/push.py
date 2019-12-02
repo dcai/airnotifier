@@ -87,7 +87,7 @@ class PushHandler(APIBaseHandler):
             device = request_dict.get("device", DEVICE_TYPE_FCM).lower()
             channel = request_dict.get("channel", "default")
             alert = request_dict.get("alert", "")
-            token = self.db.tokens.find_one({"token": self.token})
+            token = self.dao.find_token(self.token)
 
             if not token:
                 token = EntityBuilder.build_token(
@@ -101,7 +101,7 @@ class PushHandler(APIBaseHandler):
                     return
                 try:
                     # TODO check permission to insert
-                    self.db.tokens.insert(token)
+                    self.dao.add_token(token)
                 except Exception as ex:
                     logging.error(str(ex))
                     self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))

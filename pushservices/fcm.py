@@ -22,7 +22,7 @@ class FCMException(Exception):
 
 class FCMClient(PushService):
     def __str__(self):
-        return "endpoint: %s" % (self.endpoint)
+        return " FCM endpoint: %s" % (self.endpoint)
 
     def __init__(self, **kwargs):
         self.project_id = kwargs["project_id"]

@@ -57,7 +57,7 @@ class AppHandler(WebBaseHandler):
         if appname == "new":
             self.redirect(r"/create/app")
         else:
-            app = self.masterdb.applications.find_one({"shortname": appname})
+            app = self.dao.find_app_by_name(appname)
             if not file_exists(app.get("certfile", "")):
                 app["certfile"] = None
             if not file_exists(app.get("keyfile", "")):
@@ -105,7 +105,7 @@ class AppHandler(WebBaseHandler):
     def post(self, appname):
         try:
             self.appname = appname
-            app = self.masterdb.applications.find_one({"shortname": self.appname})
+            app = self.dao.find_app_by_name(appname)
 
             if self.get_argument("appfullname", None):
                 app["fullname"] = self.get_argument("appfullname")
@@ -230,7 +230,7 @@ class AppHandler(WebBaseHandler):
                     wns = WNSClient(self.masterdb, app, 0)
                     self.wnsconnections[app["shortname"]].append(wns)
 
-            self.masterdb.applications.update({"shortname": self.appname}, app)
+            self.dao.update_app_by_name(self.appname, app)
             self.redirect(r"/applications/%s/settings" % self.appname)
         except Exception as ex:
             logging.error(traceback.format_exc())

@@ -42,6 +42,7 @@ import urllib.request, urllib.parse, urllib.error
 import uuid
 import requests
 import tornado.web
+from dao import Dao
 
 from util import json_decode, json_encode
 from constants import (
@@ -81,6 +82,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.accesskeyrequired = True
         self._time_start = time.time()
+        self.dao = self.application.container.dao
 
     def prepare(self):
         """Pre-process HTTP request
@@ -93,6 +95,8 @@ class APIBaseHandler(tornado.web.RequestHandler):
 
         if not self.appname:
             self.appname = filter_alphabetanum(self.get_argument("appname"))
+
+        self.dao.set_current_app(self.appname)
 
         self.appkey = None
         if "X-An-App-Key" in self.request.headers:
@@ -119,7 +123,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
             # if it's not ios then we force android type device here
             self.device = DEVICE_TYPE_ANDROID
 
-        self.app = self.masterdb.applications.find_one({"shortname": self.appname})
+        self.app = self.dao.find_app_by_name(self.appname)
 
         if not self.app:
             self.send_response(BAD_REQUEST, dict(error="Invalid application name"))

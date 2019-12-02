@@ -28,16 +28,17 @@
 
 
 from container import Container
+from dao import Dao
 from pushservices.bootstrap import init_messaging_agents
 from sentry_sdk.integrations.tornado import TornadoIntegration
 from tornado.options import define
-import logging.config
-import pymongo
-import sentry_sdk
 from tornado.options import define, options
 from web import WebApplication
-import os
 import logging
+import logging.config
+import os
+import pymongo
+import sentry_sdk
 
 
 define("appprefix", default="", help="DB name prefix")
@@ -87,6 +88,7 @@ if __name__ == "__main__":
         ("mongodbconn", mongodb, None),
         ("services", services, None),
         ("serveroptions", options, None),
+        ("dao", Dao, ("mongodbconn", "serveroptions")),
     )
 
     container = Container(SYSTEM_DATA)

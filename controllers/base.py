@@ -34,6 +34,7 @@ from constants import DEVICE_TYPE_IOS, VERSION
 from pymongo import DESCENDING
 from util import *
 from tornado.options import options
+from dao import Dao
 import sys
 
 
@@ -55,7 +56,7 @@ class WebBaseHandler(tornado.web.RequestHandler):
     """
 
     def initialize(self):
-        pass
+        self.dao = self.application.container.dao
 
     def prepare(self):
         pass
