@@ -1,0 +1,51 @@
+[loggers]
+keys=root,tornado_access,push,apns,fcm
+
+[logger_root]
+handlers=syslog,console
+qualname=root
+
+[logger_tornado_access]
+; tornado web access logger
+propagate=0
+handlers=syslog,console
+qualname=tornado.access
+
+[logger_push]
+; controller logger
+handlers=syslog,console
+qualname=push
+
+[logger_apns]
+; apns logger
+propagate=0
+handlers=syslog,console
+qualname=apns
+
+[logger_fcm]
+; fcm logger
+handlers=syslog,console
+qualname=fcm
+
+[handlers]
+keys=syslog,console
+
+[handler_syslog]
+class = logging.handlers.SysLogHandler
+formatter = loggly
+args=('/dev/log',)
+level = DEBUG
+
+[handler_console]
+class = StreamHandler
+args = (sys.stdout,)
+formatter = loggly
+level = DEBUG
+
+[formatters]
+keys=loggly
+
+[formatter_loggly]
+datefmt = %s
+class=logging.Formatter
+format = Python: { "loggerName":"%(name)s", "timestamp":"%(asctime)s", "pathName":"%(pathname)s", "logRecordCreationTime":"%(created)f", "functionName":"%(funcName)s", "levelNo":"%(levelno)s", "lineNo":"%(lineno)d", "time":"%(msecs)d", "levelName":"%(levelname)s", "message":"%(message)s"}
