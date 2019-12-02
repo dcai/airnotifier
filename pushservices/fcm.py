@@ -11,7 +11,6 @@ import tornado
 
 BASE_URL = "https://fcm.googleapis.com"
 SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
-_logger = logging.getLogger("fcm")
 http = tornado.httpclient.AsyncHTTPClient()
 
 
@@ -51,7 +50,7 @@ class FCMClient(PushService):
                 try:
                     formatted[k] = json_encode(self.format_values(v))
                 except:
-                    _logger.error("Error treating field " + k)
+                    logging.error("Error treating field " + k)
 
             elif v is not None:
                 formatted[k] = str(v)
@@ -101,7 +100,7 @@ class FCMClient(PushService):
             raise FCMException(400, "devicde token is required")
 
         access_token, expires_in = self.oauth_client.get_access_token()
-        _logger.info(
+        logging.info(
             "access token expiring in %s..." % datetime.timedelta(seconds=expires_in)
         )
         headers = {
@@ -117,6 +116,6 @@ class FCMClient(PushService):
 
         if response.code >= 400:
             jsonError = tornado.escape.json_decode(response.body)
-            _logger.info("fcm response code is >= 400 %s" % jsonError)
+            logging.info("fcm response code is >= 400 %s" % jsonError)
             raise FCMException(400, jsonError["error"])
         return response

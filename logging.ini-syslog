@@ -1,5 +1,5 @@
 [loggers]
-keys=root,tornado_access,push,apns,fcm
+keys=root,tornado_access,tornado_general,tornado_app
 
 [logger_root]
 handlers=syslog,console
@@ -11,21 +11,17 @@ propagate=0
 handlers=syslog,console
 qualname=tornado.access
 
-[logger_push]
-; controller logger
-handlers=syslog,console
-qualname=push
-
-[logger_apns]
-; apns logger
+[logger_tornado_general]
+; tornado web access logger
 propagate=0
 handlers=syslog,console
-qualname=apns
+qualname=tornado.general
 
-[logger_fcm]
-; fcm logger
+[logger_tornado_app]
+; tornado web access logger
+propagate=0
 handlers=syslog,console
-qualname=fcm
+qualname=tornado.application
 
 [handlers]
 keys=syslog,console
@@ -39,13 +35,18 @@ level = DEBUG
 [handler_console]
 class = StreamHandler
 args = (sys.stdout,)
-formatter = loggly
+formatter = console
 level = DEBUG
 
 [formatters]
-keys=loggly
+keys=loggly,console
 
 [formatter_loggly]
 datefmt = %s
 class=logging.Formatter
 format = Python: { "loggerName":"%(name)s", "timestamp":"%(asctime)s", "pathName":"%(pathname)s", "logRecordCreationTime":"%(created)f", "functionName":"%(funcName)s", "levelNo":"%(levelno)s", "lineNo":"%(lineno)d", "time":"%(msecs)d", "levelName":"%(levelname)s", "message":"%(message)s"}
+
+[formatter_console]
+datefmt = %s
+class=logging.Formatter
+format = %(asctime)s %(name)s %(levelname)-1.1s [%(threadName)s][%(name)s][%(filename)s:%(lineno)s] %(message)s

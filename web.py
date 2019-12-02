@@ -8,13 +8,11 @@ from constants import (
 )
 from uimodules import *
 import datetime
-import logging
 import os
+import logging
 import tornado
 import tornado.httpserver
 import tornado.ioloop
-
-_logger = logging.getLogger("web")
 
 
 class NotFoundHandler(tornado.web.RequestHandler):
@@ -24,6 +22,36 @@ class NotFoundHandler(tornado.web.RequestHandler):
 
 
 class WebApplication(tornado.web.Application):
+    def __init__(self, container):
+        self.container = container
+        self.services = container.services
+        self.mongodb = container.mongodbconn
+        options = container.serveroptions
+        self.masterdb = self.mongodb[options.masterdb]
+
+        now = datetime.datetime.now()
+
+        app_settings = dict(
+            debug=options.debug,
+            app_title="AirNotifier",
+            current_year=str(now.year),
+            version="{}-{}".format(RELEASE, VERSION),
+            ui_modules={"AppSideBar": AppSideBar, "NavBar": NavBar, "TabBar": TabBar},
+            template_path=os.path.join(os.path.dirname(__file__), "templates"),
+            static_path=os.path.join(os.path.dirname(__file__), "static"),
+            cookie_secret=options.cookiesecret,
+            login_url=r"/auth/login",
+            autoescape=None,
+            default_handler_class=NotFoundHandler,
+        )
+
+        sitehandlers = self.init_routes("controllers")
+        apihandlers = self.init_routes("api")
+
+        tornado.web.Application.__init__(
+            self, sitehandlers + apihandlers, **app_settings
+        )
+
     def init_routes(self, dir):
         from routes import RouteLoader
 
@@ -99,37 +127,7 @@ class WebApplication(tornado.web.Application):
                             token=t, alert=alert, extra=extra, wns=kwargs.get("wns", {})
                         )
         except Exception as ex:
-            _logger.error(ex)
-
-    def __init__(self, container):
-        self.container = container
-        self.services = container.services
-        self.mongodb = container.mongodbconn
-        options = container.serveroptions
-        self.masterdb = self.mongodb[options.masterdb]
-
-        now = datetime.datetime.now()
-
-        app_settings = dict(
-            debug=options.debug,
-            app_title="AirNotifier",
-            current_year=str(now.year),
-            version="{}-{}".format(RELEASE, VERSION),
-            ui_modules={"AppSideBar": AppSideBar, "NavBar": NavBar, "TabBar": TabBar},
-            template_path=os.path.join(os.path.dirname(__file__), "templates"),
-            static_path=os.path.join(os.path.dirname(__file__), "static"),
-            cookie_secret=options.cookiesecret,
-            login_url=r"/auth/login",
-            autoescape=None,
-            default_handler_class=NotFoundHandler,
-        )
-
-        sitehandlers = self.init_routes("controllers")
-        apihandlers = self.init_routes("api")
-
-        tornado.web.Application.__init__(
-            self, sitehandlers + apihandlers, **app_settings
-        )
+            logging.error(ex)
 
     def main(self):
         options = self.container.serveroptions
@@ -140,16 +138,16 @@ class WebApplication(tornado.web.Application):
                 ssl_ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
                 ssl_ctx.load_cert_chain(options.httpscertfile, options.httpskeyfile)
             except IOError:
-                _logger.error("Invalid path to SSL certificate and private key")
+                logging.error("Invalid path to SSL certificate and private key")
                 raise
             http_server = tornado.httpserver.HTTPServer(self, ssl_options=ssl_ctx)
         else:
             http_server = tornado.httpserver.HTTPServer(self, xheaders=True)
         http_server.listen(options.port)
-        _logger.info("AirNotifier is listening at port: %s" % options.port)
+        logging.info("AirNotifier is listening at port: %s" % options.port)
         try:
             tornado.ioloop.IOLoop.instance().start()
         except KeyboardInterrupt:
-            _logger.info("AirNotifier is quiting")
+            logging.info("AirNotifier is quiting")
             self.mongodb.close()
             tornado.ioloop.IOLoop.instance().stop()

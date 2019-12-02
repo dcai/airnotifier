@@ -1,34 +1,30 @@
 [loggers]
-keys=root,tornado_access,push,apns,fcm
+keys=root,tornado_access,tornado_general,tornado_app
 
 [logger_root]
-handlers=console
+handlers=main,console
 qualname=root
 
 [logger_tornado_access]
 ; tornado web access logger
 propagate=0
-handlers=accesslog
+handlers=accesslog,console
 qualname=tornado.access
 
-[logger_push]
-; controller logger
-handlers=pushlog
-qualname=push
-
-[logger_apns]
-; apns logger
+[logger_tornado_general]
+; tornado web access logger
 propagate=0
-handlers=pushlog
-qualname=apns
+handlers=main,console
+qualname=tornado.general
 
-[logger_fcm]
-; fcm logger
-handlers=pushlog
-qualname=fcm
+[logger_tornado_app]
+; tornado web access logger
+propagate=0
+handlers=main,console
+qualname=tornado.application
 
 [handlers]
-keys=console,silent,accesslog,main,pushlog
+keys=console,silent,accesslog,main
 
 [handler_console]
 class = StreamHandler
@@ -48,13 +44,6 @@ level = DEBUG
 formatter = default
 class=handlers.TimedRotatingFileHandler
 args=('/var/log/airnotifier/main.log', 'H', 24, 50)
-
-[handler_pushlog]
-formatter = default
-# 2000 maxBytes 100 backups
-class=handlers.TimedRotatingFileHandler
-args=('/var/log/airnotifier/push.log', 'H', 24, 50)
-
 
 [handler_silent]
 class=StreamHandler

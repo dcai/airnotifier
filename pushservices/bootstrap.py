@@ -1,3 +1,4 @@
+import logging
 from .apns import *
 from .clickatell import *
 from .fcm import FCMClient
@@ -26,7 +27,7 @@ def init_messaging_agents(masterdb):
                 import traceback
 
                 traceback_ex = traceback.format_exc()
-                _logger.error("%s " % (traceback_ex))
+                logging.error("%s " % (traceback_ex))
                 continue
             services["fcm"][app["shortname"]].append(fcminstance)
 
@@ -54,7 +55,7 @@ def init_messaging_agents(masterdb):
                             instanceid,
                         )
                     except Exception as ex:
-                        _logger.error(ex)
+                        logging.error(ex)
                         continue
                     services["apns"][app["shortname"]].append(apn)
 
@@ -64,7 +65,7 @@ def init_messaging_agents(masterdb):
             try:
                 wns = WNSClient(masterdb, app, 0)
             except Exception as ex:
-                _logger.error(ex)
+                logging.error(ex)
                 continue
             services["wns"][app["shortname"]].append(wns)
 

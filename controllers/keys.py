@@ -32,8 +32,6 @@ from controllers.base import *
 from util import *
 import logging
 
-_logger = logging.getLogger()
-
 
 @route(r"/applications/([^/]+)/keys")
 class AppAccessKeysHandler(WebBaseHandler):

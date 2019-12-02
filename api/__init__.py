@@ -73,8 +73,6 @@ API_PERMISSIONS = {
     "create_accesskey": (0b10000, "Create access key"),
 }
 
-_logger = logging.getLogger("api")
-
 
 class APIBaseHandler(tornado.web.RequestHandler):
     """APIBaseHandler class to precess REST requests
@@ -225,7 +223,7 @@ class APIBaseHandler(tornado.web.RequestHandler):
     def finish(self, chunk=None):
         super(APIBaseHandler, self).finish(chunk)
         self._time_end = time.time()
-        _logger.info(
+        logging.info(
             "%s call ends %s" % (type(self).__name__, self._time_end - self._time_start)
         )
 
@@ -615,5 +613,5 @@ class BroadcastV1Handler(APIBaseHandler):
         self.add_to_log("%s broadcast" % self.appname, alert, "important")
         self.application.send_broadcast(self.appname, self.db, channel, alert)
         delta_t = time.time() - self._time_start
-        _logger.info("Broadcast took time: %sms" % (delta_t * 1000))
+        logging.info("Broadcast took time: %sms" % (delta_t * 1000))
         self.send_response(OK, dict(status="ok"))

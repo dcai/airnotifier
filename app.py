@@ -37,6 +37,7 @@ import sentry_sdk
 from tornado.options import define, options
 from web import WebApplication
 import os
+import logging
 
 
 define("appprefix", default="", help="DB name prefix")
@@ -63,22 +64,20 @@ if __name__ == "__main__":
     if os.path.isfile(loggingconfigfile):
         logging.config.fileConfig(loggingconfigfile)
 
-    _logger = logging.getLogger("app")
-
     options.parse_config_file("config.py")
     options.parse_command_line()
 
     if options.sentrydsn:
         sentry_sdk.init(dsn=options.sentrydsn, integrations=[TornadoIntegration()])
     else:
-        _logger.warn("Sentry dsn is not set")
+        logging.warn("Sentry dsn is not set")
 
     mongodb = None
     while not mongodb:
         try:
             mongodb = pymongo.MongoClient(options.mongouri)
-        except Exception as ex:
-            _logger.error(ex)
+        except:
+            logging.error("Cannot not connect to MongoDB")
 
     masterdb = mongodb[options.masterdb]
     services = init_messaging_agents(masterdb)

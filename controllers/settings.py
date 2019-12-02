@@ -49,8 +49,6 @@ import requests
 import traceback
 from controllers.base import *
 
-_logger = logging.getLogger()
-
 
 @route(r"/applications/([^/]+)/settings[\/]?")
 class AppHandler(WebBaseHandler):
@@ -162,7 +160,6 @@ class AppHandler(WebBaseHandler):
                     instanceid=0,
                 )
                 self.fcmconnections[app["shortname"]] = [fcm]
-                _logger.info(fcm)
 
             if self.get_argument("connections", None):
                 """If this value is greater than current apns connections,
@@ -178,12 +175,12 @@ class AppHandler(WebBaseHandler):
                 self.perform_feedback(app)
 
             if self.get_argument("launchapns", None):
-                _logger.info("Start APNS")
+                logging.info("Start APNS")
                 app["enableapns"] = 1
                 self.start_apns(app)
 
             if self.get_argument("stopapns", None):
-                _logger.info("Shutdown APNS")
+                logging.info("Shutdown APNS")
                 app["enableapns"] = 0
                 self.stop_apns(app)
 
@@ -236,5 +233,5 @@ class AppHandler(WebBaseHandler):
             self.masterdb.applications.update({"shortname": self.appname}, app)
             self.redirect(r"/applications/%s/settings" % self.appname)
         except Exception as ex:
-            _logger.error(traceback.format_exc())
+            logging.error(traceback.format_exc())
             self.render("app_settings.html", app=app, error=str(ex))

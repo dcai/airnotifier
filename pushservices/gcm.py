@@ -34,8 +34,6 @@ import requests
 import time
 from util import json_decode, json_encode
 
-_logger = logging.getLogger(__name__)
-
 GCM_ENDPOINT = "https://fcm.googleapis.com/fcm/send"
 
 

@@ -1,3 +1,5 @@
+import logging
+
 #  will choose the FIRST match it comes too
 #  or define routes in your controller using @route(r'')
 route_list = [
@@ -68,6 +70,7 @@ class RouteLoader(object):
         for importer, modname, ispkg in pkgutil.iter_modules(
             controllers_module.__path__, prefix
         ):
+            logging.info("init route: %s" % modname)
             module = __import__(modname)
 
         # grab the routes defined via the route decorator

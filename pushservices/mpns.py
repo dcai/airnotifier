@@ -39,9 +39,6 @@ try:
     from io import StringIO
 except:
     from io import StringIO
-import logging
-
-_logger = logging.getLogger(__name__)
 
 try:
     register_namespace = ET.register_namespace

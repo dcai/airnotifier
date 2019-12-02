@@ -43,8 +43,6 @@ import logging
 import traceback
 import tornado
 
-_logger = logging.getLogger("push")
-
 
 @route(r"/api/v2/push[\/]?")
 class PushHandler(APIBaseHandler):
@@ -79,7 +77,7 @@ class PushHandler(APIBaseHandler):
                     proc = import_module("hooks." + extra["processor"])
                     request_dict = proc.process_pushnotification_payload(request_dict)
                 except Exception as ex:
-                    _logger.error(str(ex))
+                    logging.error(str(ex))
                     self.send_response(BAD_REQUEST, dict(error=str(ex)))
                     return
 
@@ -105,11 +103,11 @@ class PushHandler(APIBaseHandler):
                     # TODO check permission to insert
                     self.db.tokens.insert(token)
                 except Exception as ex:
-                    _logger.error(str(ex))
+                    logging.error(str(ex))
                     self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
                     return
 
-            _logger.info("sending notification to %s: %s" % (device, self.token))
+            logging.info("sending notification to %s: %s" % (device, self.token))
             #  if device in [DEVICE_TYPE_FCM, DEVICE_TYPE_ANDROID]:
             if device.endswith(DEVICE_TYPE_FCM):
                 fcm_payload = request_dict.get("fcm", {})
@@ -119,7 +117,7 @@ class PushHandler(APIBaseHandler):
                         token=self.token, alert=alert, extra=extra, payload=fcm_payload
                     )
                 except Exception as ex:
-                    _logger.error(str(ex))
+                    logging.error(str(ex))
                     statuscode = ex.response_statuscode
                     self.send_response(
                         statuscode, dict(error="error response from fcm")
@@ -142,7 +140,7 @@ class PushHandler(APIBaseHandler):
                 if conn:
                     conn.process(token=self.token, alert=alert, extra=extra, apns=apns)
                 else:
-                    _logger.error("no active apns connection")
+                    logging.error("no active apns connection")
             elif device == DEVICE_TYPE_WNS:
                 request_dict.setdefault("wns", {})
                 wns = self.wnsconnections[self.app["shortname"]][0]
@@ -153,7 +151,7 @@ class PushHandler(APIBaseHandler):
                     wns=request_dict["wns"],
                 )
             else:
-                _logger.error("invalid device type %s" % device)
+                logging.error("invalid device type %s" % device)
                 self.send_response(BAD_REQUEST, dict(error="Invalid device type"))
                 return
 
@@ -165,5 +163,5 @@ class PushHandler(APIBaseHandler):
             self.send_response(ACCEPTED)
         except Exception as ex:
             traceback_ex = traceback.format_exc()
-            _logger.error("%s %s" % (traceback_ex, str(ex)))
+            logging.error("%s %s" % (traceback_ex, str(ex)))
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))

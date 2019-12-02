@@ -41,8 +41,6 @@ from tornado import ioloop, iostream
 import string
 import random
 
-_logger = logging.getLogger("apns")
-
 PAYLOAD_LENGTH = 256
 
 SIMPLE_NOTIFICATION_COMMAND = 0
@@ -108,7 +106,7 @@ class PayLoad(object):
                 content = 1 if content == 1 else 0
                 item["content-available"] = content
             except ValueError as err:
-                _logger.warn(
+                logging.warn(
                     'Bad value for content flag ("content-available"): %s', err
                 )
 
@@ -128,7 +126,7 @@ class PayLoad(object):
 
     def json(self):
         jsontext = json_encode(self.build_payload())
-        _logger.debug("## " + jsontext)
+        logging.debug("## " + jsontext)
         return jsontext
 
 
@@ -137,9 +135,9 @@ class APNFeedback(object):
         certexists = file_exists(certfile)
         keyexists = file_exists(keyfile)
         if not certexists:
-            _logger.error("Certificate file doesn't exist")
+            logging.error("Certificate file doesn't exist")
         if not keyexists:
-            _logger.error("Key file doesn't exist")
+            logging.error("Key file doesn't exist")
         if not certexists and not keyexists:
             raise Exception("Cert or Key not exist")
         self.host = feedbackhost[env]
@@ -169,7 +167,7 @@ class APNFeedback(object):
         self.sock.close()
 
     def _on_feedback_service_connected(self):
-        _logger.info("APNs connected")
+        logging.info("APNs connected")
 
     def _on_feedback_service_read_close(self, data):
         self.parse_feedback()
@@ -235,7 +233,7 @@ class APNClient(PushService):
     def _on_remote_connected(self):
         self.connected = True
         """ Callback when connected to APNs """
-        _logger.info(
+        logging.info(
             "APNs connection: %s[%d] is online" % (self.appname, self.instanceid)
         )
         # Processing the messages queue
@@ -245,7 +243,7 @@ class APNClient(PushService):
     def _on_remote_read_close(self, data):
         """ Close socket and reconnect """
         self.connected = False
-        _logger.warning(
+        logging.warning(
             "%s[%d] is offline. Reconnected?: %d"
             % (self.appname, self.instanceid, self.reconnect)
         )
@@ -279,11 +277,11 @@ class APNClient(PushService):
             if we get a 0 byte response and we're closing
             we should in theory just re-connect
             """
-            _logger.error("0 byte recieved.")
+            logging.error("0 byte recieved.")
             try:
                 self.remote_stream.close()
                 self.sock.close()
-                _logger.error("Attempting re-connect...")
+                logging.error("Attempting re-connect...")
                 self.connect()
             except Exception as ex:
                 raise ex
@@ -294,7 +292,7 @@ class APNClient(PushService):
             """
 
         if len(data) != 6:
-            _logger.error("response must be a 6-byte binary string.")
+            logging.error("response must be a 6-byte binary string.")
         else:
             error_format = (
                 "!"  # network big-endian
@@ -306,7 +304,7 @@ class APNClient(PushService):
                 error_format, data, 0
             )
             # command should be 8
-            _logger.error(
+            logging.error(
                 "%s[%d] Status: %s MSGID: #%s",
                 self.appname,
                 self.instanceid,
@@ -391,9 +389,9 @@ class APNClient(PushService):
 
     def _append_to_queue(self, deviceToken, payload):
         """ Pack payload and append to message queue """
-        # _logger.info("Notification through %s[%d]" % (self.appname, self.instanceid))
+        # logging.info("Notification through %s[%d]" % (self.appname, self.instanceid))
         json = payload.json()
-        _logger.info(json)
+        logging.info(json)
         json_len = len(json)
         fmt = (
             "!"  # network big-endian
@@ -436,7 +434,7 @@ class APNClient(PushService):
         identifier = payload.identifier
         # One day
         expiry = payload.expiry
-        _logger.info("MSGID #%s => %s" % (identifier, deviceToken))
+        logging.info("MSGID #%s => %s" % (identifier, deviceToken))
         frame = struct.pack(
             fmt,
             ENHANCED_NOTIFICATION_COMMAND,
@@ -459,7 +457,7 @@ class APNClient(PushService):
             try:
                 self.remote_stream.write(msg)
             except Exception as ex:
-                _logger.exception(ex)
+                logging.exception(ex)
                 # Push back to queue top
                 self.messages.appendleft(msg)
                 return False
