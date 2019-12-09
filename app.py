@@ -201,12 +201,12 @@ class AirNotifierApp(tornado.web.Application):
                 error_log("Cannot not connect to MongoDB")
 
         self.mongodb = mongodb
+        self.masterdb = mongodb[options.masterdb]
         # Authenticate if credentials are supplied.
         if options.dbuser is not None and options.dbpass is not None:
             self.masterdb.authenticate(
                 options.dbuser, options.dbpass, source=options.dbauthsource
             )
-        self.masterdb = mongodb[options.masterdb]
 
     def main(self):
         if options.https:
@@ -238,12 +238,13 @@ def init_messaging_agents():
             mongodb = pymongo.MongoClient(options.mongohost, options.mongoport)
         except Exception as ex:
             _logger.error(ex)
+
+    masterdb = mongodb[options.masterdb]
     # Authenticate if credentials are supplied.
     if options.dbuser is not None and options.dbpass is not None:
         masterdb.authenticate(
             options.dbuser, options.dbpass, source=options.dbauthsource
         )
-    masterdb = mongodb[options.masterdb]
 
     apps = masterdb.applications.find()
     for app in apps:
