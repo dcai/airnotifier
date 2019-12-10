@@ -113,9 +113,4 @@ class FCMClient(PushService):
         response = await http.fetch(
             self.endpoint, method="POST", body=data, headers=headers
         )
-
-        if response.code >= 400:
-            jsonError = tornado.escape.json_decode(response.body)
-            logging.info("fcm response code is >= 400 %s" % jsonError)
-            raise FCMException(400, jsonError["error"])
         return response

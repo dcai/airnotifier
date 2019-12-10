@@ -117,11 +117,11 @@ class PushHandler(APIBaseHandler):
                         token=self.token, alert=alert, extra=extra, payload=fcm_payload
                     )
                 except Exception as ex:
-                    logging.error(str(ex))
-                    statuscode = ex.response_statuscode
-                    self.send_response(
-                        statuscode, dict(error="error response from fcm")
-                    )
+                    statuscode = ex.code
+                    # reference: https://firebase.google.com/docs/reference/fcm/rest/v1/ErrorCode
+                    response_json = json_decode(ex.response.body)
+                    logging.error(response_json)
+                    self.send_response(ex.code, dict(error="error response from fcm"))
                     return
 
             elif device == DEVICE_TYPE_IOS:
