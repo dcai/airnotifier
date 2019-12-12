@@ -7,23 +7,21 @@ AirNotifier is a user friendly yet powerful application server for sending real-
 
 
 ## Hosted AirNotifier Service
-If you need hosted AirNotifier Service to integrate with the most popular open source learning management system, please email [friendlyrobotco@gmail.com](mailto:friendlyrobotco@gmail.com). We have a range of hosting options :)
+If you are interested in managed AirNotifier server to integrate with the most popular open source learning management system, please email [friendlyrobotco@gmail.com](mailto:friendlyrobotco@gmail.com). We have a range of hosting options :)
 
 
 ## Supported devices
-- iPhone/iPad devices ([APNS](https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/Chapters/ApplePushService.html) protocol)
-- Android devices and chrome browser ([FCM](https://firebase.google.com/docs/cloud-messaging) protocol)
-- Windows 8.1 phone (WNS protocol)
+- iPhone/iPad devices ([APNs HTTP/2](https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/CommunicatingwithAPNs.html))
+- Android devices and chrome browser ([Firebase Cloud Messaging aka FCM](https://firebase.google.com/docs/cloud-messaging) protocol)
 - Windows 10 desktop (WNS protocol)
 
 ## Features
 - Open source application server, you can install on your own server, own your data
-- Unlimited number of devices and channels
+- Unlimited number of devices
 - API access control
 - Web-based UI to configure
 - Access key management
 - Logging activities
-- FCM for iOS/Android/Chrome
 
 
 ## Installation
@@ -36,7 +34,7 @@ Please read [Installation guide](https://github.com/airnotifier/airnotifier/wiki
 ## Requirements
 
 - [Python 3.6](http://www.python.org)
-- [MongoDB 2.0+](http://www.mongodb.org/)
+- [MongoDB 4.0+](http://www.mongodb.org/)
 
 ## Copyright
 Copyright (c) Dongsheng Cai and individual contributors
