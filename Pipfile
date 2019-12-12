@@ -16,6 +16,9 @@ tornado = "~=6.0"
 click = "*"
 sentry-sdk = "==0.13.2"
 aiocontextvars = "*"
+hyper = "*"
+pyjwt = "*"
+cryptography = "*"
 
 [requires]
 python_version = "3.6"

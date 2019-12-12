@@ -86,11 +86,6 @@ class WebBaseHandler(tornado.web.RequestHandler):
         return self.application.services["apns"]
 
     @property
-    def gcmconnections(self):
-        """ GCM connections """
-        return self.application.services["gcm"]
-
-    @property
     def fcmconnections(self):
         """ FCM connections """
         return self.application.services["fcm"]

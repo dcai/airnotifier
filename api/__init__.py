@@ -52,13 +52,6 @@ from constants import (
     DEVICE_TYPE_WNS,
     RELEASE,
 )
-from pushservices.apns import PayLoad
-from pushservices.gcm import (
-    GCMException,
-    GCMInvalidRegistrationException,
-    GCMNotRegisteredException,
-    GCMUpdateRegIDsException,
-)
 from bson.objectid import ObjectId
 from hashlib import md5
 from pushservices.wns import WNSInvalidPushTypeException
@@ -178,11 +171,6 @@ class APIBaseHandler(tornado.web.RequestHandler):
     def apnsconnections(self):
         """ APNs connections """
         return self.application.services["apns"]
-
-    @property
-    def gcmconnections(self):
-        """ GCM connections """
-        return self.application.services["gcm"]
 
     @property
     def fcmconnections(self):
@@ -316,104 +304,6 @@ class TokenV1Handler(APIBaseHandler):
         except Exception as ex:
             self.add_to_log("Cannot add token", devicetoken, "warning")
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-
-
-@route(r"/notification/")
-class NotificationHandler(APIBaseHandler):
-    def post(self):
-        """ Send notifications """
-        if not self.can("send_notification"):
-            self.send_response(
-                FORBIDDEN, dict(error="No permission to send notification")
-            )
-            return
-
-        if not self.token:
-            self.send_response(BAD_REQUEST, dict(error="No token provided"))
-            return
-
-        # iOS and Android shared params (use sliptlines trick to remove line ending)
-        alert = "".join(self.get_argument("alert").splitlines())
-
-        device = self.get_argument("device", DEVICE_TYPE_IOS).lower()
-        channel = self.get_argument("channel", "default")
-        # Android
-        collapse_key = self.get_argument("collapse_key", "")
-        # iOS
-        sound = self.get_argument("sound", None)
-        badge = self.get_argument("badge", None)
-
-        token = self.db.tokens.find_one({"token": self.token})
-
-        if not token:
-            token = EntityBuilder.build_token(self.token, device, self.appname, channel)
-            if not self.can("create_token"):
-                self.send_response(
-                    BAD_REQUEST,
-                    dict(error="Unknow token and you have no permission to create"),
-                )
-                return
-            try:
-                # TODO check permission to insert
-                self.db.tokens.insert(token)
-            except Exception as ex:
-                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-        knownparams = ["alert", "sound", "badge", "token", "device", "collapse_key"]
-        # Build the custom params  (everything not alert/sound/badge/token)
-        customparams = {}
-        allparams = {}
-        for name, value in list(self.request.arguments.items()):
-            allparams[name] = self.get_argument(name)
-            if name not in knownparams:
-                customparams[name] = self.get_argument(name)
-        logmessage = "Message length: %s, Access key: %s" % (len(alert), self.appkey)
-        self.add_to_log("%s notification" % self.appname, logmessage)
-        if device == DEVICE_TYPE_IOS:
-            pl = PayLoad(
-                alert=alert,
-                sound=sound,
-                badge=badge,
-                identifier=0,
-                expiry=None,
-                customparams=customparams,
-            )
-            if self.app["shortname"] not in self.apnsconnections:
-                # TODO: add message to queue in MongoDB
-                self.send_response(INTERNAL_SERVER_ERROR, dict(error="APNs is offline"))
-                return
-            count = len(self.apnsconnections[self.app["shortname"]])
-            # Find an APNS instance
-            random.seed(time.time())
-            instanceid = random.randint(0, count - 1)
-            conn = self.apnsconnections[self.app["shortname"]][instanceid]
-            # do the job
-            try:
-                conn.send(self.token, pl)
-                self.send_response(OK)
-            except Exception as ex:
-                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-        elif device == DEVICE_TYPE_ANDROID:
-            try:
-                gcm = self.gcmconnections[self.app["shortname"]][0]
-                data = dict(
-                    list({"message": alert}.items()) + list(customparams.items())
-                )
-                response = gcm.send(
-                    [self.token], data=data, collapse_key=collapse_key, ttl=3600
-                )
-                responsedata = response.json()
-                if responsedata["failure"] == 0:
-                    self.send_response(OK)
-            except GCMUpdateRegIDsException as ex:
-                self.send_response(OK)
-            except GCMInvalidRegistrationException as ex:
-                self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
-            except GCMNotRegisteredException as ex:
-                self.send_response(BAD_REQUEST, dict(error=str(ex), regids=ex.regids))
-            except GCMException as ex:
-                self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
-        else:
-            self.send_response(BAD_REQUEST, dict(error="Invalid device type"))
 
 
 @route(r"/users")

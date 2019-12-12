@@ -2,9 +2,18 @@ import logging
 from .apns import *
 from .clickatell import *
 from .fcm import FCMClient
-from .gcm import GCMClient
 from .mpns import MPNSClient
 from .wns import WNSClient
+from constants import (
+    DEVICE_TYPE_IOS,
+    VERSION,
+    KEY_APNS_AUTHKEY,
+    KEY_APNS_BUNDLEID,
+    KEY_APNS_KEYID,
+    KEY_APNS_TEAMID,
+    KEY_FCM_PROJECT_ID,
+    KEY_FCM_JSON_KEY,
+)
 
 
 def init_messaging_agents(masterdb):
@@ -13,14 +22,15 @@ def init_messaging_agents(masterdb):
 
     apps = masterdb.applications.find()
     for app in apps:
+        appname = app["shortname"]
         """ FCMClient setup """
-        services["fcm"][app["shortname"]] = []
-        if "fcm-project-id" in app and "fcm-jsonkey" in app:
+        services["fcm"][appname] = []
+        if KEY_FCM_JSON_KEY in app and KEY_FCM_PROJECT_ID in app:
             try:
                 fcminstance = FCMClient(
-                    project_id=app["fcm-project-id"],
-                    jsonkey=app["fcm-jsonkey"],
-                    appname=app["shortname"],
+                    project_id=app[KEY_FCM_PROJECT_ID],
+                    jsonkey=app[KEY_FCM_JSON_KEY],
+                    appname=appname,
                     instanceid=0,
                 )
             except Exception as ex:
@@ -29,44 +39,33 @@ def init_messaging_agents(masterdb):
                 traceback_ex = traceback.format_exc()
                 logging.error("%s " % (traceback_ex))
                 continue
-            services["fcm"][app["shortname"]].append(fcminstance)
+            services["fcm"][appname].append(fcminstance)
 
         """ APNs setup """
-        services["apns"][app["shortname"]] = []
-        conns = int(app["connections"])
-        if conns < 1:
-            conns = 1
-        if "environment" not in app:
-            app["environment"] = "sandbox"
+        services["apns"][appname] = []
 
-        if (
-            file_exists(app.get("certfile", False))
-            and file_exists(app.get("keyfile", False))
-            and "shortname" in app
-        ):
-            if app.get("enableapns", False):
-                for instanceid in range(0, conns):
-                    try:
-                        apn = APNClient(
-                            app["environment"],
-                            app["certfile"],
-                            app["keyfile"],
-                            app["shortname"],
-                            instanceid,
-                        )
-                    except Exception as ex:
-                        logging.error(ex)
-                        continue
-                    services["apns"][app["shortname"]].append(apn)
+        try:
+            apns = ApnsClient(
+                auth_key=app[KEY_APNS_AUTHKEY],
+                bundle_id=app[KEY_APNS_BUNDLEID],
+                key_id=app[KEY_APNS_KEYID],
+                team_id=app[KEY_APNS_TEAMID],
+                appname=appname,
+                instanceid=0,
+            )
+            services["apns"][appname].append(apns)
+        except Exception as ex:
+            logging.error(ex)
+            continue
 
         """ WNS setup """
-        services["wns"][app["shortname"]] = []
+        services["wns"][appname] = []
         if "wnsclientid" in app and "wnsclientsecret" in app and "shortname" in app:
             try:
                 wns = WNSClient(masterdb, app, 0)
             except Exception as ex:
                 logging.error(ex)
                 continue
-            services["wns"][app["shortname"]].append(wns)
+            services["wns"][appname].append(wns)
 
     return services

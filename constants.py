@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 RELEASE = "2.0.0"
-VERSION = 20191117
+VERSION = 20191213.01
 
 DEVICE_TYPE_IOS = "ios"
 DEVICE_TYPE_ANDROID = "android"
@@ -35,3 +35,12 @@ DEVICE_TYPE_FCM = "fcm"
 DEVICE_TYPE_MPNS = "mpns"
 DEVICE_TYPE_WNS = "wns"
 DEVICE_TYPE_SMS = "sms"
+
+
+KEY_APNS_AUTHKEY = "apns-auth-key"
+KEY_APNS_BUNDLEID = "apns-bundle-id"
+KEY_APNS_KEYID = "apns-key-id"
+KEY_APNS_TEAMID = "apns-team-id"
+
+KEY_FCM_PROJECT_ID = "fcm-project-id"
+KEY_FCM_JSON_KEY = "fcm-jsonkey"

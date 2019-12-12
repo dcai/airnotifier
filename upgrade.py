@@ -204,6 +204,37 @@ if __name__ == "__main__":
         masterdb["options"].update_one(
             {"name": "version"}, {"$set": {"value": 20191117}}, upsert=True
         )
+    if version < 20191213.01:
+        apps = masterdb.applications.find()
+        for app in apps:
+            appname = app["shortname"]
+            appid = ObjectId(app["_id"])
+            if not KEY_APNS_AUTHKEY in app:
+                app[KEY_APNS_AUTHKEY] = ""
+            if not KEY_APNS_BUNDLEID in app:
+                app[KEY_APNS_BUNDLEID] = ""
+            if not KEY_APNS_KEYID in app:
+                app[KEY_APNS_KEYID] = ""
+            if not KEY_APNS_TEAMID in app:
+                app[KEY_APNS_TEAMID] = ""
+            masterdb.applications.update({"_id": appid}, app, upsert=True)
+            masterdb.applications.update(
+                {"_id": appid},
+                {
+                    "$unset": {
+                        "gcmprojectnumber": "",
+                        "gcmapikey": "",
+                        "connections": "",
+                        "enableapns": "",
+                        "environment": "",
+                    }
+                },
+                upsert=True,
+            )
+
+        masterdb["options"].update_one(
+            {"name": "version"}, {"$set": {"value": 20191213.01}}, upsert=True
+        )
 
     version_object = masterdb["options"].find_one({"name": "version"})
     version = version_object["value"]

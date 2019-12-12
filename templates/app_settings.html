@@ -52,21 +52,6 @@ end %} {% block sidebaritems %} {{ modules.AppSideBar(app, 'settings') }} {% end
         >
       </div>
     </div>
-    {% if app['enableapns'] != 1 %}
-    <div class="form-group">
-      <label class="control-label" for="connections">Connections</label>
-      <input
-        type="text"
-        class="form-control"
-        id="connections"
-        pattern="[0-9]+"
-        name="connections"
-        value="{{app['connections']}}"
-      />
-      <p class="form-text text-muted">This will restart APNs</p>
-    </div>
-    {% end %}
-
     <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
   </fieldset>
 </form>
@@ -118,98 +103,81 @@ end %} {% block sidebaritems %} {{ modules.AppSideBar(app, 'settings') }} {% end
 
 <hr />
 
-<form class="form-horizontal" id="form-ios-settings" method="post">
+<form class="form-horizontal" id="form-apns-settings" method="post">
   <fieldset>
-    <legend>{{ _('APNs (TCP connection, legacy)') }}</legend>
-    <div class="form-group">
-      <label> {{ _('APNs service') }}</label>
-      <input type="hidden" name="appname" value="{{app['shortname']}}" />
-      {% if app.get('enableapns', False) %}
-      <input type="hidden" name="stopapns" value="true" />
-      <button type="submit" class="btn btn-danger">{{ _('Stop') }}</button>
-      {% else %}
-      <input type="hidden" name="launchapns" value="true" />
-      <button type="submit" class="btn btn-primary">{{ _('Launch') }}</button>
-      {% end %}
-      <p class="form-text text-muted">
-        You have to stop the service to see more options
-      </p>
+    <legend>{{ _('APNs HTTP/2') }}</legend>
+    <div class="form-row">
+      <div class="col">
+        <div class="form-group">
+          <label class="control-label" for="form-element-apns-team-id">
+            {{ _('Team ID') }}</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            id="form-element-apns-team-id"
+            name="apns-team-id"
+            value="{{app.get('apns-team-id', '')}}"
+          />
+          <p class="form-text text-muted">
+            <a href="https://developer.apple.com/account/#/membership"
+              >Find team id from membership page</a
+            >
+          </p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="form-group">
+          <label class="control-label" for="form-element-apns-bundle-id">
+            {{ _('App bundle ID') }}</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            id="form-element-apns-bundle-id"
+            name="apns-bundle-id"
+            placeholder="com.airnotifier.mobile"
+            value="{{app.get('apns-bundle-id', '')}}"
+          />
+        </div>
+      </div>
     </div>
-    {% if app['enableapns'] != 1 %}
-    <form class="form-horizontal" method="post">
-      <div class="form-group">
-        <label class="control-label"> {{ _('Set mode') }}</label>
-        <input type="hidden" name="appname" value="{{app['shortname']}}" />
-        {% if not 'environment' in app or ('environment' in app and
-        app['environment'] == 'sandbox') %}
-        <input type="hidden" name="turnonproduction" value="true" />
-        <button type="submit" class="btn btn-info">
-          {{ _('Enter production mode') }}
-        </button>
-        {% else %}
-        <input type="hidden" name="turnonsandbox" value="true" />
-        <button type="submit" class="btn btn-info">
-          {{ _('Enter sandbox mode') }}
-        </button>
-        {% end %}
+    <div class="form-row">
+      <div class="col">
+        <div class="form-group">
+          <label class="control-label" for="form-element-apns-key-id">
+            {{ _('Key ID') }}</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            id="form-element-apns-key-id"
+            name="apns-key-id"
+            value="{{app.get('apns-key-id', '')}}"
+          />
+        </div>
       </div>
-    </form>
-    {% end %}
-    <form class="form-horizontal" method="post">
-      <input type="hidden" name="appname" value="{{app['shortname']}}" />
-      <label class="control-label"> {{ _('Feedback service') }}</label>
-      <input type="hidden" name="performfeedbacktask" value="true" />
-      <button type="submit" class="btn btn-primary">
-        {{ _('Clean up') }}
-      </button>
-      <p class="form-text text-muted">Clean up unused device tokens</p>
-    </form>
-    {% if app['enableapns'] != 1 %}
-    <form class="form-horizontal" method="post" enctype="multipart/form-data">
-      <input type="hidden" name="appname" value="{{app['shortname']}}" />
 
-      <div class="form-group">
-        <label class="control-label" for="certfileinput"
-          >{{ _('Certification') }}</label
+      <div class="col">
+        <label class="control-label" for="form-element-apns-auth-key"
+          >{{ _('Auth key (content of .p8 file)') }}</label
         >
-        {% if app.get('certfile', False) %}
-        <span class="alert alert-success">
-          {{ _('Already uploaded') }}
-        </span>
-        {% else %}
-        <span class="alert alert-danger">
-          {{ _('Certificate not set') }}
-        </span>
-        {% end %}
-        <input
-          class="form-control-file"
-          id="certfileinput"
-          type="file"
-          name="appcertfile"
-        />
+        <textarea
+          rows="3"
+          class="form-control"
+          id="form-element-apns-auth-key"
+          name="apns-auth-key"
+        >
+ {{ app.get('apns-auth-key', '') }}</textarea
+        >
+        <p class="form-text text-muted">
+          <a href="https://developer.apple.com/account/resources/authkeys/list"
+            >Get auth key</a
+          >
+        </p>
       </div>
-
-      <div class="form-group">
-        <label class="control-label" for="keyfileinput">{{ _('Key') }}</label>
-        {% if app.get('keyfile', False) %}
-        <span class="alert alert-success">
-          {{ _('Already uploaded') }}
-        </span>
-        {% else %}
-        <span class="alert alert-danger">
-          {{ _('Key not set') }}
-        </span>
-        {% end %}
-        <input
-          class="form-control-file"
-          id="keyfileinput"
-          type="file"
-          name="appkeyfile"
-        />
-      </div>
-      <button type="submit" class="btn btn-primary">{{ _('Upload') }}</button>
-    </form>
-    {% end %}
+    </div>
+    <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
   </fieldset>
 </form>
 

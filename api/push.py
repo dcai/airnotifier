@@ -129,18 +129,27 @@ class PushHandler(APIBaseHandler):
                 if type(alert) is not dict:
                     alert = "".join(alert.splitlines())
 
-                apns_default = {
-                    "badge": None,
-                    "sound": None,
-                    "content": None,
-                    "custom": None,
-                }
-                apns = {**apns_default, **request_dict["apns"]}
+                # https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/PayloadKeyReference.html#//apple_ref/doc/uid/TP40008194-CH17-SW1
+                apns_default = {"badge": None, "sound": None}
+                apnspayload = request_dict.get("apns", {})
                 conn = self.get_apns_conn()
                 if conn:
-                    conn.process(token=self.token, alert=alert, extra=extra, apns=apns)
+                    try:
+                        conn.process(
+                            token=self.token,
+                            alert=alert,
+                            extra=extra,
+                            apns={**apns_default, **apnspayload},
+                        )
+                    except Exception as ex:
+                        statuscode = ex.response_statuscode
+                        self.send_response(
+                            statuscode, dict(error="error response from apns")
+                        )
+                        return
                 else:
                     logging.error("no active apns connection")
+
             elif device == DEVICE_TYPE_WNS:
                 request_dict.setdefault("wns", {})
                 wns = self.wnsconnections[self.app["shortname"]][0]

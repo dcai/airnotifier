@@ -37,14 +37,24 @@ import tornado.web
 from bson.objectid import ObjectId
 import time
 import uuid
-from constants import DEVICE_TYPE_IOS, VERSION
+from constants import (
+    DEVICE_TYPE_IOS,
+    VERSION,
+    KEY_APNS_AUTHKEY,
+    KEY_APNS_BUNDLEID,
+    KEY_APNS_KEYID,
+    KEY_APNS_TEAMID,
+    KEY_FCM_PROJECT_ID,
+    KEY_FCM_JSON_KEY,
+)
+
 from pymongo import DESCENDING
 from util import *
-from pushservices.apns import APNClient, APNFeedback, PayLoad
 import sys
 from api import API_PERMISSIONS
 from pushservices.wns import WNSClient
 from pushservices.fcm import FCMClient
+from pushservices.apns import ApnsClient
 import requests
 import traceback
 from controllers.base import *
@@ -58,48 +68,12 @@ class AppHandler(WebBaseHandler):
             self.redirect(r"/create/app")
         else:
             app = self.dao.find_app_by_name(appname)
-            if not file_exists(app.get("certfile", "")):
-                app["certfile"] = None
-            if not file_exists(app.get("keyfile", "")):
-                app["keyfile"] = None
             if not app:
-
                 self.finish("Application doesn't exist")
                 # self.redirect(r"/applications/new")
                 # raise tornado.web.HTTPError(500)
             else:
                 self.render("app_settings.html", app=app)
-
-    def start_apns(self, app):
-        self.apnsconnections[app["shortname"]] = []
-        count = app.get("connections", 1)
-        app.setdefault("environment", "sandbox")
-
-        for instanceid in range(0, count):
-            apn = APNClient(
-                app.get("environment"),
-                app.get("certfile", ""),
-                app.get("keyfile", ""),
-                app["shortname"],
-                instanceid,
-            )
-            self.apnsconnections[app["shortname"]].append(apn)
-
-    def stop_apns(self, app):
-        if app["shortname"] in self.apnsconnections:
-            conns = self.apnsconnections[app["shortname"]]
-            for conn in conns:
-                conn.shutdown()
-            del self.apnsconnections[app["shortname"]]
-
-    def perform_feedback(self, app):
-        apn = APNFeedback(
-            app.get("environment"),
-            app.get("certfile", ""),
-            app.get("keyfile", ""),
-            app["shortname"],
-            self.db,
-        )
 
     @tornado.web.authenticated
     def post(self, appname):
@@ -110,22 +84,6 @@ class AppHandler(WebBaseHandler):
             if self.get_argument("appfullname", None):
                 app["fullname"] = self.get_argument("appfullname")
 
-            # Update app details
-            if self.request.files:
-                if "appcertfile" in self.request.files:
-                    rm_file(app.get("certfile", None))
-                    app["certfile"] = save_file(self.request.files["appcertfile"][0])
-                    app["apns-certfile-content"] = encode_file(
-                        self.request.files["appcertfile"][0]
-                    )
-
-                if "appkeyfile" in self.request.files:
-                    rm_file(app.get("keyfile", None))
-                    app["keyfile"] = save_file(self.request.files["appkeyfile"][0])
-                    app["apns-keyfile-content"] = encode_file(
-                        self.request.files["appkeyfile"][0]
-                    )
-
             if self.get_argument("appdescription", None):
                 app["description"] = self.get_argument("appdescription")
 
@@ -134,65 +92,8 @@ class AppHandler(WebBaseHandler):
             else:
                 app["blockediplist"] = ""
 
-            update_fcm = False
-            if self.get_argument("fcm-project-id", None):
-                if (
-                    app.get("fcm-project-id", "")
-                    != self.get_argument("fcm-project-id").strip()
-                ):
-                    app["fcm-project-id"] = self.get_argument("fcm-project-id").strip()
-                    update_fcm = True
-
-            if self.get_argument("fcm-jsonkey", None):
-                if (
-                    app.get("fcm-jsonkey", "")
-                    != self.get_argument("fcm-jsonkey").strip()
-                ):
-                    app["fcm-jsonkey"] = self.get_argument("fcm-jsonkey").strip()
-                    update_fcm = True
-
-            if update_fcm:
-                # reset fcm connections
-                fcm = FCMClient(
-                    project_id=app["fcm-project-id"],
-                    jsonkey=app["fcm-jsonkey"],
-                    appname=app["shortname"],
-                    instanceid=0,
-                )
-                self.fcmconnections[app["shortname"]] = [fcm]
-
-            if self.get_argument("connections", None):
-                """If this value is greater than current apns connections,
-                creating more
-                If less than current apns connections, kill extra instances
-                """
-                if app.get("connections", 0) != int(self.get_argument("connections")):
-                    app["connections"] = int(self.get_argument("connections"))
-                    self.stop_apns(app)
-                    self.start_apns(app)
-
-            if self.get_argument("performfeedbacktask", None):
-                self.perform_feedback(app)
-
-            if self.get_argument("launchapns", None):
-                logging.info("Start APNS")
-                app["enableapns"] = 1
-                self.start_apns(app)
-
-            if self.get_argument("stopapns", None):
-                logging.info("Shutdown APNS")
-                app["enableapns"] = 0
-                self.stop_apns(app)
-
-            if self.get_argument("turnonproduction", None):
-                app["environment"] = "production"
-                self.stop_apns(app)
-                self.start_apns(app)
-
-            if self.get_argument("turnonsandbox", None):
-                app["environment"] = "sandbox"
-                self.stop_apns(app)
-                self.start_apns(app)
+            self.update_fcm_settings(app)
+            self.update_apns_settings(app)
 
             updatewnsaccesstoken = False
             if self.get_argument("wnsclientid", None):
@@ -235,3 +136,72 @@ class AppHandler(WebBaseHandler):
         except Exception as ex:
             logging.error(traceback.format_exc())
             self.render("app_settings.html", app=app, error=str(ex))
+
+    def update_apns_settings(self, app):
+        should_update = False
+
+        team_id = self.get_argument(KEY_APNS_TEAMID, None)
+        if team_id:
+            if app.get(KEY_APNS_TEAMID, "") != team_id.strip():
+                app[KEY_APNS_TEAMID] = team_id.strip()
+                should_update = True
+
+        bundle_id = self.get_argument(KEY_APNS_BUNDLEID, None)
+        if bundle_id:
+            if app.get(KEY_APNS_BUNDLEID, "") != bundle_id.strip():
+                app[KEY_APNS_BUNDLEID] = bundle_id.strip()
+                should_update = True
+
+        key_id = self.get_argument(KEY_APNS_KEYID, None)
+        if key_id:
+            if app.get(KEY_APNS_KEYID, "") != key_id.strip():
+                app[KEY_APNS_KEYID] = key_id.strip()
+                should_update = True
+
+        auth_key = self.get_argument(KEY_APNS_AUTHKEY, None)
+        if auth_key:
+            if app.get(KEY_APNS_AUTHKEY, "") != auth_key.strip():
+                app[KEY_APNS_AUTHKEY] = auth_key.strip()
+                should_update = True
+
+        if should_update:
+            apns = ApnsClient(
+                auth_key=app[KEY_APNS_AUTHKEY],
+                bundle_id=app[KEY_APNS_BUNDLEID],
+                key_id=app[KEY_APNS_KEYID],
+                team_id=app[KEY_APNS_TEAMID],
+                appname=app["shortname"],
+                instanceid=0,
+            )
+            self.apnsconnections[app["shortname"]] = [apns]
+
+    def update_fcm_settings(self, app):
+        update_fcm = False
+        if self.get_argument(KEY_FCM_PROJECT_ID, None):
+            if (
+                app.get(KEY_FCM_PROJECT_ID, "")
+                != self.get_argument(KEY_FCM_PROJECT_ID).strip()
+            ):
+                app[KEY_FCM_PROJECT_ID] = self.get_argument(KEY_FCM_PROJECT_ID).strip()
+                update_fcm = True
+
+        if self.get_argument(KEY_FCM_JSON_KEY, None):
+            if (
+                app.get(KEY_FCM_JSON_KEY, "")
+                != self.get_argument(KEY_FCM_JSON_KEY).strip()
+            ):
+                app[KEY_FCM_JSON_KEY] = self.get_argument(KEY_FCM_JSON_KEY).strip()
+                update_fcm = True
+
+        if update_fcm:
+            # reset fcm connections
+            try:
+                fcm = FCMClient(
+                    project_id=app[KEY_FCM_PROJECT_ID],
+                    jsonkey=app[KEY_FCM_JSON_KEY],
+                    appname=app["shortname"],
+                    instanceid=0,
+                )
+                self.fcmconnections[app["shortname"]] = [fcm]
+            except Exception as ex:
+                logging.info(ex)

@@ -29,6 +29,17 @@
 import tornado.web
 from controllers.base import *
 
+from constants import (
+    DEVICE_TYPE_IOS,
+    VERSION,
+    KEY_APNS_AUTHKEY,
+    KEY_APNS_BUNDLEID,
+    KEY_APNS_KEYID,
+    KEY_APNS_TEAMID,
+    KEY_FCM_PROJECT_ID,
+    KEY_FCM_JSON_KEY,
+)
+
 
 @route(r"/create/app")
 class AppCreateNewHandler(WebBaseHandler):
@@ -48,15 +59,16 @@ class AppCreateNewHandler(WebBaseHandler):
             app["orgid"] = int(self.get_argument("orgid", 0))
         else:
             app["orgid"] = self.currentuser["orgid"]
-        app["environment"] = "sandbox"
-        app["enableapns"] = 0
-        app["connections"] = 1
         app["blockediplist"] = ""
-        app["gcmprojectnumber"] = ""
-        app["gcmapikey"] = ""
         app["clickatellusername"] = ""
         app["clickatellpassport"] = ""
         app["clickatellappid"] = ""
+        app[KEY_APNS_AUTHKEY] = ""
+        app[KEY_APNS_BUNDLEID] = ""
+        app[KEY_APNS_KEYID] = ""
+        app[KEY_APNS_TEAMID] = ""
+        app[KEY_FCM_JSON_KEY] = ""
+        app[KEY_FCM_PROJECT_ID] = ""
         if self.get_argument("appfullname", None):
             app["fullname"] = self.get_argument("appfullname")
         else:

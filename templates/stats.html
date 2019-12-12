@@ -1,44 +1,29 @@
-{% extends "base.html" %}
-
-{% block navbar %}
-{{ modules.NavBar('stats') }}
-{% end %}
-
-{% block sidebaritems %}
-{{ modules.AppSideBar({}, 'stats') }}
-{% end %}
-
+{% extends "base.html" %} {% block navbar %} {{ modules.NavBar('stats') }} {%
+end %} {% block sidebaritems %} {{ modules.AppSideBar({}, 'stats') }} {% end %}
 {% block body %}
 <div class="row-fluid">
-    {% for appname in apns %}
-    <a name="{{appname}}"></a>
-    <h2>{{appname}}</h2>
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>{{ _('Instance') }}</th>
-                <th>{{ _('Status') }}</th>
-                <th>{{ _('Queue size') }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for instance in apns[appname] %}
-            <tr>
-                <td><strong>{{instance.instanceid}}</strong></td>
-                {% if instance.connected %}
-                <td>
-                    <span class="label label-success">{{ _('Online') }}</span>
-                </td>
-                {% else %}
-                <td>
-                    <span class="label label-warning">{{ _('Offline') }}</span>
-                </td>
-                {% end %}
-                <td><span class="badge badge-info">{{ len(instance.messages) }}</span></td>
-            </tr>
-            {% end %}
-        </tbody>
-    </table>
-    {% end %}
-</div><!--/row-->
+  {% for appname in apns %}
+  <a name="{{appname}}"></a>
+  <h2>{{appname}}</h2>
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>{{ _('Instance') }}</th>
+        <th>{{ _('Status') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for instance in apns[appname] %}
+      <tr>
+        <td><strong>{{instance.instanceid}}</strong></td>
+        <td>
+          <span class="label label-success">{{ _('Online') }}</span>
+        </td>
+      </tr>
+      {% end %}
+    </tbody>
+  </table>
+  {% end %}
+</div>
+<!--/row-->
 {% end %}
