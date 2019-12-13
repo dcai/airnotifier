@@ -182,10 +182,10 @@ def create_access_key():
 
 
 def json_decode(text):
-    """ python data to string """
+    """ Takes a JSON encoded string and converts it into a ptyhon variable """
     return tornado.escape.json_decode(text)
 
 
 def json_encode(obj):
-    """ Serialize obj to a JSON formatted str """
+    """ serialize python value to str """
     return tornado.escape.json_encode(obj)
