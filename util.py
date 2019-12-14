@@ -44,6 +44,7 @@ import sys
 import unicodedata
 import os
 import base64
+import urllib
 from tornado.options import options
 from hashlib import sha1, sha512, md5
 

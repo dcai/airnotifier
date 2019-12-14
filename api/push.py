@@ -150,7 +150,7 @@ class PushHandler(APIBaseHandler):
                 return
 
             logmessage = "payload: %s, access key: %s" % (
-                request.body.encode("utf-8"),
+                self.request.body.encode("utf-8"),
                 self.appkey,
             )
             self.add_to_log("notification", logmessage)
