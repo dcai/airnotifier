@@ -19,15 +19,12 @@ def process_pushnotification_payload(data):
     if not title:
         title = "Notification"
 
-    data["fcm"] = {
-        "data": {"title": title, "site": site, "userfrom": userfrom, "notif": notif}
-    }
-
     if "alert" not in data:
-        data["alert"] = message
+        data["alert"] = {"body": message, "title": title}
 
+    data["fcm"] = {"data": extra}
     if not "wns" in extra:
-        data["extra"]["wns"] = {
+        data["wns"] = {
             "type": "toast",
             "template": "ToastText01",
             "text": [data["alert"]],
