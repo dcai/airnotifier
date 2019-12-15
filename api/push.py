@@ -142,10 +142,8 @@ class PushHandler(APIBaseHandler):
                             apns={**apns_default, **apnspayload},
                         )
                     except Exception as ex:
-                        statuscode = ex.response_statuscode
-                        self.send_response(
-                            statuscode, dict(error="error response from apns")
-                        )
+                        logging.error(ex)
+                        self.send_response(400, dict(error="error response from apns"))
                         return
                 else:
                     logging.error("no active apns connection")

@@ -297,7 +297,6 @@ class TokenV1Handler(APIBaseHandler):
             # {u'updatedExisting': True, u'connectionId': 47, u'ok': 1.0, u'err': None, u'n': 1}
             if result["updatedExisting"]:
                 self.send_response(OK, dict(status="token exists"))
-                self.add_to_log("Token exists", devicetoken)
             else:
                 self.send_response(OK, dict(status="ok"))
                 self.add_to_log("Add token", devicetoken)

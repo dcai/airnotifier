@@ -31,6 +31,7 @@ from routes import route
 from api import APIBaseHandler, EntityBuilder
 from constants import DEVICE_TYPE_IOS
 import binascii
+import logging
 from util import json_decode
 
 
@@ -62,6 +63,8 @@ class TokenV2Handler(APIBaseHandler):
         if not self.can("create_token"):
             self.send_response(FORBIDDEN, dict(error="No permission to create token"))
             return
+
+        logging.info(self.request.body)
         data = json_decode(self.request.body)
 
         device = data.get("device", DEVICE_TYPE_IOS).lower()

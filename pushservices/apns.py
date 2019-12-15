@@ -34,21 +34,35 @@ class ApnsClient(PushService):
         self.team_id = kwargs["team_id"]
         self.appname = kwargs["appname"]
         self.instanceid = kwargs["instanceid"]
+        self.last_token_refresh = 0
+        self.token = None
         self.http2 = HTTPConnection(BASE_URL)
 
+    def create_token(self):
+        now = time.time()
+        countdown = now - self.last_token_refresh
+        if countdown > 60 * (60 - 10):
+            jwt_payload = {"iss": self.team_id, "iat": time.time()}
+            token = jwt.encode(
+                jwt_payload,
+                self.auth_key,
+                algorithm=ALGORITHM,
+                headers={"alg": ALGORITHM, "kid": self.key_id},
+            )
+            self.last_token_refresh = now
+            self.token = token.decode("ascii")
+        return self.token
+
     def build_headers(self):
-        token = jwt.encode(
-            {"iss": self.team_id, "iat": time.time()},
-            self.auth_key,
-            algorithm=ALGORITHM,
-            headers={"alg": ALGORITHM, "kid": self.key_id},
-        )
+
+        token = self.create_token()
 
         return {
             "apns-expiration": "0",
             "apns-priority": "10",
             "apns-topic": self.bundle_id,
-            "authorization": "bearer {0}".format(token.decode("ascii")),
+            "mutable-content": "1",
+            "authorization": "bearer {0}".format(token),
         }
 
     def process(self, **kwargs):
@@ -64,11 +78,10 @@ class ApnsClient(PushService):
         payload_data = {"aps": {"alert": alert, **apns}}
         payload = json_encode(payload_data)
 
-        logging.info(payload)
-
         PATH = "/3/device/{0}".format(token)
         headers = self.build_headers()
 
+        logging.info(payload)
         self.http2.request("POST", PATH, payload, headers=headers)
         resp = self.http2.get_response()
 
