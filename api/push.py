@@ -113,7 +113,7 @@ class PushHandler(APIBaseHandler):
                 try:
                     fcmconn = self.fcmconnections[self.app["shortname"]][0]
                     response = fcmconn.process(
-                        token=self.token, alert=alert, extra=extra, payload=fcm_payload
+                        token=self.token, alert=alert, extra=extra, fcm=fcm_payload
                     )
                 except Exception as ex:
                     self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
