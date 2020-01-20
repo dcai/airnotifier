@@ -28,6 +28,7 @@
 
 import tornado.web
 from controllers.base import *
+from util import filter_alphabetanum
 
 from constants import (
     DEVICE_TYPE_IOS,
