@@ -4,14 +4,12 @@
 from . import PushService
 from oauth2client.service_account import ServiceAccountCredentials
 from util import json_decode, json_encode
-import argparse
 import datetime
 import logging
 import tornado
 
 BASE_URL = "https://fcm.googleapis.com"
 SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
-http = tornado.httpclient.AsyncHTTPClient()
 
 
 class FCMException(Exception):
@@ -61,13 +59,14 @@ class FCMClient(PushService):
         if alert is not None and not isinstance(alert, dict):
             alert = {"body": alert, "title": alert}
 
-        fcm_param = kwargs.get("payload", {})
+        fcm_param = kwargs.get("fcm", {})
         android = fcm_param.get("android", {})
         apns = fcm_param.get("apns", {})
         webpush = fcm_param.get("webpush", {})
         data = fcm_param.get("data", {})
 
-        # data structure: https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages
+        # data structure:
+        # https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages
         payload = {"message": {"token": token}}
 
         if alert:
@@ -89,15 +88,15 @@ class FCMClient(PushService):
         return text
 
     async def process(self, **kwargs):
-
-        payload = kwargs.get("payload", {})
-        extra = kwargs.get("extra", {})
+        fcm = kwargs.get("fcm", {})
         alert = kwargs.get("alert", None)
-        appdb = kwargs.get("appdb", None)
         token = kwargs["token"]
 
         if not token:
             raise FCMException(400, "devicde token is required")
+
+        body = self.build_request(token, alert, fcm=fcm)
+        logging.info(body)
 
         access_token, expires_in = self.oauth_client.get_access_token()
         logging.info(
@@ -108,9 +107,8 @@ class FCMClient(PushService):
             "Content-Type": "application/json; UTF-8",
         }
 
-        data = self.build_request(token, alert, extra=extra, payload=payload)
-
+        http = tornado.httpclient.AsyncHTTPClient()
         response = await http.fetch(
-            self.endpoint, method="POST", body=data, headers=headers
+            self.endpoint, method="POST", body=body, headers=headers
         )
         return response

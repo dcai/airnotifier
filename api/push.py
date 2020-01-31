@@ -110,18 +110,22 @@ class PushHandler(APIBaseHandler):
             logging.info("sending notification to %s: %s" % (device, self.token))
             #  if device in [DEVICE_TYPE_FCM, DEVICE_TYPE_ANDROID]:
             if device.endswith(DEVICE_TYPE_FCM):
-                fcm_payload = request_dict.get("fcm", {})
+                fcm = request_dict.get("fcm", {})
                 try:
                     fcmconn = self.fcmconnections[self.app["shortname"]][0]
-                    response = await fcmconn.process(
-                        token=self.token, alert=alert, extra=extra, payload=fcm_payload
-                    )
+                    await fcmconn.process(token=self.token, alert=alert, fcm=fcm)
                 except Exception as ex:
                     statuscode = ex.code
-                    # reference: https://firebase.google.com/docs/reference/fcm/rest/v1/ErrorCode
+                    # reference:
+                    # https://firebase.google.com/docs/reference/fcm/rest/v1/ErrorCode
                     response_json = json_decode(ex.response.body)
                     logging.error(response_json)
-                    self.send_response(ex.code, dict(error="error response from fcm"))
+                    self.add_to_log(
+                        "error", tornado.escape.to_unicode(ex.response.body)
+                    )
+                    self.send_response(
+                        statuscode, dict(error="error response from fcm")
+                    )
                     return
 
             elif device == DEVICE_TYPE_IOS:
