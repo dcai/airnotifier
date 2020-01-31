@@ -142,7 +142,6 @@ class PushHandler(APIBaseHandler):
                         conn.process(
                             token=self.token,
                             alert=alert,
-                            extra=extra,
                             apns={**apns_default, **apnspayload},
                         )
                     except Exception as ex:

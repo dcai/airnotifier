@@ -2,15 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from . import PushService
-from util import json_decode, json_encode
-import argparse
-import datetime
+from util import json_encode
 import logging
-import tornado
-from hyper import HTTPConnection
-import json
+import hyper
 import jwt
-import logging
 import time
 
 BASE_URL = "api.development.push.apple.com:443"
@@ -36,7 +31,7 @@ class ApnsClient(PushService):
         self.instanceid = kwargs["instanceid"]
         self.last_token_refresh = 0
         self.token = None
-        self.http2 = HTTPConnection(BASE_URL)
+        self.http2 = hyper.HTTPConnection(BASE_URL)
 
     def create_token(self):
         now = time.time()
@@ -66,27 +61,27 @@ class ApnsClient(PushService):
         }
 
     def process(self, **kwargs):
-        payload = kwargs.get("payload", {})
-        extra = kwargs.get("extra", {})
         alert = kwargs.get("alert", None)
-        apns = kwargs.get("apns", None)
+        apns = kwargs.get("apns", {})
         token = kwargs["token"]
 
         if alert is not None and not isinstance(alert, dict):
             alert = {"body": alert, "title": alert}
 
+        # data structure:
+        # https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/PayloadKeyReference.html#//apple_ref/doc/uid/TP40008194-CH17-SW1
         payload_data = {"aps": {"alert": alert, **apns}}
         payload = json_encode(payload_data)
+        self.payload = payload
 
         PATH = "/3/device/{0}".format(token)
-        headers = self.build_headers()
+        self.headers = self.build_headers()
 
-        logging.info(payload)
-        self.http2.request("POST", PATH, payload, headers=headers)
+        self.http2.request("POST", PATH, payload, headers=self.headers)
         resp = self.http2.get_response()
 
         if resp.status >= 400:
-            headers = resp.headers
+            #  headers = resp.headers
             #  for k, v in headers.items():
             #      logging.error("%s: %s" % (k.decode("utf-8"), v.decode("utf-8")))
             body = resp.read().decode("utf-8")
