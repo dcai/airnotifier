@@ -31,7 +31,6 @@ from container import Container
 from dao import Dao
 from pushservices.bootstrap import init_messaging_agents
 from sentry_sdk.integrations.tornado import TornadoIntegration
-from tornado.options import define
 from tornado.options import define, options
 from web import WebApplication
 import logging

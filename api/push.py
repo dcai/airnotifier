@@ -29,9 +29,10 @@
 from http.client import BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, ACCEPTED
 from routes import route
 from api import APIBaseHandler, EntityBuilder
-from util import json_decode, json_encode
+from util import json_decode
 import random
-import time, sys
+import time
+import sys
 from importlib import import_module
 from constants import (
     DEVICE_TYPE_IOS,
