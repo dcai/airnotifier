@@ -29,7 +29,7 @@
 from http.client import BAD_REQUEST, FORBIDDEN, NOT_FOUND, INTERNAL_SERVER_ERROR, OK
 from routes import route
 from api import APIBaseHandler, EntityBuilder
-from constants import DEVICE_TYPE_IOS
+from constants import DEVICE_TYPE_IOS, DEVICE_TYPE_FCM
 import binascii
 import logging
 from util import json_decode
@@ -64,10 +64,9 @@ class TokenV2Handler(APIBaseHandler):
             self.send_response(FORBIDDEN, dict(error="No permission to create token"))
             return
 
-        logging.info(self.request.body)
         data = json_decode(self.request.body)
 
-        device = data.get("device", DEVICE_TYPE_IOS).lower()
+        device = data.get("device", DEVICE_TYPE_FCM).lower()
         channel = data.get("channel", "default")
         devicetoken = data.get("token", "")
 
@@ -93,8 +92,7 @@ class TokenV2Handler(APIBaseHandler):
                 self.add_to_log("Token exists", devicetoken)
                 self.send_response(OK)
             else:
-                self.send_response(OK)
                 self.add_to_log("Add token", devicetoken)
+                self.send_response(OK)
         except Exception as ex:
-            self.add_to_log("Cannot add token", devicetoken, "warning")
             self.send_response(INTERNAL_SERVER_ERROR, dict(error=str(ex)))
