@@ -72,7 +72,7 @@ class WebApplication(tornado.web.Application):
 
         return {"msg": status, "error": error}
 
-    def send_broadcast(self, appname, appdb, **kwargs):
+    async def send_broadcast(self, appname, appdb, **kwargs):
         channel = kwargs.get("channel", "default")
         alert = kwargs.get("alert", None)
         sound = kwargs.get("sound", None)
@@ -117,8 +117,8 @@ class WebApplication(tornado.web.Application):
                             extra=extra,
                             apns=kwargs.get("apns", {}),
                         )
-                elif token["device"] == DEVICE_TYPE_FCM:
-                    fcm.process(
+                elif token["device"] == DEVICE_TYPE_FCM or token["device"] == DEVICE_TYPE_ANDROID:
+                    await fcm.process(
                         token=t, alert=alert, extra=extra, fcm=kwargs.get("fcm", {})
                     )
                 elif token["device"] == DEVICE_TYPE_WNS:

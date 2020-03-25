@@ -44,7 +44,7 @@ from util import json_decode
 
 @route(r"/api/v2/broadcast[\/]?")
 class BroadcastHandler(APIBaseHandler):
-    def post(self):
+    async def post(self):
         if not self.can("send_broadcast"):
             self.send_response(FORBIDDEN, dict(error="No permission to send broadcast"))
             return
@@ -70,7 +70,7 @@ class BroadcastHandler(APIBaseHandler):
                 alert["title"] + ": " + alert["body"],
                 "important",
             )
-        self.application.send_broadcast(
+        await self.application.send_broadcast(
             self.appname,
             self.db,
             channel=channel,
