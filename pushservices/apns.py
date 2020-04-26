@@ -8,7 +8,8 @@ import hyper
 import jwt
 import time
 
-BASE_URL = "api.development.push.apple.com:443"
+#  BASE_URL_DEV = "api.development.push.apple.com:443"
+BASE_URL_PROD = "api.push.apple.com:443"
 ALGORITHM = "ES256"
 
 
@@ -31,7 +32,8 @@ class ApnsClient(PushService):
         self.instanceid = kwargs["instanceid"]
         self.last_token_refresh = 0
         self.token = None
-        self.http2 = hyper.HTTPConnection(BASE_URL)
+        self.http2 = hyper.HTTPConnection(BASE_URL_PROD)
+        #  self.http2dev = hyper.HTTPConnection(BASE_URL_DEV)
 
     def create_token(self):
         now = time.time()
@@ -48,13 +50,14 @@ class ApnsClient(PushService):
             self.token = token.decode("ascii")
         return self.token
 
-    def build_headers(self):
+    def build_headers(self, push_type="alert"):
 
         token = self.create_token()
 
         return {
             "apns-expiration": "0",
             "apns-priority": "10",
+            "apns-push-type": push_type,  # alert or background
             "apns-topic": self.bundle_id,
             "mutable-content": "1",
             "authorization": "bearer {0}".format(token),
@@ -68,16 +71,28 @@ class ApnsClient(PushService):
         if alert is not None and not isinstance(alert, dict):
             alert = {"body": alert, "title": alert}
 
+        filtered_apns = {
+            k: v
+            for (k, v) in apns.items()
+            if k
+            in [
+                "thread-id",
+                "category",
+                "content-available",
+                "sound",
+                "badge",
+                "alert",
+            ]
+        }
         # data structure:
         # https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/PayloadKeyReference.html#//apple_ref/doc/uid/TP40008194-CH17-SW1
-        payload_data = {"aps": {"alert": alert, **apns}}
-        payload = json_encode(payload_data)
-        self.payload = payload
+        payload_data = {"aps": {"alert": alert, **filtered_apns}}
+        self.payload = json_encode(payload_data)
 
         PATH = "/3/device/{0}".format(token)
-        self.headers = self.build_headers()
+        self.headers = self.build_headers(push_type=apns["push_type"])
 
-        self.http2.request("POST", PATH, payload, headers=self.headers)
+        self.http2.request("POST", PATH, self.payload, headers=self.headers)
         resp = self.http2.get_response()
 
         if resp.status >= 400:

@@ -47,14 +47,16 @@ class TestAPNS(unittest.TestCase):
             "instanceid": "",
         }
         apns = ApnsClient(**kwargs)
+        apns_default = {"badge": None, "sound": "default", "push_type": "alert"}
         apns.process(
-            token="aaa", alert="alert", apns={"badge": 12},
+            token="aaa", alert="alert", apns={**apns_default, **{"badge": 12}},
         )
         self.assertDictEqual(
             apns.headers,
             {
                 "apns-expiration": "0",
                 "apns-priority": "10",
+                "apns-push-type": "alert",
                 "apns-topic": "com.airnotifier",
                 "authorization": "bearer encode_jwt",
                 "mutable-content": "1",
@@ -62,7 +64,23 @@ class TestAPNS(unittest.TestCase):
         )
         self.assertEqual(
             apns.payload,
-            '{"aps": {"alert": {"body": "alert", "title": "alert"}, "badge": 12}}',
+            '{"aps": {"alert": {"body": "alert", "title": "alert"}, "badge": 12, "sound": "default"}}',
+        )
+        apns.process(
+            token="aaa",
+            alert="alert",
+            apns={**apns_default, **{"badge": 12, "push_type": "background"}},
+        )
+        self.assertDictEqual(
+            apns.headers,
+            {
+                "apns-expiration": "0",
+                "apns-priority": "10",
+                "apns-push-type": "background",
+                "apns-topic": "com.airnotifier",
+                "authorization": "bearer encode_jwt",
+                "mutable-content": "1",
+            },
         )
 
 
