@@ -50,7 +50,6 @@ define("pemdir", default="pemdir", help="Directory to store pems")
 define(
     "passwordsalt", default="d2o0n1g2s0h3e1n1g", help="Being used to make password hash"
 )
-define("pemdir", default="pemdir", help="Directory to store pems")
 
 
 if __name__ == "__main__":
