@@ -3,12 +3,7 @@
 [![Join the chat at https://gitter.im/airnotifier/airnotifier](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/airnotifier/airnotifier?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 
-AirNotifier is a user friendly yet powerful application server for sending real-time notifications to mobile and desktop applications. AirNotifier provides a unified web service interface to deliver messages to multi devices using multi protocols, it also features a web based administrator UI to configure and manage services.
-
-
-## Hosted AirNotifier Service
-If you are interested in managed AirNotifier server to integrate with the most popular open source learning management system, please email [friendlyrobotco@gmail.com](mailto:friendlyrobotco@gmail.com). We have a range of hosting options :)
-
+AirNotifier is a user friendly yet powerful application server for sending real-time notifications to mobile and desktop applications. AirNotifier provides a unified web service interface to deliver messages to multi devices using multi protocols, it also features a web based administrator UI to configure and manage 
 
 ## Supported devices
 - iPhone/iPad devices ([APNs HTTP/2](https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/CommunicatingwithAPNs.html))
