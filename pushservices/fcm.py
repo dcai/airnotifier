@@ -7,6 +7,8 @@ from util import json_decode, json_encode
 import datetime
 import logging
 import tornado
+import pycurl
+from tornado.httpclient import AsyncHTTPClient
 
 BASE_URL = "https://fcm.googleapis.com"
 SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
@@ -107,7 +109,9 @@ class FCMClient(PushService):
             "Content-Type": "application/json; UTF-8",
         }
 
-        http = tornado.httpclient.AsyncHTTPClient()
+        AsyncHTTPClient.configure('tornado.curl_httpclient.CurlAsyncHTTPClient', max_clients=10)
+        http = AsyncHTTPClient()
+
         response = await http.fetch(
             self.endpoint, method="POST", body=body, headers=headers
         )
