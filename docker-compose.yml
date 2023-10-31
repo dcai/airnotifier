@@ -4,7 +4,7 @@
 version: "3"
 services:
   mongodb:
-    image: mongo:latest
+    image: mongo:4.4
     container_name: mongodb
     ports:
       - 27017:27017
@@ -12,19 +12,17 @@ services:
       - MONGO_DATA_DIR=/data/db
       - MONGO_LOG_DIR=/tmp/mongo/mongo.log
     volumes:
-      - ./mongo/data:/data/db
-      - ./mongo/log:/tmp/mongo
+      - /srv/podman/airnotifier/mongodb:/data/db:Z
+      - /srv/podman/airnotifier/mongologs:/tmp/mongo:Z
     command: mongod --logpath=/dev/null # --quiet
   airnotifier:
-    links:
-      - mongodb
     depends_on:
       - mongodb
-    build: .
+    image: localhost/airnotifier
     container_name: airnotifier
     volumes:
-      - ./certs:/var/airnotifier/pemdir
-      - ./logs:/var/log/airnotifier
+      - /srv/podman/airnotifier/certs:/var/airnotifier/pemdir:Z
+      - /srv/podman/airnotifier/logs:/var/log/airnotifier:Z
     ports:
       - 8801:8801
     environment:
