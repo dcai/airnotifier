@@ -16,7 +16,7 @@ RUN pip3 install pipenv pymongo tornado
 
 RUN apt-get upgrade -y
 
-RUN git clone --branch EVOSTDM-2867_master https://github.com/massicos/airnotifier.git /airnotifier
+RUN git clone --branch master https://github.com/massicos/airnotifier.git /airnotifier
 RUN mkdir -p /var/airnotifier/pemdir && \
     mkdir -p /var/log/airnotifier
 
