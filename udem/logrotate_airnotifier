@@ -1,0 +1,11 @@
+# AirNotifier - Configuration de la rotation des logs
+"/var/log/airnotifier/airnotifier.err" "/var/log/airnotifier/airnotifier.log" {
+notifempty
+daily
+copytruncate
+rotate 30
+compress
+sharedscripts
+dateext
+olddir archive/
+}

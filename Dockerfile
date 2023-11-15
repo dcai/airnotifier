@@ -13,8 +13,11 @@ RUN export PYCURL_SSL_LIBRARY=openssl
 RUN pip3 install --no-cache-dir --compile pycurl
 RUN pip3 install pipenv pymongo tornado
 
-
 RUN apt-get upgrade -y
+
+RUN apt install -y logrotate
+COPY logrotate_airnotifier /etc/logrotate.d/airnotifier
+RUN mkdir -p /var/log/airnotifier/archive
 
 RUN git clone --branch master https://github.com/massicos/airnotifier.git /airnotifier
 RUN mkdir -p /var/airnotifier/pemdir && \

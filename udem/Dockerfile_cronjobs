@@ -1,0 +1,30 @@
+FROM ubuntu:22.04
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
+RUN apt-get update
+RUN apt-get -y install nano
+RUN apt-get -y install wget
+RUN apt-get install -y cron
+
+RUN wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2204-x86_64-100.9.1.deb -P /tmp
+RUN apt install /tmp/mongodb-database-tools-ubuntu2204-x86_64-100.9.1.deb
+RUN rm /tmp/mongodb-database-tools-ubuntu2204-x86_64-100.9.1.deb
+
+RUN wget https://downloads.mongodb.com/compass/mongosh-2.0.2-linux-x64.tgz -P /tmp
+RUN tar xvfz /tmp/mongosh-2.0.2-linux-x64.tgz -C /
+RUN mv /mongosh-2.0.2-linux-x64 /mongosh
+RUN chmod +x /mongosh/bin/mongosh
+RUN rm /tmp/mongosh-2.0.2-linux-x64.tgz
+
+RUN mkdir airnotifier
+COPY MongoDB-clear-logs.js /airnotifier
+COPY sauvegarderMongoDB.sh /airnotifier
+COPY lib.sh /airnotifier
+RUN chmod +x /airnotifier/sauvegarderMongoDB.sh /airnotifier/lib.sh
+RUN apt install -y tmpreaper
+
+COPY crontab.txt /opt
+RUN crontab /opt/crontab.txt
+
+CMD ["cron", "-f"]

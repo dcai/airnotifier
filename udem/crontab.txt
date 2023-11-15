@@ -1,0 +1,4 @@
+00 23 1 * * /mongosh/bin/mongosh mongodb://${MONGO_SERVER}:${MONGO_PORT} --file /airnotifier/MongoDB-clear-logs.js > /var/log/cronjobs/MongoDB-clear-airnotifier.log_`date +\%Y\-\%m\-\%d\-\%Hh\%M`
+00 01 * * 6 /airnotifier/sauvegarderMongoDB.sh -z /data/mongodbbackups > /var/log/airnotifier/sauvegarderMongoDB.log
+30 01 * * 6 /usr/sbin/tmpreaper -ma 30d /data/mongodbbackups
+30 23 1 * * /usr/sbin/tmpreaper -ma 182d /var/log/cronjobs

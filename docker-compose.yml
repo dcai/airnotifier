@@ -28,3 +28,14 @@ services:
     environment:
       - MONGO_SERVER=mongodb
       - MONGO_PORT=27017
+  cronjobs:
+    depends_on:
+      - airnotifier
+    image: localhost/cronjobs
+    container_name: cronjobs
+    volumes:
+      - /srv/podman/airnotifier/logscronjobs:/var/log/cronjobs:Z
+      - /srv/podman/airnotifier/mongodbbackups:/data/mongodbbackups:Z
+    environment:
+      - MONGO_SERVER=mongodb
+      - MONGO_PORT=27017
